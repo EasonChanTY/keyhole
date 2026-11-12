@@ -4171,6 +4171,23 @@ updateHud();
     var w='换一批（'+rerollCost()+'金）';
     if(btn.textContent!==w) btn.textContent=w;
   },1200);
+
+  /* 6. 钥匙整体上移 + 收紧 */
+  try{
+    var _bkA=buildKeys;
+    buildKeys=function(){
+      var r=_bkA.apply(this,arguments);
+      try{
+        if(typeof keysRoot!=='undefined'&&keysRoot){
+          if(keysRoot.__by===undefined) keysRoot.__by=keysRoot.position.y;
+          keysRoot.position.y=keysRoot.__by+0.18;
+          keysRoot.scale.set(0.86,0.86,0.86);
+        }
+      }catch(e){}
+      return r;
+    };
+  }catch(e){}
+
   /* 7. 设置里加「地狱」按钮 + 高亮修正 */
   try{
     var _pm=paintModes;
@@ -4381,6 +4398,51 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   function isLogic(){
     try{ return MODE===MODES.logic || MODE===MODES.logicHell; }catch(e){ return false; }
   }
+
+  /* 普通模式上移 0.18，推理模式不动（保持原位置） */
+  function applyKeyTransform(){
+    try{
+      if(typeof keysRoot==='undefined' || !keysRoot) return;
+      if(keysRoot.__by===undefined) keysRoot.__by=keysRoot.position.y;
+      keysRoot.position.y = keysRoot.__by + (isLogic() ? 0 : 0.18);
+      keysRoot.scale.set(0.86,0.86,0.86);
+    }catch(e){}
+  }
+
+  /* 从 keysRoot 往根节点走，再遍历，找大圆环并隐藏 */
+  function hideCursor(){
+    try{
+      if(typeof keysRoot==='undefined' || !keysRoot) return;
+      var root=keysRoot, g=0;
+      while(root.parent && g++<12) root=root.parent;
+      var found=0;
+      root.traverse(function(o){
+        if(!o.isMesh || !o.geometry) return;
+        var t=o.geometry.type;
+        if(t!=='TorusGeometry' && t!=='RingGeometry' && t!=='CircleGeometry') return;
+        var p=o, inKeys=false;
+        for(var d=0; d<8 && p; d++){ if(p===keysRoot){ inKeys=true; break; } p=p.parent; }
+        if(inKeys) return;
+        var par=o.geometry.parameters || {};
+        if(par.radius!==undefined && par.radius<0.15) return;   /* 太小的环（钥匙齿圈）不动 */
+        if(o.visible){ o.visible=false; found++; }
+      });
+      if(found) try{ toast('已隐藏光标环 '+found+' 个'); }catch(e){}
+    }catch(e){}
+  }
+
+  try{
+    var _bk=buildKeys;
+    buildKeys=function(){
+      var r=_bk.apply(this,arguments);
+      try{ applyKeyTransform(); hideCursor(); }catch(e){}
+      return r;
+    };
+  }catch(e){}
+
+  setTimeout(function(){ try{ applyKeyTransform(); hideCursor(); }catch(e){} },1200);
+})();
+
 </script>
 </body>
 </html>

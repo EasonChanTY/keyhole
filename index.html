@@ -4047,7 +4047,7 @@ updateHud();
       }, true);
     }
   }
-
+  
   setInterval(run, 700);
 })();
 /* ===== v39：提示文字上移，不遮挡物件 ===== */
@@ -4060,74 +4060,231 @@ updateHud();
     '#stHint{top:15%!important;bottom:auto!important;pointer-events:none!important}';
   document.head.appendChild(st);
 })();  
+/* ===== v42-A ===== */
 (function(){
-  var b=document.createElement('div');
-  b.textContent='抓配置';
-  b.style.cssText='position:fixed;top:6px;left:6px;z-index:2147483645;background:#0f0;color:#000;font:12px/1 sans-serif;padding:6px 8px;border-radius:6px;font-weight:700';
-  b.onclick=function(){
-    var d=document.getElementById('__dump2');
-    if(!d){
-      d=document.createElement('div'); d.id='__dump2';
-      d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#0b0b0b;color:#0f0;font:9px/1.3 monospace;padding:8px;white-space:pre-wrap;word-break:break-all;overflow:auto';
-      d.onclick=function(){ d.style.display='none'; };
-      document.body.appendChild(d);
+
+  /* 1. 新模式：地狱 */
+  MODES.hell = { name:'地狱', teeth:9, step:0.03, peek:1800, keys:10, obs:4, haz:0.12, key:'hell' };
+
+  /* 2. 新增遮挡物 */
+  var NEWOBS=['hook','coin','bone','eye'];
+  for(var i=0;i<NEWOBS.length;i++){ if(OB_LIST.indexOf(NEWOBS[i])<0) OB_LIST.push(NEWOBS[i]); }
+  try{
+    var _obA=obAdd;
+    obAdd=function(kind){
+      try{
+        if(kind==='hook'){
+          var m=new THREE.Mesh(new THREE.TorusGeometry(.045,.008,6,14,Math.PI*1.3), MAT.rust);
+          m.position.set(.02,-.05,-.02); m.rotation.z=.6; obRoot.add(m); return;
+        }
+        if(kind==='coin'){
+          var c=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.006,16), MAT.rust);
+          c.rotation.x=Math.PI/2; c.position.set(-.04,.02,-.02); obRoot.add(c); return;
+        }
+        if(kind==='bone'){
+          var b2=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.16,8), MAT.cloth);
+          b2.rotation.z=.9; b2.position.set(0,-.02,-.03); obRoot.add(b2); return;
+        }
+        if(kind==='eye'){
+          var e2=new THREE.Mesh(new THREE.SphereGeometry(.035,10,10), MAT.rust);
+          e2.position.set(.03,.04,-.02); obRoot.add(e2); return;
+        }
+      }catch(e){}
+      return _obA(kind);
+    };
+  }catch(e){}
+
+  /* 3. 覆盖 confirmBox：遮挡数量不再限 2；地狱齿口 8/9/10 随机 */
+  try{
+    var _cb=confirmBox;
+    confirmBox=function(){
+      if(S.phase!=='box'||S.selBox<0)return;
+      var b=S.boxes[S.selBox];
+      if(S.coins<b.tier.price){toast('金币不够买这只箱子');return;}
+      S.coins-=b.tier.price;save();
+
+      if(MODE===MODES.hell) MODE.teeth = 8 + Math.floor(Math.random()*3);
+
+      var n=MODE.teeth;
+      buildPins(n);
+      S.obs=[];
+      var want=MODE.obs||0, guard=0;
+      while(S.obs.length<want && guard++<60){
+        var k=OB_LIST[rnd(OB_LIST.length)];
+        if(S.obs.indexOf(k)>=0) continue;
+        S.obs.push(k);
+      }
+      buildObstructions(S.obs);
+      S.lock=Array.from({length:n},function(){return rnd(5);});
+      S.lock.forEach(function(c,idx){
+        var L=segLen(c)*.95;
+        pins[idx].scale.y=L; pins[idx].position.y=.16-L/2;
+      });
+      buildKeys(b.swan,n);
+      S.busy=true;updateUI();
+      fadeTo(function(){
+        S.phase='lock';S.peeking=false;S.peeked=false;S.busy=false;
+        var ob=S.obs.length?' · 锁孔里塞着 '+S.obs.map(function(x){return OB_NAME[x]||x;}).join(' + '):'';
+        msgl('看清 '+n+' 根锁芯'+ob);
+        updateUI();
+        showTip('lock');
+      });
+    };
+  }catch(e){}
+
+  /* 4. 地狱掉落更好 */
+  try{
+    var _rlA=rollLoot;
+    rollLoot=function(tier){
+      if(MODE===MODES.hell && tier && tier.w){
+        var t2={}, kk;
+        for(kk in tier) t2[kk]=tier[kk];
+        var w=tier.w, nw=[w[0]*.55,w[1]*.85,w[2]*1.35,w[3]*2.1,w[4]*3.2];
+        var s=nw[0]+nw[1]+nw[2]+nw[3]+nw[4];
+        for(kk=0;kk<5;kk++) nw[kk]=nw[kk]/s;
+        t2.w=nw;
+        if(t2.n) t2.n=[t2.n[0]+1,t2.n[1]+1];
+        return _rlA(t2);
+      }
+      return _rlA(tier);
+    };
+  }catch(e){}
+
+  /* 5. 换一批要花钱 */
+  function rerollCost(){ return Math.min(30, 10+Math.floor(S.lv/10)); }
+  document.addEventListener('click',function(e){
+    var t=e.target, btn=null;
+    for(var d=0;d<3&&t;d++){ if(t.id==='btnB'){btn=t;break;} t=t.parentNode; }
+    if(!btn) return;
+    var c=rerollCost();
+    if(S.coins<c){
+      e.preventDefault(); e.stopPropagation();
+      if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+      toast('换一批需要 <b>'+c+'</b> 金，金币不够'); return;
     }
-    var L=[];
-    function j(n){ try{ return JSON.stringify(eval(n)); }catch(e){ return 'ERR'; } }
-    L.push('=== MODES ===\n'+j('MODES'));
-    L.push('=== TIERS ===\n'+j('TIERS'));
-    try{ L.push('=== OB_LIST ===\n'+JSON.stringify(OB_LIST)); }catch(e){ L.push('=== OB_LIST === ERR'); }
-    try{ L.push('=== LOGIC_LV === '+JSON.stringify(LOGIC_LV)); }catch(e){}
-    try{ L.push('=== MODE ===\n'+j('MODE')); }catch(e){}
-    try{
-      var bs=document.getElementById('modeRow').querySelectorAll('button');
-      for(var i=0;i<bs.length;i++) L.push('[modeRow] '+(bs[i].textContent||'').trim()+' => '+String(bs[i].onclick).slice(0,180));
-    }catch(e){}
-    try{
-      var b2=document.getElementById('logicRow').querySelectorAll('button');
-      for(var k=0;k<b2.length;k++) L.push('[logicRow] '+(b2[k].textContent||'').trim()+' => '+String(b2[k].onclick).slice(0,180));
-    }catch(e){}
-    var fns=['buildKeys','genKeys','makeKeys','rollLoot','_rl','makeLock','genLock','drawLock','peekInit'];
-    for(var m=0;m<fns.length;m++){
-      try{ if(typeof eval(fns[m])==='function') L.push('=== '+fns[m]+' ===\n'+eval(fns[m]).toString().slice(0,700)); }catch(e){}
-    }
-    d.textContent=L.join('\n\n');
-    d.style.display='block';
-  };
-  document.body.appendChild(b);
-})();  
+    S.coins-=c;
+    try{ updateHud(); save(); }catch(err){}
+  },true);
+  setInterval(function(){
+    var btn=document.getElementById('btnB');
+    if(!btn) return;
+    var w='换一批（'+rerollCost()+'金）';
+    if(btn.textContent!==w) btn.textContent=w;
+  },1200);
+
+  /* 6. 钥匙整体上移 + 收紧 */
+  try{
+    var _bkA=buildKeys;
+    buildKeys=function(){
+      var r=_bkA.apply(this,arguments);
+      try{
+        if(typeof keysRoot!=='undefined'&&keysRoot){
+          if(keysRoot.__by===undefined) keysRoot.__by=keysRoot.position.y;
+          keysRoot.position.y=keysRoot.__by+0.18;
+          keysRoot.scale.set(0.86,0.86,0.86);
+        }
+      }catch(e){}
+      return r;
+    };
+  }catch(e){}
+
+  /* 7. 设置里加「地狱」按钮 + 高亮修正 */
+  try{
+    var _pm=paintModes;
+    paintModes=function(){
+      try{
+        var cur = MODE===MODES.easy?'easy':MODE===MODES.hard?'hard':MODE===MODES.logic?'logic':MODE===MODES.hell?'hell':'nightmare';
+        var bs=document.querySelectorAll('#modeRow button');
+        [].slice.call(bs).forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-model')===cur); });
+        [].slice.call(bs).forEach(function(b){
+          b.onclick=function(){
+            MODE=MODES[b.getAttribute('data-model')];
+            SFX.tap();haptic(10);paintModes();
+            toast('难度已切换为 <b>'+MODE.name+'</b><br>下一局生效',1600);
+          };
+        });
+      }catch(e){ _pm&&_pm(); }
+    };
+    setInterval(function(){
+      var row=document.getElementById('modeRow');
+      if(row && !row.querySelector('button[data-model="hell"]')){
+        var b=document.createElement('button');
+        b.textContent='地狱'; b.setAttribute('data-model','hell');
+        row.appendChild(b);
+        paintModes();
+      }
+    },800);
+  }catch(e){}
+
+})();
+/* ===== v42-B：推理·地狱 ===== */
 (function(){
-  var b=document.createElement('div');
-  b.textContent='抓源码';
-  b.style.cssText='position:fixed;top:6px;left:6px;z-index:2147483645;background:#0f0;color:#000;font:12px/1 sans-serif;padding:6px 8px;border-radius:6px;font-weight:700';
-  b.onclick=function(){
-    var d=document.getElementById('__d3');
-    if(!d){
-      d=document.createElement('div'); d.id='__d3';
-      d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#0b0b0b;color:#0f0;font:9px/1.3 monospace;padding:8px;white-space:pre-wrap;word-break:break-all;overflow:auto';
-      d.onclick=function(){ d.style.display='none'; };
-      document.body.appendChild(d);
-    }
-    var src='';
-    var ss=document.querySelectorAll('script');
-    for(var i=0;i<ss.length;i++){ if(!ss[i].src) src+='\n/*SCRIPT '+i+'*/\n'+ss[i].textContent; }
-    var out='源码长度 '+src.length+'\n';
-    function grab(re,label,len){
-      var m=re.exec(src);
-      if(!m){ out+='\n### '+label+' 未找到\n'; return; }
-      out+='\n### '+label+' @'+m.index+'\n'+src.slice(m.index, m.index+len)+'\n';
-    }
-    grab(/function\s+_bk5\s*\(/, '_bk5', 1500);
-    grab(/(var|let|const)\s+_rl\s*=/, '_rl', 1700);
-    grab(/function\s+paintModes\s*\(/, 'paintModes', 500);
-    grab(/function\s+buildKeys\s*\(/, 'buildKeys', 300);
-    var m=/S\.lock\s*=/.exec(src);
-    if(m) out+='\n### S.lock 生成处（前 700 字）@'+m.index+'\n'+src.slice(Math.max(0,m.index-700), m.index+600)+'\n';
-    else out+='\n### S.lock 赋值 未找到\n';
-    d.textContent=out;
-    d.style.display='block';
+
+  /* 推理地狱：齿口 4 → 6（+2）、2 条免费提示、错一次整箱作废 */
+  MODES.logicHell = { name:'推理·地狱', teeth:6, step:0.03, peek:0, keys:6, obs:2, haz:0, key:'logicHell', logic:true };
+
+  /* 掉落同样比噩梦好 */
+  try{
+    var _rlB=rollLoot;
+    rollLoot=function(tier){
+      if(MODE===MODES.logicHell && tier && tier.w){
+        var t2={},kk;
+        for(kk in tier) t2[kk]=tier[kk];
+        var w=tier.w, nw=[w[0]*.5,w[1]*.85,w[2]*1.4,w[3]*2.2,w[4]*3.4];
+        var s=nw[0]+nw[1]+nw[2]+nw[3]+nw[4];
+        for(kk=0;kk<5;kk++) nw[kk]=nw[kk]/s;
+        t2.w=nw;
+        return _rlB(t2);
+      }
+      return _rlB(tier);
+    };
+  }catch(e){}
+
+  /* 模式高亮（含地狱/推理地狱） */
+  paintModes=function(){
+    try{
+      var cur = MODE===MODES.easy?'easy':MODE===MODES.hard?'hard':MODE===MODES.hell?'hell':(MODE===MODES.logic||MODE===MODES.logicHell)?'logic':'nightmare';
+      var bs=document.querySelectorAll('#modeRow button');
+      [].slice.call(bs).forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-model')===cur); });
+      [].slice.call(bs).forEach(function(b){
+        b.onclick=function(){
+          MODE=MODES[b.getAttribute('data-model')];
+          SFX.tap();haptic(10);paintModes();
+          toast('难度已切换为 <b>'+MODE.name+'</b><br>下一局生效',1600);
+        };
+      });
+    }catch(e){}
   };
-  document.body.appendChild(b);
+
+  /* 在「推理模式」那一排加「地狱」按钮 */
+  setInterval(function(){
+    var row=document.getElementById('logicRow');
+    if(!row) return;
+    if(!row.getAttribute('data-mb')){
+      row.setAttribute('data-mb','1');
+      row.addEventListener('click',function(e){
+        var t=e.target;
+        while(t && t!==row && t.tagName!=='BUTTON') t=t.parentNode;
+        if(!t||t.tagName!=='BUTTON') return;
+        var l=t.getAttribute('data-l');
+        if(l==='0'||l==='1'||l==='2'){ MODE=MODES.logic; paintModes(); }  /* 点普通逻辑难度 → 退回普通推理 */
+      },true);
+    }
+    if(row.querySelector('button[data-l="3"]')) return;
+    var b=document.createElement('button');
+    b.textContent='地狱';
+    b.setAttribute('data-l','3');
+    b.onclick=function(){
+      MODE=MODES.logicHell;
+      LOGIC_LV=0;               /* 0 = 6 把钥匙 + 2 条免费提示 */
+      [].slice.call(row.querySelectorAll('button')).forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      try{ SFX.tap(); haptic(10); paintModes(); }catch(e){}
+      toast('推理·地狱：<b>6 根锁芯</b> · <b>2 条免费提示</b> · 错一次整箱作废',1900);
+    };
+    row.appendChild(b);
+  },800);
+
 })();  
 </script>
 </body>

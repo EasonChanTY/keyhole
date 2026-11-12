@@ -4286,6 +4286,8 @@ updateHud();
   },800);
 
 })();  
+/* v42-A 修正：msgl 应为 msg */
+try{ window.msgl = msg; }catch(e){ try{ window.msgl = function(t){ var n=document.getElementById('toast'); if(n){ n.textContent=t; n.style.display='block'; setTimeout(function(){ n.style.display='none'; },1600);} }; }catch(e2){} }  
 </script>
 </body>
 </html>

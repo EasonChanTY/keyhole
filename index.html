@@ -4392,6 +4392,56 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
 
   setTimeout(function(){ try{ applyKeyTransform(); hideRing(); addOutlines(); }catch(e){} },1200);
 })();
+(function(){
+  var b=document.createElement('div');
+  b.textContent='抓光标2';
+  b.style.cssText='position:fixed;top:6px;left:6px;z-index:2147483645;background:#0f0;color:#000;font:12px/1 sans-serif;padding:6px 8px;border-radius:6px;font-weight:700';
+  b.onclick=function(){
+    var d=document.getElementById('__d7');
+    if(!d){
+      d=document.createElement('div'); d.id='__d7';
+      d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#0b0b0b;color:#0f0;font:9px/1.3 monospace;padding:8px;white-space:pre-wrap;word-break:break-all;overflow:auto';
+      d.onclick=function(){ d.style.display='none'; };
+      document.body.appendChild(d);
+    }
+    var out='';
+
+    out+='=== 3D 圆环类 ===\n';
+    try{
+      scene.traverse(function(o){
+        if(!o.isMesh||!o.geometry) return;
+        var g=o.geometry.type;
+        if(g!=='TorusGeometry'&&g!=='RingGeometry'&&g!=='CircleGeometry') return;
+        out+='#'+(o.name||'-')+' '+g+' vis='+o.visible+' parent='+((o.parent&&o.parent.name)||'-')+' pos '+o.position.x.toFixed(2)+','+o.position.y.toFixed(2)+','+o.position.z.toFixed(2)+'\n';
+      });
+    }catch(e){ out+='scene ERR\n'; }
+
+    out+='\n=== Sprite ===\n';
+    try{
+      scene.traverse(function(o){
+        if(o.isSprite) out+='#'+(o.name||'-')+' parent='+((o.parent&&o.parent.name)||'-')+' scale '+o.scale.x.toFixed(2)+'\n';
+      });
+    }catch(e){}
+
+    out+='\n=== DOM 圆形元素 ===\n';
+    var all=document.body.getElementsByTagName('*');
+    for(var i=0;i<all.length;i++){
+      var el=all[i];
+      if(!el.offsetWidth) continue;
+      var cs;
+      try{ cs=getComputedStyle(el); }catch(e){ continue; }
+      if(cs.display==='none'||cs.visibility==='hidden') continue;
+      var br=parseFloat(cs.borderTopLeftRadius)||0;
+      var w=el.offsetWidth, h=el.offsetHeight;
+      if(br>=Math.min(w,h)/2-1 && w>24 && Math.abs(w-h)<8){
+        out+='<'+el.tagName+'> #'+el.id+' .'+String(el.className).slice(0,40)+' '+w+'x'+h+' r='+br+' pos='+cs.position+' z='+cs.zIndex+' bg='+cs.backgroundColor+'\n';
+      }
+    }
+
+    d.textContent=out; d.style.display='block';
+  };
+  document.body.appendChild(b);
+})();  
 </script>
 </body>
 </html>

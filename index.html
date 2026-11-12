@@ -9,47 +9,43 @@
 <meta name="theme-color" content="#0a0705">
 <title>齿口 · Keyhole</title>
 <style>
-:root{--gold:#e6c47f;--ink:#efe6d6;--bg:#0a0705}
+:root{--gold:#e6c47f;--ink:#efe6d6}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
-  font-family:-apple-system,"PingFang SC",system-ui,sans-serif;
-  -webkit-user-select:none;user-select:none;touch-action:none;-webkit-font-smoothing:antialiased}
+html,body{margin:0;height:100%;overflow:hidden;background:#0a0705;color:var(--ink);
+font-family:-apple-system,"PingFang SC",system-ui,sans-serif;-webkit-user-select:none;
+user-select:none;touch-action:none;-webkit-font-smoothing:antialiased}
 #scene{position:fixed;inset:0;width:100%;height:100%;display:block}
-#vig{position:fixed;inset:0;z-index:3;pointer-events:none;opacity:.55;transition:opacity .45s;
-  background:radial-gradient(circle at 50% 46%,#0000 30%,#00000055 55%,#000000e8 82%)}
+#vig{position:fixed;inset:0;z-index:3;pointer-events:none;opacity:.55;transition:.45s;
+background:radial-gradient(circle at 50% 46%,#0000 30%,#00000055 55%,#000000e8 82%)}
 #vig.on{opacity:1}
-#fade{position:fixed;inset:0;z-index:15;background:#000;opacity:0;pointer-events:none;transition:opacity .3s ease}
+#fade{position:fixed;inset:0;z-index:15;background:#000;opacity:0;pointer-events:none;transition:.3s}
 #fade.on{opacity:1;pointer-events:auto}
-#flash{position:fixed;inset:0;z-index:8;pointer-events:none;background:#fff;opacity:0;transition:opacity .16s ease}
-
+#flash{position:fixed;inset:0;z-index:8;pointer-events:none;background:#fff;opacity:0;transition:.16s}
 #boot{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:18px;background:#070504;transition:opacity .5s;color:var(--gold)}
+justify-content:center;gap:18px;background:#070504;transition:.5s;color:var(--gold)}
 #boot.off{opacity:0;pointer-events:none}
 #boot .b1{font-size:15px;letter-spacing:.6em;text-indent:.6em;opacity:.85}
 #boot .bar{width:90px;height:1px;background:#ffffff18;overflow:hidden}
-#boot .bar i{display:block;height:100%;width:40%;background:var(--gold);animation:sl 1.1s ease-in-out infinite}
+#boot .bar i{display:block;height:100%;width:40%;background:var(--gold);animation:sl 1.1s infinite}
 @keyframes sl{0%{transform:translateX(-100%)}100%{transform:translateX(320%)}}
-
 #hud{position:fixed;top:0;left:0;right:0;z-index:6;pointer-events:none;
-  padding:calc(12px + env(safe-area-inset-top)) 16px 20px;
-  background:linear-gradient(#000000d9,#0000);display:flex;flex-direction:column;gap:7px}
+padding:calc(12px + env(safe-area-inset-top)) 16px 20px;
+background:linear-gradient(#000000d9,#0000);display:flex;flex-direction:column;gap:7px}
 #hud .h1{display:flex;align-items:center;gap:12px;font-size:10px;letter-spacing:.12em;color:#8f8270}
 #hud .h1 b{color:var(--gold);font-size:18px;font-weight:700;letter-spacing:0;margin-left:5px}
 #hud .sp{flex:1}
 #hud .h2{display:flex;align-items:center;gap:10px;font-size:10.5px;color:#7d7266;letter-spacing:.06em}
 #hud button{pointer-events:auto;padding:7px 11px;border-radius:10px;border:1px solid #ffffff1c;
-  background:#ffffff08;color:#a99c88;font-size:11.5px;font-family:inherit;flex:0 0 auto}
+background:#ffffff08;color:#a99c88;font-size:11.5px;font-family:inherit;flex:0 0 auto}
 .oildot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#e6c47f;margin-right:3px}
 .oildot.off{background:#3a322a}
-
 #ui{position:fixed;left:0;right:0;bottom:0;z-index:6;
-  padding:14px 16px calc(14px + env(safe-area-inset-bottom));
-  display:flex;flex-direction:column;gap:8px;background:linear-gradient(#0000,#000000eb 46%)}
+padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+display:flex;flex-direction:column;gap:8px;background:linear-gradient(#0000,#000000eb 46%)}
 .row{display:flex;gap:8px}
-button{font-family:inherit;flex:1;padding:15px 6px;border-radius:14px;
-  border:1px solid #ffffff1a;background:#171210e0;color:var(--ink);
-  font-size:15px;font-weight:600;transition:transform .12s,opacity .25s;
-  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+button{font-family:inherit;flex:1;padding:15px 6px;border-radius:14px;border:1px solid #ffffff1a;
+background:#171210e0;color:var(--ink);font-size:15px;font-weight:600;transition:.12s;
+-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
 button:active{transform:scale(.972)}
 button:disabled{opacity:.26}
 button.gold{background:linear-gradient(#eccd85,#a8853c);color:#1c1206;border-color:#f6e2b4}
@@ -57,120 +53,124 @@ button.small{font-size:12.5px;padding:11px}
 button.danger{background:#2a1411;color:#e2a390;border-color:#c0563a55;font-size:12.5px;padding:11px}
 #btnR,#btnC{display:none}
 #msg{text-align:center;font-size:12.5px;line-height:1.5;color:#a2957f;min-height:18px}
-
 #peekBar{position:fixed;left:0;right:0;bottom:0;height:3px;z-index:7;background:#ffffff12;display:none}
 #peekBar i{display:block;height:100%;width:100%;transform-origin:left;
-  background:linear-gradient(90deg,#e6c47f,#fff6dd)}
-
-#toast{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%) scale(.94);
-  z-index:9;padding:20px 26px;border-radius:20px;text-align:center;
-  background:#0b0806f7;border:1px solid #ffffff1f;box-shadow:0 26px 80px #000d;
-  opacity:0;transition:.26s cubic-bezier(.2,.9,.3,1.15);pointer-events:none;
-  font-size:13px;line-height:1.65;color:#c0b4a0;white-space:nowrap}
+background:linear-gradient(90deg,#e6c47f,#fff6dd)}
+#toast{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%) scale(.94);z-index:9;
+padding:20px 26px;border-radius:20px;text-align:center;background:#0b0806f7;
+border:1px solid #ffffff1f;box-shadow:0 26px 80px #000d;opacity:0;transition:.26s
+cubic-bezier(.2,.9,.3,1.15);pointer-events:none;font-size:13px;line-height:1.65;color:#c0b4a0;white-space:nowrap}
 #toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
 #toast b{display:block;font-size:23px;font-weight:700;color:var(--gold);margin:4px 0}
-
 #stage{position:fixed;inset:0;z-index:7;display:none}
 #stage.on{display:block}
 #tapLayer{position:absolute;inset:0}
 #stTop{position:absolute;top:calc(96px + env(safe-area-inset-top));left:0;right:0;
-  display:flex;justify-content:space-between;padding:0 22px;font-size:11px;
-  letter-spacing:.14em;color:#8f8270;pointer-events:none}
+display:flex;justify-content:space-between;padding:0 22px;font-size:11px;letter-spacing:.14em;
+color:#8f8270;pointer-events:none}
 #stTop b{color:var(--gold);font-size:19px;letter-spacing:0;display:block;margin-top:3px}
 #rar{position:absolute;left:50%;top:55%;transform:translate(-50%,8px) scale(.9);opacity:0;
-  text-align:center;pointer-events:none;transition:.32s cubic-bezier(.2,1.5,.4,1)}
+text-align:center;pointer-events:none;transition:.32s cubic-bezier(.2,1.5,.4,1)}
 #rar.on{opacity:1;transform:translate(-50%,0) scale(1)}
 #rar .q{font-size:11px;letter-spacing:.26em;display:inline-block;padding:4px 12px;
-  border-radius:20px;color:#0d0906;font-weight:800}
+border-radius:20px;color:#0d0906;font-weight:800}
 #rar .n{font-size:20px;margin-top:8px;letter-spacing:.06em;color:#efe4d0}
-#rar .v{font-size:15px;margin-top:3px;color:#e6c47f;transition:color .2s}
+#rar .v{font-size:15px;margin-top:3px;color:#e6c47f;transition:.2s}
 #rar .v.hit{color:#ff9a86}
 #markLog{display:flex;flex-direction:column;gap:3px;margin-top:6px;align-items:center}
 .mk{font-size:11px;letter-spacing:.06em;color:#ff9080;animation:cp .3s cubic-bezier(.2,1.6,.4,1) both}
 @keyframes cp{from{transform:scale(0)}to{transform:scale(1)}}
 #chips{position:absolute;left:0;right:0;bottom:calc(92px + env(safe-area-inset-bottom));
-  display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:0 20px;pointer-events:none}
-.chip{width:9px;height:9px;border-radius:3px}
+display:flex;flex-wrap:wrap;gap:5px;justify-content:center;padding:0 20px;pointer-events:none}
+.chip{width:8px;height:8px;border-radius:2px}
 #stHint{position:absolute;left:0;right:0;bottom:calc(46px + env(safe-area-inset-bottom));
-  text-align:center;font-size:12.5px;color:#b7a88e;letter-spacing:.14em;
-  animation:bt 1.6s ease-in-out infinite;pointer-events:none}
+text-align:center;font-size:12.5px;color:#b7a88e;letter-spacing:.14em;animation:bt 1.6s infinite;pointer-events:none}
 @keyframes bt{0%,100%{opacity:.45}50%{opacity:1}}
 #stSum{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;
-  justify-content:center;gap:10px;background:#0a0705e8;
-  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+justify-content:center;gap:10px;background:#0a0705e8;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 #stSum.on{display:flex}
 #stSum .lbl{font-size:11px;letter-spacing:.4em;color:#8f8270}
 #stSum .big{font-size:46px;color:var(--gold);font-weight:200}
 #stSum .sub{font-size:12px;color:#9c8f7b;margin-bottom:12px;text-align:center;line-height:1.7}
 #stSum button{width:210px;padding:16px;border-radius:16px;border:none;flex:0 0 auto;
-  background:linear-gradient(#eccd85,#a8853c);color:#1c1206;font-size:15px;font-weight:700}
-
-/* ===== 全屏面板（登录 / 背包 / 设置） ===== */
+background:linear-gradient(#eccd85,#a8853c);color:#1c1206;font-size:15px;font-weight:700}
 .panel{position:fixed;inset:0;z-index:25;display:none;flex-direction:column;
-  background:linear-gradient(#0c0906,#070504);
-  padding:calc(16px + env(safe-area-inset-top)) 18px calc(16px + env(safe-area-inset-bottom))}
+background:linear-gradient(#0c0906,#070504);
+padding:calc(16px + env(safe-area-inset-top)) 18px calc(16px + env(safe-area-inset-bottom))}
 .panel.on{display:flex}
-.phead{display:flex;align-items:center;gap:10px;padding-bottom:12px;
-  border-bottom:1px solid #ffffff12;margin-bottom:12px}
+.phead{display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid #ffffff12;margin-bottom:12px}
 .phead h2{margin:0;font-size:15px;font-weight:500;letter-spacing:.2em;color:var(--gold)}
 .phead .sp{flex:1}
-.phead button{flex:0 0 auto;padding:8px 14px;font-size:12.5px;border-radius:10px;
-  border:1px solid #ffffff1c;background:#ffffff08;color:#a99c88}
-
-#login{display:none;flex-direction:column;align-items:center;justify-content:center;gap:0;
-  background:radial-gradient(120% 75% at 50% 30%,#20160d 0%,#0a0705 62%,#040302 100%)}
+.phead button{flex:0 0 auto;padding:8px 12px;font-size:12.5px;border-radius:10px;
+border:1px solid #ffffff1c;background:#ffffff08;color:#a99c88}
+#login{display:none;position:fixed;inset:0;z-index:30;flex-direction:column;align-items:center;
+justify-content:center;overflow:hidden;
+background:radial-gradient(70% 55% at 50% 38%,#2a1d12 0%,#0b0705 62%,#050302 100%)}
 #login.on{display:flex}
-#login h1{margin:0;font-size:40px;font-weight:200;color:var(--gold);
-  letter-spacing:.42em;text-indent:.42em}
-#login .sub{font-size:11px;letter-spacing:.28em;color:#7a6a53;margin-top:14px}
-#login input{margin-top:34px;width:230px;padding:14px 16px;border-radius:12px;
-  border:1px solid #ffffff22;background:#ffffff08;color:var(--ink);
-  font-size:15px;text-align:center;font-family:inherit;outline:none}
-#login input::placeholder{color:#5f5548}
-#login button{margin-top:16px;width:230px;flex:0 0 auto;padding:15px;border-radius:14px;
-  border:none;background:linear-gradient(#eccd85,#a8853c);color:#1c1206;
-  font-size:15px;font-weight:700;letter-spacing:.14em}
-#login .tip{margin-top:26px;font-size:10.5px;color:#5f5548;text-align:center;line-height:1.9}
-
-#bagList{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
-  display:flex;flex-direction:column;gap:7px}
+#login .kh{position:absolute;top:13%;left:50%;transform:translateX(-50%);width:180px;
+opacity:.12;filter:drop-shadow(0 0 26px #e6c47f)}
+#login .kh path{fill:none;stroke:#e6c47f;stroke-width:2.2}
+#login .glow{position:absolute;top:15%;left:50%;transform:translateX(-50%);width:440px;height:440px;
+border-radius:50%;background:radial-gradient(circle,#e6c47f22 0%,#0000 62%)}
+#login h1{position:relative;margin:0;font-size:42px;font-weight:200;color:var(--gold);
+letter-spacing:.46em;text-indent:.46em;text-shadow:0 0 50px #e6c47f55}
+#login .sub{position:relative;font-size:8.5px;letter-spacing:.58em;text-indent:.58em;color:#7a6a53;margin-top:16px}
+#login .rule{width:60px;height:1px;margin:28px 0 24px;
+background:linear-gradient(90deg,#0000,#e6c47f88,#0000)}
+#login .lgp{position:relative;font-size:12px;color:#8c7e69;text-align:center;line-height:2.1;
+letter-spacing:.08em;margin-bottom:28px}
+#login .lgp em{color:var(--gold);font-style:normal}
+#login input{position:relative;width:236px;padding:15px 16px;border-radius:13px;border:1px solid #ffffff20;
+background:#ffffff0a;color:var(--ink);font-size:15px;text-align:center;font-family:inherit;outline:none}
+#login input::placeholder{color:#5a5145}
+#login #btnLogin{position:relative;margin-top:14px;width:236px;flex:0 0 auto;padding:15px;
+border-radius:14px;border:none;background:linear-gradient(#eccd85,#a8853c);color:#1c1206;
+font-size:15px;font-weight:700;letter-spacing:.16em;box-shadow:0 14px 40px #e6c47f2e}
+#login .tip{position:relative;margin-top:24px;font-size:10px;color:#4f463c;text-align:center;line-height:2}
+#bagList{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;
+gap:7px;padding-bottom:8px}
 .brow{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:12px;
-  background:#16121099;border:1px solid #ffffff10}
-.brow:active{background:#221a1499}
+background:#16121099;border:1px solid #ffffff10}
+.brow.picked{background:#2a2114cc;border-color:#e6c47f55}
 .dot{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
 .bn{flex:1;font-size:14px;color:#ddd2c0}
-.bc{font-size:10.5px;color:#8f8270;flex:0 0 auto;letter-spacing:.05em}
+.bc{font-size:10.5px;color:#8f8270;flex:0 0 auto}
 .bc.bad{color:#e98a76}
-.bp{font-size:13px;color:var(--gold);width:64px;text-align:right;flex:0 0 auto;
-  font-variant-numeric:tabular-nums}
+.bp{font-size:13px;color:var(--gold);width:62px;text-align:right;flex:0 0 auto;font-variant-numeric:tabular-nums}
 .star{color:#ffcf5c;font-size:11px;width:12px;flex:0 0 auto}
-
-#detail{position:fixed;inset:0;z-index:30;display:none;align-items:flex-end;
-  background:#000000c4;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.ck{width:16px;height:16px;border-radius:5px;border:1px solid #ffffff30;flex:0 0 auto;
+display:flex;align-items:center;justify-content:center;font-size:10px;color:#1c1206}
+.brow.picked .ck{background:#e6c47f;border-color:#e6c47f}
+#bulkBar{display:none;gap:8px;align-items:center;padding-top:10px;border-top:1px solid #ffffff12}
+#bulkBar.on{display:flex}
+#bulkInfo{font-size:11.5px;color:#a2957f;flex:1}
+#bulkBar button{flex:0 0 auto;padding:12px 14px;font-size:13px}
+#detail{position:fixed;inset:0;z-index:32;display:none;align-items:flex-end;
+background:#000000c4;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 #detail.on{display:flex}
-#detail .card{width:100%;background:#100c09;border-radius:20px 20px 0 0;
-  padding:22px 20px calc(22px + env(safe-area-inset-bottom));
-  border-top:1px solid #ffffff1a;animation:up .28s cubic-bezier(.2,1.2,.4,1) both}
+#detail .card{width:100%;background:#100c09;border-radius:22px 22px 0 0;
+padding:20px 20px calc(20px + env(safe-area-inset-bottom));border-top:1px solid #ffffff1a;
+animation:up .28s cubic-bezier(.2,1.2,.4,1) both;max-height:86%;overflow-y:auto}
 @keyframes up{from{transform:translateY(100%)}to{transform:none}}
-#detail .dn{font-size:20px;color:#efe4d0;letter-spacing:.06em}
-#detail .dt{font-size:11px;color:#7a6a53;margin-top:5px;letter-spacing:.14em}
-#detail .dd{font-size:13px;color:#a89a86;line-height:1.85;margin:14px 0 16px;
-  font-style:italic}
-#detail .dprice{font-size:26px;color:var(--gold);font-weight:200;
-  display:flex;align-items:baseline;gap:8px}
-#detail .dprice small{font-size:11px;color:#7a6a53;letter-spacing:.1em}
-#detail .drow{display:flex;gap:9px;margin-top:18px}
-
+#detail .dn{font-size:19px;color:#efe4d0;letter-spacing:.06em}
+#detail .dt{font-size:10.5px;color:#7a6a53;margin-top:5px;letter-spacing:.14em}
+#detail .dd{font-size:12.5px;color:#a89a86;line-height:1.85;margin:13px 0 4px;font-style:italic}
+#dChart{width:100%;height:80px;display:block;margin:10px 0 4px}
+.chartMeta{display:flex;justify-content:space-between;font-size:10px;color:#6f6558;margin-bottom:12px}
+.chartMeta b{color:#a2957f;font-weight:600}
+#detail .dprice{font-size:26px;color:var(--gold);font-weight:200;display:flex;
+align-items:baseline;gap:8px;margin-top:6px}
+#detail .dprice small{font-size:10.5px;color:#7a6a53;letter-spacing:.1em}
+#detail .drow{display:flex;gap:9px;margin-top:16px}
 #setList{display:flex;flex-direction:column;gap:10px}
 #setList .lab{font-size:11px;color:#7d7266;letter-spacing:.16em;margin:6px 0 2px}
 .mrow{display:flex;gap:8px}
-.mrow button{flex:1;padding:13px;font-size:13.5px;border-radius:12px;
-  border:1px solid #ffffff1a;background:#171210;color:#a2957f}
+.mrow button{flex:1;padding:13px;font-size:13.5px;border-radius:12px;border:1px solid #ffffff1a;
+background:#171210;color:#a2957f}
 .mrow button.on{background:linear-gradient(#eccd85,#a8853c);color:#1c1206;border-color:#f6e2b4}
 </style>
 </head>
 <body>
-
 <canvas id="scene"></canvas>
 <div id="vig"></div>
 <div id="flash"></div>
@@ -182,12 +182,7 @@ button.danger{background:#2a1411;color:#e2a390;border-color:#c0563a55;font-size:
     <button id="btnBag">背包 <span id="bagCount">0</span></button>
     <button id="btnSet">⚙</button>
   </div>
-  <div class="h2">
-    <span id="hOil"></span>
-    <span id="hEra"></span>
-    <span class="sp"></span>
-    <span id="hLeft"></span>
-  </div>
+  <div class="h2"><span id="hOil"></span><span id="hEra"></span><span class="sp"></span><span id="hLeft"></span></div>
 </header>
 
 <section id="ui">
@@ -206,7 +201,7 @@ button.danger{background:#2a1411;color:#e2a390;border-color:#c0563a55;font-size:
 <section id="stage">
   <div id="tapLayer"></div>
   <div id="stTop">
-    <div>本箱合计<b id="stSumVal">0</b></div>
+    <div>本箱估价<b id="stSumVal">0</b></div>
     <div style="text-align:right">第<b id="stIdx">0</b></div>
   </div>
   <div id="rar"><div class="q"></div><div class="n"></div><div class="v"></div><div id="markLog"></div></div>
@@ -220,63 +215,55 @@ button.danger{background:#2a1411;color:#e2a390;border-color:#c0563a55;font-size:
   </div>
 </section>
 
-<!-- 登录 -->
-<section id="login" class="panel">
+<section id="login">
+  <svg class="kh" viewBox="0 0 100 150"><path d="M50 18a24 24 0 1 0 0 48a24 24 0 1 0 0-48Z M36 62 L27 140 H73 L64 62 Z"/></svg>
+  <div class="glow"></div>
   <h1>齿口</h1>
   <div class="sub">K E Y H O L E</div>
+  <div class="rule"></div>
+  <div class="lgp">有些箱子<br><em>只值得被打开一次</em></div>
   <input id="nick" placeholder="你的名字" maxlength="12">
   <button id="btnLogin">进 入</button>
-  <div class="tip">存档保存在这台设备上<br>（微信手机号登录需要服务器，暂未支持）</div>
+  <div class="tip">存档在本机 · 换设备不同步</div>
 </section>
 
-<!-- 背包 -->
 <section id="bagScreen" class="panel">
-  <div class="phead">
-    <h2>背 包</h2>
-    <div class="sp"></div>
-    <button id="bsClose">关闭</button>
-  </div>
-  <div class="h2" style="display:flex;gap:10px;font-size:10.5px;color:#7d7266;margin-bottom:10px">
-    <span id="bsEra"></span><span id="bsEraDesc" style="color:#5f5548"></span>
-  </div>
+  <div class="phead"><h2>背 包</h2><div class="sp"></div>
+    <button id="bsBulk">批量</button><button id="bsClose">关闭</button></div>
+  <div style="display:flex;gap:9px;font-size:10.5px;color:#7d7266;margin-bottom:10px">
+    <span id="bsEra"></span><span id="bsEraDesc" style="color:#544b40"></span></div>
   <div id="bagList"></div>
-  <div id="bagEmpty" style="text-align:center;color:#5f5548;font-size:12.5px;padding:40px 0;
-    display:none">背包是空的 —— 去开箱吧</div>
+  <div id="bagEmpty" style="text-align:center;color:#5f5548;font-size:12.5px;padding:40px 0;display:none">背包是空的 —— 去开箱吧</div>
+  <div id="bulkBar">
+    <button id="bulkAll" class="small">全选</button>
+    <span id="bulkInfo">0 件 · 0 金</span>
+    <button id="bulkSell" class="gold">出售</button>
+  </div>
 </section>
 
-<!-- 物品详情 -->
 <div id="detail">
   <div class="card">
     <div class="dn" id="dName">—</div>
     <div class="dt" id="dMeta">—</div>
     <div class="dd" id="dDesc"></div>
+    <canvas id="dChart"></canvas>
+    <div class="chartMeta"><span>最高 <b id="chHi">0</b></span><span>最低 <b id="chLo">0</b></span><span>近24时 <b id="chDelta">—</b></span></div>
     <div class="dprice" id="dPrice">0<small>当前市价</small></div>
-    <div class="drow">
-      <button id="dFav" class="small">收藏</button>
-      <button id="dSell" class="gold">出售</button>
-    </div>
+    <div class="drow"><button id="dFav" class="small">收藏</button><button id="dSell" class="gold">出售</button></div>
   </div>
 </div>
 
-<!-- 设置 -->
 <section id="setScreen" class="panel">
-  <div class="phead">
-    <h2>设 置</h2>
-    <div class="sp"></div>
-    <button id="stClose">关闭</button>
-  </div>
+  <div class="phead"><h2>设 置</h2><div class="sp"></div><button id="stClose">关闭</button></div>
   <div id="setList">
     <div class="lab">难 度（下局生效）</div>
     <div class="mrow" id="modeRow">
-      <button data-mode="easy">简单</button>
-      <button data-mode="hard">困难</button>
-      <button data-mode="nightmare">噩梦</button>
+      <button data-mode="easy">简单</button><button data-mode="hard">困难</button><button data-mode="nightmare">噩梦</button>
     </div>
-    <div class="lab" style="margin-top:18px">存 档</div>
+    <div class="lab" style="margin-top:16px">存 档</div>
     <button id="btnReset" class="danger" style="flex:0 0 auto">清空存档、重新开始</button>
-    <div style="font-size:10.5px;color:#4f463c;line-height:1.9;margin-top:22px">
-      版本 v8 · 单机版<br>物品好坏在生成时已确定，转动只是验货。
-    </div>
+    <div style="font-size:10.5px;color:#4f463c;line-height:1.9;margin-top:20px">
+      版本 v10 · 单机版<br>物品好坏生成时已定，转动只是验货。</div>
   </div>
 </section>
 
@@ -284,345 +271,315 @@ button.danger{background:#2a1411;color:#e2a390;border-color:#c0563a55;font-size:
 <div id="boot"><div class="b1">齿 口</div><div class="bar"><i></i></div></div>
 
 <script>
-window.addEventListener('error', e => err(e.message));
-window.addEventListener('unhandledrejection', e => err((e.reason && e.reason.message) || e.reason));
-function err(m){
-  document.body.insertAdjacentHTML('beforeend',
-    '<div style="position:fixed;inset:0;z-index:99;background:#000;color:#ff9c9c;padding:24px;'+
-    'font-size:12px;line-height:1.7;overflow:auto;white-space:pre-wrap">出错了：\n' + m + '</div>');
-}
+window.addEventListener('error',e=>err(e.message));
+window.addEventListener('unhandledrejection',e=>err((e.reason&&e.reason.message)||e.reason));
+function err(m){document.body.insertAdjacentHTML('beforeend',
+ '<div style="position:fixed;inset:0;z-index:99;background:#000;color:#ff9c9c;padding:24px;font-size:12px;line-height:1.7;overflow:auto;white-space:pre-wrap">出错了：\n'+m+'</div>');}
 </script>
 
 <script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
-  }
-}
+{"imports":{
+"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+"three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}
 </script>
 
 <script type="module">
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-/* ================= 1. 配置 ================= */
-const CFG = {
-  startCoins: 260, price:20, reviewCost:60,
-  oilMax:5, oilStart:5, boxCount:5, viewMs:2600
+/* ===== 配置 ===== */
+const CFG={startCoins:260,price:20,reviewCost:60,oilMax:5,oilStart:5,boxCount:5,viewMs:2600};
+const MODES={
+ easy:{name:'简单',teeth:4,step:.050,peek:5000,keys:5,obs:0},
+ hard:{name:'困难',teeth:5,step:.042,peek:3600,keys:6,obs:1},
+ nightmare:{name:'噩梦',teeth:6,step:.036,peek:2400,keys:7,obs:2}
 };
-const MODES = {
-  easy:{ name:'简单', teeth:4, step:.050, peek:5000, keys:5, bars:0 },
-  hard:{ name:'困难', teeth:5, step:.042, peek:3600, keys:6, bars:2 },
-  nightmare:{ name:'噩梦', teeth:6, step:.036, peek:2400, keys:7, bars:3 }
-};
-let MODE = MODES.easy;
+let MODE=MODES.easy;
 
-/* ================= 2. 物品库（30 件） ================= */
-const ITEMS = [
- // 垃圾
- {id:'paper', n:'揉皱的纸团', t:1, c:'junk', b:1, d:'某个孩子的作业，被判了不及格。'},
- {id:'nail',  n:'生锈铁钉', t:1, c:'junk', b:2, d:'钉子还在，木头早就没了。'},
- {id:'soap',  n:'半块肥皂', t:1, c:'junk', b:3, d:'闻起来还有一点雪松味。'},
- {id:'can',   n:'空罐头',   t:1, c:'junk', b:2, d:'标签被撕掉了，只剩一圈刮痕。'},
- {id:'sock',  n:'破旧袜子', t:1, c:'junk', b:1, d:'单只。另一只大概在某个地方等你。'},
- {id:'lemon', n:'干瘪柠檬', t:1, c:'junk', b:2, d:'像一枚被时间掏空的月亮。'},
- // 杂物
- {id:'button',n:'黄铜纽扣', t:2, c:'curio', b:9,  d:'军装纽扣，背面刻着一串编号。'},
- {id:'marble',n:'玻璃弹珠', t:2, c:'curio', b:7,  d:'里面有一道彩色螺旋，像小小的星系。'},
- {id:'stamp', n:'旧邮票',   t:2, c:'curio', b:11, d:'边角有点卷，邮戳模糊难辨。'},
- {id:'comb',  n:'旧木梳',   t:2, c:'curio', b:8,  d:'齿断了两根，握久了有包浆。'},
- {id:'driver',n:'螺丝刀',   t:2, c:'curio', b:10, d:'手柄上有人用力过猛留下的裂痕。'},
- {id:'ring2', n:'铁钥匙圈', t:2, c:'curio', b:6,  d:'挂过七把钥匙，现在一把也不剩。'},
- // 古物
- {id:'sring', n:'银戒指',   t:3, c:'antique', b:28, d:'内圈刻着两个字母，磨得几乎看不清。'},
- {id:'pearl', n:'海水珍珠', t:3, c:'antique', b:32, d:'光泽还在，只是不再有人戴它。'},
- {id:'watch', n:'铜怀表',   t:3, c:'antique', b:35, d:'上弦还能走，但每天慢三分钟。'},
- {id:'scarf', n:'丝绸手帕', t:3, c:'antique', b:24, d:'绣了一枝梅花，边角被虫蛀过。'},
- {id:'candle',n:'银烛台',   t:3, c:'antique', b:30, d:'底座留着烛泪凝固的痕迹。'},
- {id:'china', n:'青花瓷片', t:3, c:'antique', b:26, d:'只是一片，但釉色干净得不像话。'},
- // 珠宝
- {id:'sapph', n:'蓝宝石',   t:4, c:'gem', b:78, d:'斯里兰卡产，颜色偏矢车菊。'},
- {id:'ruby',  n:'红宝石',   t:4, c:'gem', b:85, d:'缅甸老矿，内部有一道天然羽状纹。'},
- {id:'gwatch',n:'金怀表',   t:4, c:'gem', b:72, d:'表盖内侧刻着一句德文。'},
- {id:'ivory', n:'象牙梳',   t:4, c:'gem', b:68, d:'雕着一整幅山水，梳齿完整。'},
- {id:'censer',n:'鎏金香炉', t:4, c:'gem', b:80, d:'炉底有一层洗不掉的沉香。'},
- {id:'catseye',n:'猫眼石',  t:4, c:'gem', b:75, d:'光带会随着转动在石面上爬行。'},
- // 传世
- {id:'dia',   n:'圆钻',     t:5, c:'relic', b:260, d:'五十八个切面，火彩像被打碎的光。'},
- {id:'moon',  n:'月光石',   t:5, c:'relic', b:230, d:'蓝白色的光晕，据说是从里面长出来的。'},
- {id:'crown', n:'王冠碎片', t:5, c:'relic', b:300, d:'断口处还留着一小段金丝缠枝。'},
- {id:'star',  n:'星辉核',   t:5, c:'relic', b:320, d:'来源不明。放进暗处会自己亮一会儿。'},
- {id:'jade',  n:'帝王绿',   t:5, c:'relic', b:290, d:'浓得化不开的绿，透光时像有水在流。'},
- {id:'dragon',n:'龙晶',     t:5, c:'relic', b:340, d:'传说里的东西，居然真的存在。'}
+/* ===== 物品 ===== */
+const ITEMS=[
+{id:'paper',n:'揉皱的纸团',t:1,c:'junk',b:1,d:'某个孩子的作业，被判了不及格。'},
+{id:'nail',n:'生锈铁钉',t:1,c:'junk',b:2,d:'钉子还在，木头早就没了。'},
+{id:'soap',n:'半块肥皂',t:1,c:'junk',b:3,d:'闻起来还有一点雪松味。'},
+{id:'can',n:'空罐头',t:1,c:'junk',b:2,d:'标签被撕掉了，只剩一圈刮痕。'},
+{id:'sock',n:'破旧袜子',t:1,c:'junk',b:1,d:'单只。另一只大概在某个地方等你。'},
+{id:'lemon',n:'干瘪柠檬',t:1,c:'junk',b:2,d:'像一枚被时间掏空的月亮。'},
+{id:'button',n:'黄铜纽扣',t:2,c:'curio',b:9,d:'军装纽扣，背面刻着一串编号。'},
+{id:'marble',n:'玻璃弹珠',t:2,c:'curio',b:7,d:'里面有一道彩色螺旋，像小小的星系。'},
+{id:'stamp',n:'旧邮票',t:2,c:'curio',b:11,d:'边角有点卷，邮戳模糊难辨。'},
+{id:'comb',n:'旧木梳',t:2,c:'curio',b:8,d:'齿断了两根，握久了有包浆。'},
+{id:'driver',n:'螺丝刀',t:2,c:'curio',b:10,d:'手柄上有人用力过猛留下的裂痕。'},
+{id:'ring2',n:'铁钥匙圈',t:2,c:'curio',b:6,d:'挂过七把钥匙，现在一把也不剩。'},
+{id:'sring',n:'银戒指',t:3,c:'antique',b:28,d:'内圈刻着两个字母，磨得几乎看不清。'},
+{id:'pearl',n:'海水珍珠',t:3,c:'antique',b:32,d:'光泽还在，只是不再有人戴它。'},
+{id:'watch',n:'铜怀表',t:3,c:'antique',b:35,d:'上弦还能走，但每天慢三分钟。'},
+{id:'scarf',n:'丝绸手帕',t:3,c:'antique',b:24,d:'绣了一枝梅花，边角被虫蛀过。'},
+{id:'candle',n:'银烛台',t:3,c:'antique',b:30,d:'底座留着烛泪凝固的痕迹。'},
+{id:'china',n:'青花瓷片',t:3,c:'antique',b:26,d:'只是一片，但釉色干净得不像话。'},
+{id:'sapph',n:'蓝宝石',t:4,c:'gem',b:78,d:'斯里兰卡产，颜色偏矢车菊。'},
+{id:'ruby',n:'红宝石',t:4,c:'gem',b:85,d:'缅甸老矿，内部有一道天然羽状纹。'},
+{id:'gwatch',n:'金怀表',t:4,c:'gem',b:72,d:'表盖内侧刻着一句德文。'},
+{id:'ivory',n:'象牙梳',t:4,c:'gem',b:68,d:'雕着一整幅山水，梳齿完整。'},
+{id:'censer',n:'鎏金香炉',t:4,c:'gem',b:80,d:'炉底有一层洗不掉的沉香。'},
+{id:'catseye',n:'猫眼石',t:4,c:'gem',b:75,d:'光带会随着转动在石面上爬行。'},
+{id:'dia',n:'圆钻',t:5,c:'relic',b:260,d:'五十八个切面，火彩像被打碎的光。'},
+{id:'moon',n:'月光石',t:5,c:'relic',b:230,d:'蓝白色的光晕，据说是从里面长出来的。'},
+{id:'crown',n:'王冠碎片',t:5,c:'relic',b:300,d:'断口处还留着一小段金丝缠枝。'},
+{id:'star',n:'星辉核',t:5,c:'relic',b:320,d:'来源不明。放进暗处会自己亮一会儿。'},
+{id:'jade',n:'帝王绿',t:5,c:'relic',b:290,d:'浓得化不开的绿，透光时像有水在流。'},
+{id:'dragon',n:'龙晶',t:5,c:'relic',b:340,d:'传说里的东西，居然真的存在。'}
 ];
-const CAT = {
-  junk:{ name:'垃圾', css:'#6d5b47' },
-  curio:{ name:'杂物', css:'#8c9686' },
-  antique:{ name:'古物', css:'#4f9dff' },
-  gem:{ name:'珠宝', css:'#b57aff' },
-  relic:{ name:'传世', css:'#ffcf5c' }
-};
-const COND_TXT = ['', '完好', '轻微瑕疵', '中度瑕疵', '重度瑕疵', '碎裂'];
-const COND_MUL = [0, 1, .8, .5, .2, 0];
-const POOL = {};
-ITEMS.forEach(it => { if (!POOL[it.t]) POOL[it.t] = []; POOL[it.t].push(it); });
+const CAT={junk:{name:'垃圾',css:'#6d5b47'},curio:{name:'杂物',css:'#8c9686'},
+ antique:{name:'古物',css:'#4f9dff'},gem:{name:'珠宝',css:'#b57aff'},relic:{name:'传世',css:'#ffcf5c'}};
+const COND_TXT=['','完好','轻微瑕疵','中度瑕疵','重度瑕疵','碎裂'];
+const COND_MUL=[0,1,.8,.5,.2,0];
+const POOL={};ITEMS.forEach(i=>{(POOL[i.t]=POOL[i.t]||[]).push(i);});
+const ITEM_BY_ID={};ITEMS.forEach(i=>ITEM_BY_ID[i.id]=i);
 
-/* ================= 3. 市场 / 时代 ================= */
-function hash(s){
-  let h = 2166136261;
-  for (let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
-  return ((h>>>0)%100000)/100000;
+/* ===== 市场 ===== */
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}
+ return ((h>>>0)%100000)/100000;}
+const HOUR=3600000, epoch=()=>Math.floor(Date.now()/HOUR);
+const ERAS=[
+{n:'收藏热',m:{junk:.6,curio:1,antique:1.6,gem:1.3,relic:1.4},d:'全城都在收老物件'},
+{n:'大萧条',m:{junk:1.8,curio:.7,antique:.6,gem:.45,relic:.7},d:'珠宝换不来一顿饱饭'},
+{n:'镀金年代',m:{junk:.8,curio:1,antique:1.1,gem:1.9,relic:1.2},d:'人人都想戴点什么'},
+{n:'战乱',m:{junk:2.2,curio:.9,antique:.5,gem:.35,relic:.6},d:'一只空罐头也很值钱'},
+{n:'考古热',m:{junk:.5,curio:1.1,antique:2.2,gem:1,relic:1.6},d:'博物馆在到处收东西'},
+{n:'复古潮',m:{junk:1.4,curio:1.8,antique:1.2,gem:.9,relic:1},d:'年轻人开始收集旧东西'},
+{n:'平淡日子',m:{junk:1,curio:1,antique:1,gem:1,relic:1},d:'一切照旧'}];
+function eraAt(ep){const i=Math.floor(hash('era'+Math.floor(ep/4))*ERAS.length);
+ return ERAS[Math.min(i,ERAS.length-1)];}
+const curEra=()=>eraAt(epoch());
+function priceAt(item,cond,ep){
+ if(cond>=5||!item)return 0;
+ const era=eraAt(ep);
+ let f=.9+hash(item.id+'|'+ep)*.2;
+ const r=hash(item.id+'|r|'+ep);
+ if(r<.012)f*=3.4;else if(r<.03)f*=.35;
+ return Math.max(1,Math.round(item.b*(era.m[item.c]||1)*f*COND_MUL[cond]));
 }
-const HOUR = 3600000;
-const epoch = () => Math.floor(Date.now()/HOUR);
-const ERAS = [
-  {n:'收藏热',   m:{junk:.6,curio:1.0,antique:1.6,gem:1.3,relic:1.4}, d:'全城都在收老物件'},
-  {n:'大萧条',   m:{junk:1.8,curio:.7,antique:.6,gem:.45,relic:.7},   d:'珠宝换不来一顿饱饭'},
-  {n:'镀金年代', m:{junk:.8,curio:1.0,antique:1.1,gem:1.9,relic:1.2}, d:'人人都想戴点什么'},
-  {n:'战乱',     m:{junk:2.2,curio:.9,antique:.5,gem:.35,relic:.6},   d:'一只空罐头也很值钱'},
-  {n:'考古热',   m:{junk:.5,curio:1.1,antique:2.2,gem:1.0,relic:1.6}, d:'博物馆在到处收东西'},
-  {n:'复古潮',   m:{junk:1.4,curio:1.8,antique:1.2,gem:.9,relic:1.0}, d:'年轻人开始收集旧东西'},
-  {n:'平淡日子', m:{junk:1.0,curio:1.0,antique:1.0,gem:1.0,relic:1.0},d:'一切照旧'}
-];
-function curEra(){
-  const idx = Math.floor(hash('era'+Math.floor(epoch()/4))*ERAS.length);
-  return ERAS[Math.min(idx, ERAS.length-1)];
-}
-function priceOf(item, cond){
-  if (cond >= 5 || !item) return 0;
-  const ep = epoch(), era = curEra();
-  let f = 0.90 + hash(item.id+'|'+ep) * 0.20;      // 常时 ±10%
-  const r = hash(item.id+'|r|'+ep);
-  if (r < 0.012) f *= 3.4;                          // 极低概率暴涨
-  else if (r < 0.030) f *= 0.35;                    // 极低概率暴跌
-  const v = item.b * (era.m[item.c] || 1) * f * COND_MUL[cond];
-  return Math.max(1, Math.round(v));
-}
-const ITEM_BY_ID = {};
-ITEMS.forEach(x => ITEM_BY_ID[x.id] = x);
+const priceOf=(it,cd)=>priceAt(it,cd,epoch());
 
-/* ================= 4. 音效 ================= */
+/* ===== 音效 ===== */
 let AC=null;
-const ac=()=>{ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)();
-  if(AC.state==='suspended') AC.resume(); return AC; };
-function tone(f,d,t='sine',v=.12,to=0){
-  const c=ac(),o=c.createOscillator(),g=c.createGain();
-  o.type=t;o.frequency.value=f;
-  if(to) o.frequency.exponentialRampToValueAtTime(to,c.currentTime+d);
-  g.gain.setValueAtTime(v,c.currentTime);
-  g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);
-  o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+d+.03);
-}
-function noise(d,v=.08,hp=1600){
-  const c=ac(),b=c.createBuffer(1,Math.floor(c.sampleRate*d),c.sampleRate);
-  const a=b.getChannelData(0);
-  for(let i=0;i<a.length;i++) a[i]=(Math.random()*2-1)*Math.pow(1-i/a.length,3);
-  const s=c.createBufferSource();s.buffer=b;
-  const f=c.createBiquadFilter();f.type='highpass';f.frequency.value=hp;
-  const g=c.createGain();g.gain.value=v;
-  s.connect(f);f.connect(g);g.connect(c.destination);s.start();
-}
+const ac=()=>{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();
+ if(AC.state==='suspended')AC.resume();return AC;};
+function tone(f,d,t='sine',v=.12,to=0){const c=ac(),o=c.createOscillator(),g=c.createGain();
+ o.type=t;o.frequency.value=f;if(to)o.frequency.exponentialRampToValueAtTime(to,c.currentTime+d);
+ g.gain.setValueAtTime(v,c.currentTime);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);
+ o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+d+.03);}
+function noise(d,v=.08,hp=1600){const c=ac(),b=c.createBuffer(1,Math.floor(c.sampleRate*d),c.sampleRate);
+ const a=b.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=(Math.random()*2-1)*Math.pow(1-i/a.length,3);
+ const s=c.createBufferSource();s.buffer=b;const f=c.createBiquadFilter();f.type='highpass';
+ f.frequency.value=hp;const g=c.createGain();g.gain.value=v;
+ s.connect(f);f.connect(g);g.connect(c.destination);s.start();}
 const SFX={
-  tap:()=>tone(920,.05,'triangle',.07),
-  lift:()=>tone(560,.13,'sine',.09,760),
-  peek:()=>{noise(.45,.05,900);tone(170,.7,'sine',.045,110);},
-  wrong:()=>{tone(115,.4,'sawtooth',.09,62);noise(.22,.07,260);},
-  crack:()=>{noise(.7,.16,180);tone(70,.7,'sawtooth',.11,40);},
-  open:()=>{noise(.25,.1,400);[523,659,784].forEach((f,i)=>setTimeout(()=>tone(f,.5,'sine',.08),i*70));},
-  pop:q=>{tone(300+q*120,.18,'triangle',.085,520+q*180);noise(.06,.03,3000);},
-  big:()=>[784,988,1175,1568].forEach((f,i)=>setTimeout(()=>tone(f,.6,'sine',.07),i*80)),
-  flaw:()=>{tone(220,.28,'sawtooth',.07,140);noise(.18,.05,700);},
-  shard:()=>{noise(.9,.2,900);[1200,900,600].forEach((f,i)=>setTimeout(()=>tone(f,.3,'triangle',.06),i*50));},
-  coin:()=>{tone(1200,.09,'sine',.07,1600);setTimeout(()=>tone(1600,.12,'sine',.05),60);}
+ tap:()=>tone(920,.05,'triangle',.07),lift:()=>tone(560,.13,'sine',.09,760),
+ peek:()=>{noise(.45,.05,900);tone(170,.7,'sine',.045,110);},
+ wrong:()=>{tone(115,.4,'sawtooth',.09,62);noise(.22,.07,260);},
+ crack:()=>{noise(.7,.16,180);tone(70,.7,'sawtooth',.11,40);},
+ open:()=>{noise(.25,.1,400);[523,659,784].forEach((f,i)=>setTimeout(()=>tone(f,.5,'sine',.08),i*70));},
+ pop:q=>{tone(300+q*120,.18,'triangle',.085,520+q*180);noise(.06,.03,3000);},
+ big:()=>[784,988,1175,1568].forEach((f,i)=>setTimeout(()=>tone(f,.6,'sine',.07),i*80)),
+ flaw:()=>{tone(220,.28,'sawtooth',.06,140);noise(.16,.05,700);},
+ perfect:()=>{[880,1320].forEach((f,i)=>setTimeout(()=>tone(f,.32,'sine',.055),i*60));},
+ shard:()=>{noise(.9,.2,900);[1200,900,600].forEach((f,i)=>setTimeout(()=>tone(f,.3,'triangle',.06),i*50));},
+ coin:()=>{tone(1200,.09,'sine',.07,1600);setTimeout(()=>tone(1600,.12,'sine',.05),60);}
 };
 
-/* ================= 5. 渲染 ================= */
+/* ===== 渲染 ===== */
 const canvas=document.getElementById('scene');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(devicePixelRatio,1.9));
-renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.05;
-renderer.shadowMap.enabled=true;
-renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const pmrem=new THREE.PMREMGenerator(renderer);
 const ENV=pmrem.fromScene(new RoomEnvironment(),.05).texture;
 
-/* ================= 6. 纹理 & 材质 ================= */
-function woodTex(){
-  const N=512,cv=document.createElement('canvas');cv.width=cv.height=N;
-  const x=cv.getContext('2d');
-  x.fillStyle='#2b1a0f';x.fillRect(0,0,N,N);
-  for(let i=0;i<220;i++){
-    const y0=Math.random()*N;
-    const r=55+Math.random()*45,g=30+Math.random()*28,b=14+Math.random()*16;
-    x.strokeStyle=`rgba(${r|0},${g|0},${b|0},${.12+Math.random()*.38})`;
-    x.lineWidth=.5+Math.random()*2.2;
-    x.beginPath();x.moveTo(-10,y0);
-    for(let px=0;px<=N+10;px+=14)
-      x.lineTo(px,y0+Math.sin(px*.015+i*.7)*7+(Math.random()-.5)*2.4);
-    x.stroke();
-  }
-  const t=new THREE.CanvasTexture(cv);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;return t;
-}
-function velvetTex(){
-  const N=256,cv=document.createElement('canvas');cv.width=cv.height=N;
-  const x=cv.getContext('2d');
-  x.fillStyle='#170d07';x.fillRect(0,0,N,N);
-  for(let i=0;i<9000;i++){
-    x.fillStyle=Math.random()>.5?'rgba(120,70,40,.06)':'rgba(0,0,0,.12)';
-    x.fillRect(Math.random()*N,Math.random()*N,2,2);
-  }
-  const t=new THREE.CanvasTexture(cv);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;
-}
+function woodTex(){const N=512,cv=document.createElement('canvas');cv.width=cv.height=N;
+ const x=cv.getContext('2d');x.fillStyle='#2b1a0f';x.fillRect(0,0,N,N);
+ for(let i=0;i<200;i++){const y0=Math.random()*N;
+  const r=55+Math.random()*45,g=30+Math.random()*28,b=14+Math.random()*16;
+  x.strokeStyle=`rgba(${r|0},${g|0},${b|0},${.12+Math.random()*.38})`;x.lineWidth=.5+Math.random()*2.2;
+  x.beginPath();x.moveTo(-10,y0);
+  for(let px=0;px<=N+10;px+=14)x.lineTo(px,y0+Math.sin(px*.015+i*.7)*7+(Math.random()-.5)*2.4);
+  x.stroke();}
+ const t=new THREE.CanvasTexture(cv);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;return t;}
+function velvetTex(){const N=256,cv=document.createElement('canvas');cv.width=cv.height=N;
+ const x=cv.getContext('2d');x.fillStyle='#170d07';x.fillRect(0,0,N,N);
+ for(let i=0;i<8000;i++){x.fillStyle=Math.random()>.5?'rgba(120,70,40,.06)':'rgba(0,0,0,.12)';
+  x.fillRect(Math.random()*N,Math.random()*N,2,2);}
+ const t=new THREE.CanvasTexture(cv);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;}
 const WOOD=woodTex(),VELVET=velvetTex();
-
 const MAT={
-  brass:new THREE.MeshStandardMaterial({color:0xd0a04c,metalness:1,roughness:.24}),
-  brassD:new THREE.MeshStandardMaterial({color:0x7d6128,metalness:1,roughness:.52}),
-  iron:new THREE.MeshStandardMaterial({color:0x4a4a4c,metalness:1,roughness:.42}),
-  copper:new THREE.MeshStandardMaterial({color:0xc07a3a,metalness:1,roughness:.3}),
-  silver:new THREE.MeshStandardMaterial({color:0xdfe4ea,metalness:1,roughness:.14}),
-  gold:new THREE.MeshStandardMaterial({color:0xf0c96e,metalness:1,roughness:.16}),
-  gemB:new THREE.MeshStandardMaterial({color:0x4f9dff,metalness:.35,roughness:.06,
-        emissive:0x1a4f96,emissiveIntensity:.9,flatShading:true}),
-  gemP:new THREE.MeshStandardMaterial({color:0xa77bff,metalness:.3,roughness:.05,
-        emissive:0x4a1f96,emissiveIntensity:.9,flatShading:true}),
-  diamond:new THREE.MeshStandardMaterial({color:0xf2f8ff,metalness:.1,roughness:0,
-        emissive:0x9fd0ff,emissiveIntensity:1.6,flatShading:true}),
-  paper:new THREE.MeshStandardMaterial({color:0xb9ac93,roughness:.95,flatShading:true}),
-  wood:new THREE.MeshStandardMaterial({map:WOOD,roughness:.82,metalness:.04}),
-  velvet:new THREE.MeshStandardMaterial({map:VELVET,color:0x2a1a10,roughness:.98}),
-  dark:new THREE.MeshStandardMaterial({color:0x0d0906,roughness:.95}),
-  glass:new THREE.MeshStandardMaterial({color:0xa8c8ff,transparent:true,opacity:.13,
-        roughness:.04,metalness:.15,side:THREE.DoubleSide,depthWrite:false}),
-  rubble:new THREE.MeshStandardMaterial({color:0x3a332b,roughness:.95,flatShading:true})
+ brass:new THREE.MeshStandardMaterial({color:0xd0a04c,metalness:1,roughness:.24}),
+ brassD:new THREE.MeshStandardMaterial({color:0x7d6128,metalness:1,roughness:.52}),
+ iron:new THREE.MeshStandardMaterial({color:0x4a4a4c,metalness:1,roughness:.42}),
+ rust:new THREE.MeshStandardMaterial({color:0x6b4a2e,metalness:.7,roughness:.78}),
+ copper:new THREE.MeshStandardMaterial({color:0xc07a3a,metalness:1,roughness:.3}),
+ silver:new THREE.MeshStandardMaterial({color:0xdfe4ea,metalness:1,roughness:.14}),
+ gold:new THREE.MeshStandardMaterial({color:0xf0c96e,metalness:1,roughness:.16}),
+ gemB:new THREE.MeshStandardMaterial({color:0x4f9dff,metalness:.35,roughness:.06,emissive:0x1a4f96,emissiveIntensity:.9,flatShading:true}),
+ gemP:new THREE.MeshStandardMaterial({color:0xa77bff,metalness:.3,roughness:.05,emissive:0x4a1f96,emissiveIntensity:.9,flatShading:true}),
+ diamond:new THREE.MeshStandardMaterial({color:0xf2f8ff,metalness:.1,roughness:0,emissive:0x9fd0ff,emissiveIntensity:1.6,flatShading:true}),
+ paper:new THREE.MeshStandardMaterial({color:0xb9ac93,roughness:.95,flatShading:true}),
+ wood:new THREE.MeshStandardMaterial({map:WOOD,roughness:.82,metalness:.04}),
+ velvet:new THREE.MeshStandardMaterial({map:VELVET,color:0x2a1a10,roughness:.98}),
+ glass:new THREE.MeshStandardMaterial({color:0xa8c8ff,transparent:true,opacity:.13,roughness:.04,metalness:.15,side:THREE.DoubleSide,depthWrite:false}),
+ cloth:new THREE.MeshStandardMaterial({color:0x3a2020,roughness:.95,side:THREE.DoubleSide}),
+ rubble:new THREE.MeshStandardMaterial({color:0x3a332b,roughness:.95,flatShading:true})
 };
 MAT.velvet.map.repeat.set(2,2);MAT.wood.map.repeat.set(1.4,1.4);
-
 function lightRig(s,k,shadow){
-  s.add(new THREE.HemisphereLight(0x6d7d9a,0x1a0f07,.45));
-  const a=new THREE.DirectionalLight(0xfff0d2,k);
-  a.position.set(1.8,2.6,2.4);
-  if(shadow){
-    a.castShadow=true;a.shadow.mapSize.set(1024,1024);a.shadow.bias=-.0009;
-    const sc=a.shadow.camera;
-    sc.left=-2.4;sc.right=2.4;sc.top=3.6;sc.bottom=-3.6;sc.near=.5;sc.far=12;
-  }
-  s.add(a);
-  const b=new THREE.DirectionalLight(0x86a8ff,.75);b.position.set(-2.2,-.6,1.4);s.add(b);
-}
-function glowTex(){
-  const cv=document.createElement('canvas');cv.width=cv.height=256;
-  const x=cv.getContext('2d');
-  const g=x.createRadialGradient(128,128,0,128,128,128);
-  g.addColorStop(0,'rgba(255,214,150,.6)');
-  g.addColorStop(.42,'rgba(255,186,120,.14)');
-  g.addColorStop(1,'rgba(0,0,0,0)');
-  x.fillStyle=g;x.fillRect(0,0,256,256);return new THREE.CanvasTexture(cv);
-}
+ s.add(new THREE.HemisphereLight(0x6d7d9a,0x1a0f07,.45));
+ const a=new THREE.DirectionalLight(0xfff0d2,k);a.position.set(1.8,2.6,2.4);
+ if(shadow){a.castShadow=true;a.shadow.mapSize.set(1024,1024);a.shadow.bias=-.0009;
+  const sc=a.shadow.camera;sc.left=-2.4;sc.right=2.4;sc.top=3.6;sc.bottom=-3.6;sc.near=.5;sc.far=12;}
+ s.add(a);
+ const b=new THREE.DirectionalLight(0x86a8ff,.75);b.position.set(-2.2,-.6,1.4);s.add(b);}
+function glowTex(){const cv=document.createElement('canvas');cv.width=cv.height=256;
+ const x=cv.getContext('2d');const g=x.createRadialGradient(128,128,0,128,128,128);
+ g.addColorStop(0,'rgba(255,214,150,.6)');g.addColorStop(.42,'rgba(255,186,120,.14)');
+ g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,256,256);
+ return new THREE.CanvasTexture(cv);}
 const GLOW=glowTex();
 const glowMat=o=>new THREE.MeshBasicMaterial({map:GLOW,transparent:true,opacity:o||1,
-  blending:THREE.AdditiveBlending,depthWrite:false});
+ blending:THREE.AdditiveBlending,depthWrite:false});
 
-/* ================= 7. 场景 ================= */
-const sceneB=new THREE.Scene();
-sceneB.background=new THREE.Color(0x070504);sceneB.environment=ENV;
+/* ===== 场景 ===== */
+const sceneB=new THREE.Scene();sceneB.background=new THREE.Color(0x070504);sceneB.environment=ENV;
 lightRig(sceneB,2.9,true);
 const wallB=new THREE.Mesh(new THREE.PlaneGeometry(7,10),
-  new THREE.MeshStandardMaterial({map:VELVET,color:0x1c1008,roughness:1}));
+ new THREE.MeshStandardMaterial({map:VELVET,color:0x1c1008,roughness:1}));
 wallB.position.set(0,0,-.55);wallB.receiveShadow=true;sceneB.add(wallB);
 const glowB=new THREE.Mesh(new THREE.PlaneGeometry(3.6,5.4),glowMat(.7));
 glowB.position.set(0,0,-.5);sceneB.add(glowB);
 const boxRoot=new THREE.Group();sceneB.add(boxRoot);
 const camB=new THREE.PerspectiveCamera(45,1,.1,60);
 
-const sceneL=new THREE.Scene();
-sceneL.background=new THREE.Color(0x050403);sceneL.environment=ENV;
+const sceneL=new THREE.Scene();sceneL.background=new THREE.Color(0x050403);sceneL.environment=ENV;
 lightRig(sceneL,1.1,false);
 const ptL=new THREE.PointLight(0xffcf95,7,4);ptL.position.set(.35,.55,.9);sceneL.add(ptL);
-function plateTex(){
-  const N=512,cv=document.createElement('canvas');cv.width=cv.height=N;
-  const x=cv.getContext('2d');
-  const g=x.createLinearGradient(0,0,N,N);
-  g.addColorStop(0,'#d8b062');g.addColorStop(.4,'#8f6d2c');
-  g.addColorStop(.7,'#6b4f1b');g.addColorStop(1,'#b08a3e');
-  x.fillStyle=g;x.fillRect(0,0,N,N);
-  for(let i=0;i<4000;i++){x.fillStyle='rgba(0,0,0,'+(Math.random()*.1)+')';
-    x.fillRect(Math.random()*N,Math.random()*N,2,2);}
-  for(let i=0;i<60;i++){
-    x.strokeStyle='rgba(255,240,205,'+(Math.random()*.07)+')';
-    x.lineWidth=Math.random()*1.4;
-    x.beginPath();x.moveTo(Math.random()*N,Math.random()*N);
-    x.lineTo(Math.random()*N,Math.random()*N);x.stroke();
-  }
-  [[.10,.10],[.90,.10],[.10,.90],[.90,.90],[.50,.06],[.50,.94]].forEach(([a,b])=>{
-    x.beginPath();x.arc(a*N,b*N,10,0,Math.PI*2);x.fillStyle='#5b421a';x.fill();
-    x.beginPath();x.arc(a*N-2,b*N-2,7,0,Math.PI*2);x.fillStyle='#cfa860';x.fill();
-  });
-  x.globalCompositeOperation='destination-out';
-  x.beginPath();x.arc(N*.5,N*.42,N*.085,0,Math.PI*2);x.fill();
-  x.beginPath();
-  x.moveTo(N*.5-N*.036,N*.46);x.lineTo(N*.5+N*.036,N*.46);
-  x.lineTo(N*.5+N*.058,N*.70);x.lineTo(N*.5-N*.058,N*.70);
-  x.closePath();x.fill();
-  x.globalCompositeOperation='source-over';
-  const t=new THREE.CanvasTexture(cv);t.anisotropy=4;return t;
-}
+function plateTex(){const N=512,cv=document.createElement('canvas');cv.width=cv.height=N;
+ const x=cv.getContext('2d');const g=x.createLinearGradient(0,0,N,N);
+ g.addColorStop(0,'#d8b062');g.addColorStop(.4,'#8f6d2c');g.addColorStop(.7,'#6b4f1b');
+ g.addColorStop(1,'#b08a3e');x.fillStyle=g;x.fillRect(0,0,N,N);
+ for(let i=0;i<3500;i++){x.fillStyle='rgba(0,0,0,'+(Math.random()*.1)+')';
+  x.fillRect(Math.random()*N,Math.random()*N,2,2);}
+ for(let i=0;i<50;i++){x.strokeStyle='rgba(255,240,205,'+(Math.random()*.07)+')';
+  x.lineWidth=Math.random()*1.4;x.beginPath();x.moveTo(Math.random()*N,Math.random()*N);
+  x.lineTo(Math.random()*N,Math.random()*N);x.stroke();}
+ [[.1,.1],[.9,.1],[.1,.9],[.9,.9],[.5,.06],[.5,.94]].forEach(([a,b])=>{
+  x.beginPath();x.arc(a*N,b*N,10,0,Math.PI*2);x.fillStyle='#5b421a';x.fill();
+  x.beginPath();x.arc(a*N-2,b*N-2,7,0,Math.PI*2);x.fillStyle='#cfa860';x.fill();});
+ x.globalCompositeOperation='destination-out';
+ x.beginPath();x.arc(N*.5,N*.42,N*.085,0,Math.PI*2);x.fill();
+ x.beginPath();x.moveTo(N*.5-N*.036,N*.46);x.lineTo(N*.5+N*.036,N*.46);
+ x.lineTo(N*.5+N*.058,N*.7);x.lineTo(N*.5-N*.058,N*.7);x.closePath();x.fill();
+ x.globalCompositeOperation='source-over';
+ const t=new THREE.CanvasTexture(cv);t.anisotropy=4;return t;}
 const plate=new THREE.Mesh(new THREE.PlaneGeometry(1.6,1.6),
-  new THREE.MeshStandardMaterial({map:plateTex(),metalness:.85,roughness:.42,alphaTest:.5}));
+ new THREE.MeshStandardMaterial({map:plateTex(),metalness:.85,roughness:.42,alphaTest:.5}));
 sceneL.add(plate);
 const bezel=new THREE.Mesh(new THREE.TorusGeometry(.152,.012,14,40),MAT.brassD);
 bezel.position.set(0,.128,.006);sceneL.add(bezel);
 const datum=new THREE.Mesh(new THREE.BoxGeometry(.32,.011,.028),
-  new THREE.MeshStandardMaterial({color:0xffe6a8,emissive:0xffcf80,emissiveIntensity:1.3,
-    metalness:.6,roughness:.3}));
+ new THREE.MeshStandardMaterial({color:0xffe6a8,emissive:0xffcf80,emissiveIntensity:1.3,
+ metalness:.6,roughness:.3}));
 datum.position.set(0,.165,-.02);datum.visible=false;sceneL.add(datum);
 const pinRoot=new THREE.Group();sceneL.add(pinRoot);
 let pins=[];
 function buildPins(n){
-  while(pinRoot.children.length){const c=pinRoot.children[0];pinRoot.remove(c);
-    c.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
-  pins=[];
-  const step=0.24/(n-1),w=Math.min(.058,step*.74);
-  for(let i=0;i<n;i++){
-    const p=new THREE.Mesh(new THREE.BoxGeometry(w,1,.05),MAT.brass);
-    p.position.set(-.12+i*step,.1,-.09);p.visible=false;
-    pinRoot.add(p);pins.push(p);
-  }
+ while(pinRoot.children.length){const c=pinRoot.children[0];pinRoot.remove(c);
+  c.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
+ pins=[];const step=.24/(n-1),w=Math.min(.058,step*.74);
+ for(let i=0;i<n;i++){const p=new THREE.Mesh(new THREE.BoxGeometry(w,1,.05),MAT.brass);
+  p.position.set(-.12+i*step,.1,-.09);p.visible=false;pinRoot.add(p);pins.push(p);}
 }
-const obRoot=new THREE.Group();obRoot.position.z=-.03;sceneL.add(obRoot);
-function buildObstruction(bars){
-  while(obRoot.children.length){const c=obRoot.children[0];obRoot.remove(c);
-    c.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
-  if(!bars) return;
-  const xs=bars>=3?[-.078,0,.078]:[-.055,.055];
-  xs.forEach(x=>{
-    const b=new THREE.Mesh(new THREE.BoxGeometry(.017,.44,.017),MAT.iron);
-    b.position.set(x,-.05,0);obRoot.add(b);
-  });
-  if(bars>=3){
-    const h=new THREE.Mesh(new THREE.BoxGeometry(.30,.016,.017),MAT.iron);
-    h.position.set(0,-.075,0);obRoot.add(h);
-    const h2=new THREE.Mesh(new THREE.BoxGeometry(.30,.014,.017),MAT.iron);
-    h2.position.set(0,-.175,0);obRoot.add(h2);
-  }
+
+/* ===== 遮挡物系统 ===== */
+const obRoot=new THREE.Group();sceneL.add(obRoot);
+const OB_NAME={bars:'铁栏杆',spring:'弹簧',web:'蛛网',grime:'油污',plate:'锈铁片',chain:'铁链',cloth:'破布条'};
+const OB_LIST=['bars','spring','web','grime','plate','chain','cloth'];
+function obClear(){
+ while(obRoot.children.length){const c=obRoot.children[0];obRoot.remove(c);
+  c.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
 }
+function obAdd(kind){
+ if(kind==='bars'){
+  [-.072,0,.072].forEach(x=>{
+   const b=new THREE.Mesh(new THREE.BoxGeometry(.015,.44,.015),MAT.iron);
+   b.position.set(x,-.05,0);obRoot.add(b);});
+ }
+ else if(kind==='spring'){
+  const pts=[];
+  for(let i=0;i<=60;i++){const t=i/60;
+   pts.push(new THREE.Vector3(Math.cos(t*Math.PI*9)*.052,.16-t*.34,Math.sin(t*Math.PI*9)*.052));}
+  const geo=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),80,.0055,6,false);
+  obRoot.add(new THREE.Mesh(geo,MAT.iron));
+ }
+ else if(kind==='web'){
+  const v=[];
+  for(let k=0;k<8;k++){const a=k/8*Math.PI*2;
+   v.push(0,0,0,Math.cos(a)*.15,Math.sin(a)*.15,0);}
+  for(let r=1;r<=3;r++){const R=r*.05;
+   for(let k=0;k<8;k++){const a1=k/8*Math.PI*2,a2=(k+1)/8*Math.PI*2;
+    v.push(Math.cos(a1)*R,Math.sin(a1)*R,0,Math.cos(a2)*R,Math.sin(a2)*R,0);}}
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));
+  const ls=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0xc2c6cc,transparent:true,opacity:.5}));
+  ls.position.set(0,.06,-.035);obRoot.add(ls);
+ }
+ else if(kind==='grime'){
+  const cv=document.createElement('canvas');cv.width=cv.height=128;
+  const x=cv.getContext('2d');
+  for(let i=0;i<60;i++){const gx=Math.random()*128,gy=Math.random()*128,r=8+Math.random()*28;
+   const g=x.createRadialGradient(gx,gy,0,gx,gy,r);
+   g.addColorStop(0,'rgba(28,16,6,.5)');g.addColorStop(1,'rgba(28,16,6,0)');
+   x.fillStyle=g;x.beginPath();x.arc(gx,gy,r,0,Math.PI*2);x.fill();}
+  const pl=new THREE.Mesh(new THREE.PlaneGeometry(.36,.42),
+   new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,
+   opacity:.8,depthWrite:false}));
+  pl.position.set(0,.02,-.025);obRoot.add(pl);
+ }
+ else if(kind==='plate'){
+  const b=new THREE.Mesh(new THREE.BoxGeometry(.20,.34,.012),MAT.rust);
+  b.position.set(-.058,-.03,0);b.rotation.z=.16;obRoot.add(b);
+  const b2=new THREE.Mesh(new THREE.BoxGeometry(.085,.17,.012),MAT.rust);
+  b2.position.set(.062,-.10,0);b2.rotation.z=-.32;obRoot.add(b2);
+ }
+ else if(kind==='chain'){
+  for(let i=0;i<5;i++){
+   const t=new THREE.Mesh(new THREE.TorusGeometry(.030,.0072,8,18),MAT.iron);
+   t.position.set(0,.14-i*.068,-.012);t.rotation.y=(i%2)*Math.PI/2;obRoot.add(t);}
+ }
+ else if(kind==='cloth'){
+  const pl=new THREE.Mesh(new THREE.PlaneGeometry(.21,.34,4,6),MAT.cloth);
+  const pos=pl.geometry.attributes.position;
+  for(let i=0;i<pos.count;i++){const yy=pos.getY(i);pos.setZ(i,Math.sin(yy*22)*.009);}
+  pos.needsUpdate=true;pl.geometry.computeVertexNormals();
+  pl.position.set(.015,.05,-.02);pl.rotation.z=.1;obRoot.add(pl);
+ }
+}
+function buildObstructions(list){
+ obClear();
+ (list||[]).forEach(obAdd);
+}
+
 const camP=new THREE.PerspectiveCamera(40,1,.05,60);
 const CAM_P_NEAR=1.05,CAM_P_FAR=1.95;
 
-const sceneK=new THREE.Scene();
-sceneK.background=new THREE.Color(0x070504);sceneK.environment=ENV;
+const sceneK=new THREE.Scene();sceneK.background=new THREE.Color(0x070504);sceneK.environment=ENV;
 lightRig(sceneK,2.3,true);
 const boardK=new THREE.Mesh(new THREE.BoxGeometry(1.5,3.6,.07),MAT.velvet);
 boardK.position.set(0,-.35,-.2);boardK.receiveShadow=true;sceneK.add(boardK);
-const glowK=new THREE.Mesh(new THREE.PlaneGeometry(3.0,4.8),glowMat(.85));
+const glowK=new THREE.Mesh(new THREE.PlaneGeometry(3,4.8),glowMat(.85));
 glowK.position.set(0,-.35,-.18);sceneK.add(glowK);
 const keysRoot=new THREE.Group();sceneK.add(keysRoot);
 const camK=new THREE.PerspectiveCamera(45,1,.1,60);
 
-const sceneR=new THREE.Scene();
-sceneR.background=new THREE.Color(0x060403);sceneR.environment=ENV;
+const sceneR=new THREE.Scene();sceneR.background=new THREE.Color(0x060403);sceneR.environment=ENV;
 sceneR.add(new THREE.HemisphereLight(0x6d7d9a,0x120a06,.28));
 const spot=new THREE.SpotLight(0xffe8c2,55,9,.52,.75,1.4);
 spot.position.set(0,3.4,1.4);spot.target.position.set(0,0,0);
@@ -637,126 +594,110 @@ glowR.position.set(0,.05,-.5);sceneR.add(glowR);
 const itemHolder=new THREE.Group();itemHolder.scale.setScalar(3.4);sceneR.add(itemHolder);
 const camR=new THREE.PerspectiveCamera(45,1,.05,40);
 
-/* ================= 8. 模型 ================= */
+/* ===== 模型 ===== */
 function makeItemMesh(tier){
-  const g=new THREE.Group();
-  if(tier===1){
-    const m=new THREE.Mesh(new THREE.IcosahedronGeometry(.034,0),MAT.paper);
-    m.scale.set(1.1,.8,.9);m.position.y=.026;g.add(m);
-  } else if(tier===2){
-    const m=new THREE.Mesh(new THREE.CylinderGeometry(.030,.030,.011,20),MAT.copper);
-    m.position.y=.006;g.add(m);
-    const r=new THREE.Mesh(new THREE.TorusGeometry(.028,.004,8,20),MAT.copper);
-    r.rotation.x=Math.PI/2;r.position.y=.010;g.add(r);
-  } else if(tier===3){
-    const m=new THREE.Mesh(new THREE.TorusGeometry(.038,.011,14,28),MAT.silver);
-    m.rotation.x=Math.PI/2;m.position.y=.014;g.add(m);
-    const s=new THREE.Mesh(new THREE.OctahedronGeometry(.014),MAT.gemB);
-    s.position.set(.038,.016,0);g.add(s);
-  } else if(tier===4){
-    const m=new THREE.Mesh(new THREE.OctahedronGeometry(.046),MAT.gemP);
-    m.position.y=.046;g.add(m);
-    const b=new THREE.Mesh(new THREE.CylinderGeometry(.020,.026,.014,10),MAT.gold);
-    b.position.y=.012;g.add(b);
-  } else {
-    const m=new THREE.Mesh(new THREE.OctahedronGeometry(.058),MAT.diamond);
-    m.position.y=.058;g.add(m);
-    const b=new THREE.Mesh(new THREE.CylinderGeometry(.028,.036,.016,10),MAT.gold);
-    b.position.y=.014;g.add(b);
-    const t=new THREE.Mesh(new THREE.OctahedronGeometry(.020),MAT.diamond);
-    t.position.set(.045,.030,0);g.add(t);
-  }
-  return g;
+ const g=new THREE.Group();
+ if(tier===1){const m=new THREE.Mesh(new THREE.IcosahedronGeometry(.034,0),MAT.paper);
+  m.scale.set(1.1,.8,.9);m.position.y=.026;g.add(m);}
+ else if(tier===2){const m=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.011,20),MAT.copper);
+  m.position.y=.006;g.add(m);
+  const r=new THREE.Mesh(new THREE.TorusGeometry(.028,.004,8,20),MAT.copper);
+  r.rotation.x=Math.PI/2;r.position.y=.01;g.add(r);}
+ else if(tier===3){const m=new THREE.Mesh(new THREE.TorusGeometry(.038,.011,14,28),MAT.silver);
+  m.rotation.x=Math.PI/2;m.position.y=.014;g.add(m);
+  const s=new THREE.Mesh(new THREE.OctahedronGeometry(.014),MAT.gemB);
+  s.position.set(.038,.016,0);g.add(s);}
+ else if(tier===4){const m=new THREE.Mesh(new THREE.OctahedronGeometry(.046),MAT.gemP);
+  m.position.y=.046;g.add(m);
+  const b=new THREE.Mesh(new THREE.CylinderGeometry(.02,.026,.014,10),MAT.gold);
+  b.position.y=.012;g.add(b);}
+ else{const m=new THREE.Mesh(new THREE.OctahedronGeometry(.058),MAT.diamond);
+  m.position.y=.058;g.add(m);
+  const b=new THREE.Mesh(new THREE.CylinderGeometry(.028,.036,.016,10),MAT.gold);
+  b.position.y=.014;g.add(b);
+  const t=new THREE.Mesh(new THREE.OctahedronGeometry(.02),MAT.diamond);
+  t.position.set(.045,.03,0);g.add(t);}
+ return g;
+}
+function makeCrack(sev){
+ const g=new THREE.Group();
+ const mat=new THREE.MeshBasicMaterial({color:0x241610,transparent:true,opacity:0});
+ const segs=sev>=5
+  ?[[0,0,.0018,.03,.5],[.01,.018,.0016,.026,-.8],[-.008,.02,.0014,.022,.9],
+    [.016,.034,.0013,.02,-1.2],[-.003,.04,.0012,.018,.4]]
+  :[[0,0,.0016,.024,.5],[.008,.014,.0014,.02,-.9],[.002,.028,.0012,.016,1.1]];
+ segs.forEach(([x,y,w,h,r])=>{
+  const b=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat);
+  b.position.set(x,y,0);b.rotation.z=r;g.add(b);});
+ g.userData.mat=mat;return g;
 }
 const segLen=q=>.06+q*MODE.step;
 
 function makeBox(tier,shown){
-  const g=new THREE.Group();
-  g.add(new THREE.Mesh(new THREE.BoxGeometry(.9,.34,.56),MAT.wood));
-  const metal=new THREE.MeshStandardMaterial({color:tier.metal,metalness:.95,roughness:.3});
-  [-.11,.11].forEach(y=>{
-    const band=new THREE.Mesh(new THREE.BoxGeometry(.93,.04,.585),metal);
-    band.position.y=y;g.add(band);
-  });
-  [-.44,.44].forEach(x=>{
-    const p=new THREE.Mesh(new THREE.BoxGeometry(.028,.34,.58),metal);
-    p.position.x=x;g.add(p);
-  });
-  const latch=new THREE.Mesh(new THREE.BoxGeometry(.10,.07,.028),metal);
-  latch.position.set(0,.05,.292);g.add(latch);
-
-  const velv=new THREE.Mesh(new THREE.PlaneGeometry(.79,.45),MAT.velvet);
-  velv.rotation.x=-Math.PI/2;velv.position.y=.171;velv.receiveShadow=true;g.add(velv);
-  const lit=new THREE.Mesh(new THREE.PlaneGeometry(.85,.55),glowMat(.5));
-  lit.rotation.x=-Math.PI/2;lit.position.y=.174;g.add(lit);
-
-  shown.forEach((it,i)=>{
-    const m=makeItemMesh(it.item.t);
-    m.scale.setScalar(1.1);
-    m.position.x=(i-(shown.length-1)/2)*.22;
-    m.position.z=(Math.random()-.5)*.10;
-    m.position.y=.172;
-    g.add(m);
-  });
-
-  const lid=new THREE.Group();
-  lid.position.set(0,.265,-.245);
-  const glass=new THREE.Mesh(new THREE.PlaneGeometry(.8,.46),MAT.glass.clone());
-  glass.rotation.x=-Math.PI/2;glass.position.set(0,0,.245);lid.add(glass);
-  const rT=new THREE.Mesh(new THREE.BoxGeometry(.94,.028,.045),metal);
-  rT.position.set(0,0,.49);lid.add(rT);
-  const rB=rT.clone();rB.position.z=0;lid.add(rB);
-  const rL=new THREE.Mesh(new THREE.BoxGeometry(.045,.028,.54),metal);
-  rL.position.set(-.445,0,.245);lid.add(rL);
-  const rR=rL.clone();rR.position.x=.445;lid.add(rR);
-  g.add(lid);
-
-  const shelf=new THREE.Mesh(new THREE.BoxGeometry(1.02,.05,.68),MAT.brassD);
-  shelf.position.y=-.195;shelf.receiveShadow=true;g.add(shelf);
-
-  g.traverse(o=>{if(o.isMesh&&o.material!==glass.material)o.castShadow=true;});
-  g.rotation.x=.40;
-  g.userData={lid};
-  return g;
+ const g=new THREE.Group();
+ g.add(new THREE.Mesh(new THREE.BoxGeometry(.9,.34,.56),MAT.wood));
+ const metal=new THREE.MeshStandardMaterial({color:tier.metal,metalness:.95,roughness:.3});
+ [-.11,.11].forEach(y=>{const b=new THREE.Mesh(new THREE.BoxGeometry(.93,.04,.585),metal);
+  b.position.y=y;g.add(b);});
+ [-.44,.44].forEach(x=>{const p=new THREE.Mesh(new THREE.BoxGeometry(.028,.34,.58),metal);
+  p.position.x=x;g.add(p);});
+ const latch=new THREE.Mesh(new THREE.BoxGeometry(.1,.07,.028),metal);
+ latch.position.set(0,.05,.292);g.add(latch);
+ const velv=new THREE.Mesh(new THREE.PlaneGeometry(.79,.45),MAT.velvet);
+ velv.rotation.x=-Math.PI/2;velv.position.y=.171;velv.receiveShadow=true;g.add(velv);
+ const lit=new THREE.Mesh(new THREE.PlaneGeometry(.85,.55),glowMat(.5));
+ lit.rotation.x=-Math.PI/2;lit.position.y=.174;g.add(lit);
+ shown.forEach((it,i)=>{
+  const m=makeItemMesh(it.item.t);m.scale.setScalar(1.1);
+  m.position.x=(i-(shown.length-1)/2)*.22;m.position.z=(Math.random()-.5)*.1;
+  m.position.y=.172;g.add(m);});
+ const lid=new THREE.Group();lid.position.set(0,.265,-.245);
+ const glass=new THREE.Mesh(new THREE.PlaneGeometry(.8,.46),MAT.glass.clone());
+ glass.rotation.x=-Math.PI/2;glass.position.set(0,0,.245);lid.add(glass);
+ const rT=new THREE.Mesh(new THREE.BoxGeometry(.94,.028,.045),metal);
+ rT.position.set(0,0,.49);lid.add(rT);
+ const rB=rT.clone();rB.position.z=0;lid.add(rB);
+ const rL=new THREE.Mesh(new THREE.BoxGeometry(.045,.028,.54),metal);
+ rL.position.set(-.445,0,.245);lid.add(rL);
+ const rR=rL.clone();rR.position.x=.445;lid.add(rR);
+ g.add(lid);
+ const shelf=new THREE.Mesh(new THREE.BoxGeometry(1.02,.05,.68),MAT.brassD);
+ shelf.position.y=-.195;shelf.receiveShadow=true;g.add(shelf);
+ g.traverse(o=>{if(o.isMesh&&o.material!==glass.material)o.castShadow=true;});
+ g.rotation.x=.4;g.userData={lid};return g;
 }
 function makeKey(code){
-  const mat=MAT.brass.clone();
-  const g=new THREE.Group();
-  const bow=new THREE.Mesh(new THREE.TorusGeometry(.086,.019,18,36),mat);
-  bow.position.x=-.245;g.add(bow);
-  const boss=new THREE.Mesh(new THREE.SphereGeometry(.021,16,12),mat);
-  boss.position.x=-.245;boss.scale.z=.55;g.add(boss);
-  const neck=new THREE.Mesh(new THREE.BoxGeometry(.10,.040,.024),mat);
-  neck.position.x=-.16;g.add(neck);
-  const spine=new THREE.Mesh(new THREE.BoxGeometry(.44,.026,.024),mat);
-  spine.position.set(.06,.042,0);g.add(spine);
-  const dline=new THREE.Mesh(new THREE.BoxGeometry(.44,.006,.026),
-    new THREE.MeshStandardMaterial({color:0x4a3612,metalness:.8,roughness:.5}));
-  dline.position.set(.06,.029,.002);g.add(dline);
-  const n=code.length,gap=0.28/(n-1),w=Math.min(.062,gap*.64);
-  const teeth=new THREE.Group();
-  for(let i=0;i<n;i++){
-    const L=segLen(code[i]);
-    const t=new THREE.Mesh(new THREE.BoxGeometry(w,L,.024),mat);
-    t.position.set(-.09+i*gap,.029-L/2,0);teeth.add(t);
-  }
-  g.add(teeth);
-  const tip=new THREE.Mesh(new THREE.BoxGeometry(.055,.05,.024),mat);
-  tip.position.set(.30,.02,0);g.add(tip);
-  g.traverse(o=>{if(o.isMesh)o.castShadow=true;});
-  g.userData={teeth,mat};
-  return g;
+ const mat=MAT.brass.clone();
+ const g=new THREE.Group();
+ const bow=new THREE.Mesh(new THREE.TorusGeometry(.086,.019,18,36),mat);
+ bow.position.x=-.245;g.add(bow);
+ const boss=new THREE.Mesh(new THREE.SphereGeometry(.021,16,12),mat);
+ boss.position.x=-.245;boss.scale.z=.55;g.add(boss);
+ const neck=new THREE.Mesh(new THREE.BoxGeometry(.1,.04,.024),mat);
+ neck.position.x=-.16;g.add(neck);
+ const spine=new THREE.Mesh(new THREE.BoxGeometry(.44,.026,.024),mat);
+ spine.position.set(.06,.042,0);g.add(spine);
+ const dl=new THREE.Mesh(new THREE.BoxGeometry(.44,.006,.026),
+  new THREE.MeshStandardMaterial({color:0x4a3612,metalness:.8,roughness:.5}));
+ dl.position.set(.06,.029,.002);g.add(dl);
+ const n=code.length,gap=.28/(n-1),w=Math.min(.062,gap*.64);
+ const teeth=new THREE.Group();
+ for(let i=0;i<n;i++){const L=segLen(code[i]);
+  const t=new THREE.Mesh(new THREE.BoxGeometry(w,L,.024),mat);
+  t.position.set(-.09+i*gap,.029-L/2,0);teeth.add(t);}
+ g.add(teeth);
+ const tip=new THREE.Mesh(new THREE.BoxGeometry(.055,.05,.024),mat);
+ tip.position.set(.3,.02,0);g.add(tip);
+ g.traverse(o=>{if(o.isMesh)o.castShadow=true;});
+ g.userData={teeth,mat};return g;
 }
 
-/* ================= 9. 状态 ================= */
-const SAVE_KEY='keyhole_v8';
-const S={
-  nick:'守箱人', coins:CFG.startCoins, oil:CFG.oilStart, opened:0, bag:[],
-  boxes:[], selBox:-1, lock:[], keys:[], selKey:-1,
-  phase:'title', peeking:false, peeked:false, busy:false,
-  peekUntil:0, loot:[], drawIdx:-1, collected:0, summary:false, insp:null,
-  detailIdx:-1
-};
+/* ===== 状态 ===== */
+const SAVE_KEY='keyhole_v10';
+const S={nick:'守箱人',coins:CFG.startCoins,oil:CFG.oilStart,opened:0,bag:[],
+ boxes:[],selBox:-1,lock:[],keys:[],selKey:-1,phase:'title',peeking:false,peeked:false,
+ busy:false,peekUntil:0,loot:[],drawIdx:-1,collected:0,summary:false,insp:null,
+ detailIdx:-1,bulk:false,picked:new Set(),obs:[]};
 const rnd=n=>Math.floor(Math.random()*n);
 const same=(a,b)=>a.every((v,i)=>v===b[i]);
 const $=id=>document.getElementById(id);
@@ -766,754 +707,695 @@ const btnA=$('btnA'),btnB=$('btnB'),btnC=$('btnC'),btnR=$('btnR'),uiEl=$('ui');
 const peekBar=$('peekBar'),peekFill=peekBar.querySelector('i');
 const stageEl=$('stage'),rarEl=$('rar'),chipsEl=$('chips'),markLog=$('markLog');
 const stSumEl=$('stSum'),stHint=$('stHint');
-
 const msg=t=>msgEl.textContent=t;
-let toastTimer=0;
-function toast(html,ms=2000){
-  toastEl.innerHTML=html;toastEl.classList.add('on');
-  clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>toastEl.classList.remove('on'),ms);
-}
-function fadeTo(fn,ms=320){
-  fadeEl.classList.add('on');
-  setTimeout(()=>{fn();setTimeout(()=>fadeEl.classList.remove('on'),60);},ms);
-}
-function flash(q){flashEl.style.opacity=q>=5?.24:(q>=4?.13:0);setTimeout(()=>flashEl.style.opacity=0,130);}
+let tt=0;
+function toast(h,ms=2000){toastEl.innerHTML=h;toastEl.classList.add('on');
+ clearTimeout(tt);tt=setTimeout(()=>toastEl.classList.remove('on'),ms);}
+function fadeTo(fn,ms=320){fadeEl.classList.add('on');
+ setTimeout(()=>{fn();setTimeout(()=>fadeEl.classList.remove('on'),60);},ms);}
+function flash(q){flashEl.style.opacity=q>=5?.22:(q>=4?.12:0);
+ setTimeout(()=>flashEl.style.opacity=0,130);}
 const bruteCost=b=>Math.round(b.tier.price*1.2)+90;
 
-/* ================= 10. 存档 ================= */
-function save(){
-  try{
-    localStorage.setItem(SAVE_KEY,JSON.stringify({
-      nick:S.nick,coins:S.coins,bag:S.bag,opened:S.opened
-    }));
-  }catch(e){}
-}
-function load(){
-  try{
-    const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
-    if(d){
-      S.nick=d.nick||'守箱人';
-      S.coins=typeof d.coins==='number'?d.coins:CFG.startCoins;
-      S.bag=Array.isArray(d.bag)?d.bag:[];
-      S.opened=d.opened||0;
-      return true;
-    }
-  }catch(e){}
-  return false;
-}
+function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(
+ {nick:S.nick,coins:S.coins,bag:S.bag,opened:S.opened}));}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
+ if(d){S.nick=d.nick||'守箱人';
+  S.coins=typeof d.coins==='number'?d.coins:CFG.startCoins;
+  S.bag=Array.isArray(d.bag)?d.bag:[];S.opened=d.opened||0;return true;}}catch(e){}
+ return false;}
 
-/* ================= 11. HUD ================= */
 function updateHud(){
-  hCoins.textContent=S.coins;
-  bagCount.textContent=S.bag.length;
-  let html='';
-  for(let i=0;i<CFG.oilMax;i++)
-    html+=`<span class="oildot ${i<S.oil?'':'off'}"></span>`;
-  hOil.innerHTML=html;
-  const era=curEra();
-  hEra.textContent='时代 · '+era.n;
-  const left=HOUR-(Date.now()%HOUR);
-  const m=Math.floor(left/60000);
-  hLeft.textContent=`行情 ${m} 分后变`;
+ hCoins.textContent=S.coins;bagCount.textContent=S.bag.length;
+ let html='';for(let i=0;i<CFG.oilMax;i++)html+=`<span class="oildot ${i<S.oil?'':'off'}"></span>`;
+ hOil.innerHTML=html;
+ hEra.textContent='时代 · '+curEra().n;
+ hLeft.textContent=`行情 ${Math.floor((HOUR-(Date.now()%HOUR))/60000)} 分后变`;
 }
 function updateUI(){
-  updateHud();
-  btnC.style.display='none';btnR.style.display='none';
-  if(S.phase==='box'){
-    btnA.disabled=S.selBox<0;
-    btnA.textContent=S.selBox<0?'先点一只箱子':`买下这只 · ${S.boxes[S.selBox].tier.price} 金`;
-    btnB.disabled=false;btnB.textContent='换一批';
-  } else if(S.phase==='lock'){
-    btnA.disabled=S.peeked||S.oil<=0;
-    btnA.textContent=S.peeking?'移开视线':(S.peeked?'已窥视过':(S.oil<=0?'灯油已尽':'窥视锁孔 · −1 灯油'));
-    btnB.disabled=false;btnB.textContent='去挑钥匙 →';
-  } else if(S.phase==='keys'){
-    const b=S.boxes[S.selBox];
-    btnA.disabled=false;btnA.textContent='弃箱';
-    btnR.style.display='block';
-    btnR.disabled=S.selKey<0||S.busy||S.coins<CFG.reviewCost;
-    btnR.textContent=`重看这把 · ${CFG.reviewCost} 金`;
-    btnB.disabled=S.selKey<0||S.busy;
-    btnB.textContent=`买下并试开 · ${CFG.price} 金`;
-    if(b){
-      const c=bruteCost(b);
-      btnC.style.display='block';
-      btnC.disabled=S.busy||S.coins<c;
-      btnC.textContent=`暴力开 · ${c} 金（必定开，最贵一件会碎）`;
-    }
-  }
+ updateHud();btnC.style.display='none';btnR.style.display='none';
+ if(S.phase==='box'){
+  btnA.disabled=S.selBox<0||S.coins<S.boxes[S.selBox]?.tier.price;
+  btnA.textContent=S.selBox<0?'先点一只箱子':`买下这只 · ${S.boxes[S.selBox].tier.price} 金`;
+  btnB.disabled=false;btnB.textContent='换一批';
+  if(S.coins<18&&S.bag.length>0)msg('金币不够了 —— 点右上角背包卖点东西');
+ }else if(S.phase==='lock'){
+  btnA.disabled=S.peeked||S.oil<=0;
+  btnA.textContent=S.peeking?'移开视线':(S.peeked?'已窥视过':(S.oil<=0?'灯油已尽':'窥视锁孔 · −1 灯油'));
+  btnB.disabled=false;btnB.textContent='去挑钥匙 →';
+ }else if(S.phase==='keys'){
+  const b=S.boxes[S.selBox];
+  btnA.disabled=false;btnA.textContent='弃箱';
+  btnR.style.display='block';
+  btnR.disabled=S.selKey<0||S.busy||S.coins<CFG.reviewCost;
+  btnR.textContent=`重看这把 · ${CFG.reviewCost} 金`;
+  btnB.disabled=S.selKey<0||S.busy;btnB.textContent=`买下并试开 · ${CFG.price} 金`;
+  if(b){const c=bruteCost(b);btnC.style.display='block';
+   btnC.disabled=S.busy||S.coins<c;
+   btnC.textContent=`暴力开 · ${c} 金（最贵一件会碎）`;}
+ }
 }
 
-/* ================= 12. 箱子等级 ================= */
+/* ===== 箱型 ===== */
 const TIERS=[
-  {name:'木箱',metal:0x8a6a3a,price:18, n:[3,4],w:[.45,.32,.16,.07,.00],swan:.03,wt:.45},
-  {name:'铜箱',metal:0xb87333,price:45, n:[4,5],w:[.32,.30,.24,.12,.02],swan:.05,wt:.32},
-  {name:'银箱',metal:0xb9c3cc,price:90, n:[4,6],w:[.18,.28,.30,.18,.06],swan:.07,wt:.17},
-  {name:'金箱',metal:0xd8b25c,price:180,n:[5,7],w:[.10,.28,.28,.24,.10],swan:.10,wt:.06}
-];
-function pickTier(){
-  const r=Math.random();let acc=0;
-  for(const t of TIERS){acc+=t.wt;if(r<acc)return t;}
-  return TIERS[0];
+{name:'木箱',metal:0x8a6a3a,price:18,n:3,w:[.45,.32,.16,.07,0],swan:.03,wt:.42},
+{name:'铜箱',metal:0xb87333,price:55,n:4,w:[.34,.30,.22,.12,.02],swan:.05,wt:.30},
+{name:'银箱',metal:0xb9c3cc,price:130,n:6,w:[.22,.30,.28,.15,.05],swan:.07,wt:.18},
+{name:'金箱',metal:0xd8b25c,price:280,n:8,w:[.14,.26,.28,.22,.10],swan:.10,wt:.08},
+{name:'至尊箱',metal:0xf0d78a,price:650,n:10,w:[.10,.20,.26,.24,.20],swan:.14,wt:.02}];
+const FLAW_P=[0,0,.05,.14,.28,.40];
+function pickTier(){const r=Math.random();let a=0;
+ for(const t of TIERS){a+=t.wt;if(r<a)return t;}return TIERS[0];}
+function rollCond(tier){
+ if(tier<=1)return 1;
+ if(Math.random()>FLAW_P[tier])return 1;
+ const r=Math.random();
+ if(tier>=4&&r<.14)return 5;
+ if(r<.5)return 2;if(r<.83)return 3;return 4;
 }
 function rollLoot(tier){
-  const n=tier.n[0]+rnd(tier.n[1]-tier.n[0]+1);
-  const out=[];
-  for(let i=0;i<n;i++){
-    const r=Math.random();let acc=0,t=1;
-    for(let k=0;k<5;k++){acc+=tier.w[k];if(r<acc){t=k+1;break;}}
-    const pool=POOL[t];
-    out.push({item:pool[rnd(pool.length)],cond:rollCond(t)});
-  }
-  return out;
+ const n=tier.n[0]+rnd(tier.n[1]-tier.n[0]+1),out=[];
+ for(let i=0;i<n;i++){
+  const r=Math.random();let a=0,t=1;
+  for(let k=0;k<5;k++){a+=tier.w[k];if(r<a){t=k+1;break;}}
+  const pool=POOL[t];
+  out.push({item:pool[rnd(pool.length)],cond:rollCond(t)});
+ }
+ return out;
 }
-function rollCond(tier){
-  if(tier<=1) return 1;
-  const p=[0,0,.08,.25,.45,.62][tier];
-  if(Math.random()>p) return 1;
-  const r=Math.random();
-  if(tier>=4&&r<.16) return 5;
-  if(r<.5) return 2;
-  if(r<.82) return 3;
-  return 4;
-}
+function clearGroup(root){while(root.children.length){
+ const c=root.children[0];root.remove(c);
+ c.traverse(o=>{if(o.geometry)o.geometry.dispose();});}}
 
-/* ================= 13. 回合 ================= */
-function clearGroup(root){
-  while(root.children.length){
-    const c=root.children[0];root.remove(c);
-    c.traverse(o=>{if(o.geometry)o.geometry.dispose();});
-  }
-}
 function newRound(){
-  clearGroup(boxRoot);
-  S.boxes=[];
-  for(let i=0;i<CFG.boxCount;i++){
-    const tier=pickTier();
-    const loot=rollLoot(tier);
-    const shown=loot.slice().sort((a,b)=>b.item.t-a.item.t).slice(0,Math.min(2,loot.length));
-    const g=makeBox(tier,shown);
-    g.position.set(0,1.46-i*0.73,0);
-    boxRoot.add(g);
-    g.traverse(o=>o.userData.boxIndex=i);
-    S.boxes.push({tier,loot,shown,g,swan:Math.random()<tier.swan});
-  }
-  S.selBox=-1;S.selKey=-1;S.busy=false;
-  S.phase='box';S.peeking=false;S.peeked=false;
-  S.loot=[];S.drawIdx=-1;S.collected=0;S.summary=false;S.insp=null;
-  vig.classList.remove('on');
-  peekBar.style.display='none';
-  stageEl.classList.remove('on');
-  uiEl.style.display='flex';
-  pins.forEach(p=>p.visible=false);
-  datum.visible=false;
-  layout();
-  msg(`${MODE.name}模式 · ${MODE.teeth} 齿 · 点一只箱子`);
-  updateUI();
+ clearGroup(boxRoot);S.boxes=[];
+ for(let i=0;i<CFG.boxCount;i++){
+  const tier=pickTier(),loot=rollLoot(tier);
+  const shown=loot.slice().sort((a,b)=>b.item.t-a.item.t).slice(0,Math.min(2,loot.length));
+  const g=makeBox(tier,shown);
+  g.position.set(0,1.46-i*.73,0);boxRoot.add(g);
+  g.traverse(o=>o.userData.boxIndex=i);
+  S.boxes.push({tier,loot,shown,g,swan:Math.random()<tier.swan});
+ }
+ S.selBox=-1;S.selKey=-1;S.busy=false;S.phase='box';S.peeking=false;S.peeked=false;
+ S.loot=[];S.drawIdx=-1;S.collected=0;S.summary=false;S.insp=null;S.obs=[];
+ vig.classList.remove('on');peekBar.style.display='none';
+ stageEl.classList.remove('on');uiEl.style.display='flex';
+ pins.forEach(p=>p.visible=false);datum.visible=false;obClear();
+ layout();msg(`${MODE.name}模式 · ${MODE.teeth} 齿 · 点一只箱子`);updateUI();
 }
 function chooseBox(i){
-  if(S.phase!=='box'||S.busy)return;
-  S.selBox=i;SFX.tap();
-  const b=S.boxes[i];
-  msg(`${b.tier.name} · ${b.tier.price}金｜玻璃下：${b.shown.map(x=>x.item.n).join('、')}`);
-  updateUI();
+ if(S.phase!=='box'||S.busy)return;
+ S.selBox=i;SFX.tap();
+ const b=S.boxes[i];
+ msg(`${b.tier.name} · ${b.tier.price}金｜玻璃下：${b.shown.map(x=>x.item.n).join('、')}`);
+ updateUI();
 }
 function confirmBox(){
-  if(S.phase!=='box'||S.selBox<0)return;
-  const b=S.boxes[S.selBox];
-  if(S.coins<b.tier.price){toast('金币不够买这只箱子');return;}
-  S.coins-=b.tier.price;save();
-  const n=MODE.teeth;
-  buildPins(n);buildObstruction(MODE.bars);
-  S.lock=Array.from({length:n},()=>rnd(5));
-  S.lock.forEach((c,i)=>{const L=segLen(c)*.95;pins[i].scale.y=L;pins[i].position.y=.16-L/2;});
-  buildKeys(b.swan,n);
-  S.busy=true;updateUI();
-  fadeTo(()=>{
-    S.phase='lock';S.peeking=false;S.peeked=false;S.busy=false;
-    msg(`看清 ${n} 根锁芯 —— 只有 ${(MODE.peek/1000).toFixed(1)} 秒`);
-    updateUI();
-  });
+ if(S.phase!=='box'||S.selBox<0)return;
+ const b=S.boxes[S.selBox];
+ if(S.coins<b.tier.price){toast('金币不够买这只箱子');return;}
+ S.coins-=b.tier.price;save();
+ const n=MODE.teeth;
+ buildPins(n);
+ // 随机遮挡物
+ S.obs=[];
+ if(MODE.obs>0){
+  S.obs.push(OB_LIST[rnd(OB_LIST.length)]);
+  if(MODE.obs>1){
+   let k=OB_LIST[rnd(OB_LIST.length)];
+   let guard=0;
+   while(k===S.obs[0]&&guard++<8)k=OB_LIST[rnd(OB_LIST.length)];
+   S.obs.push(k);
+  }
+ }
+ buildObstructions(S.obs);
+ S.lock=Array.from({length:n},()=>rnd(5));
+ S.lock.forEach((c,i)=>{const L=segLen(c)*.95;
+  pins[i].scale.y=L;pins[i].position.y=.16-L/2;});
+ buildKeys(b.swan,n);
+ S.busy=true;updateUI();
+ fadeTo(()=>{
+  S.phase='lock';S.peeking=false;S.peeked=false;S.busy=false;
+  const obTxt=S.obs.length?('· 锁孔里塞着 '+S.obs.map(x=>OB_NAME[x]).join(' + ')):'';
+  msg(`看清 ${n} 根锁芯 ${obTxt}`);
+  updateUI();
+ });
 }
 function buildKeys(blackSwan,n){
-  clearGroup(keysRoot);
-  const codes=[];
-  if(!blackSwan) codes.push(S.lock.slice());
-  while(codes.length<MODE.keys){
-    const c=Array.from({length:n},()=>rnd(5));
-    if(codes.some(x=>same(x,c)))continue;
-    codes.push(c);
-  }
-  for(let i=codes.length-1;i>0;i--){const j=rnd(i+1);[codes[i],codes[j]]=[codes[j],codes[i]];}
-  const count=codes.length;
-  const spacing=Math.min(.42,2.35/(count-1));
-  const top=.66;
-  S.keys=codes.map((code,i)=>{
-    const g=makeKey(code);
-    g.position.set(0,top-i*spacing,0);
-    keysRoot.add(g);
-    const obj={g,id:i,code,teeth:g.userData.teeth,mat:g.userData.mat,
-               viewed:false,revealUntil:0,dead:false};
-    g.traverse(o=>o.userData.keyRef=obj);
-    return obj;
-  });
-  S.keysCenter=top-(count-1)*spacing/2;
-  S.keysNeedH=(count-1)*spacing+0.46;
-  layout();
+ clearGroup(keysRoot);
+ const codes=[];
+ if(!blackSwan)codes.push(S.lock.slice());
+ while(codes.length<MODE.keys){
+  const c=Array.from({length:n},()=>rnd(5));
+  if(codes.some(x=>same(x,c)))continue;
+  codes.push(c);
+ }
+ for(let i=codes.length-1;i>0;i--){const j=rnd(i+1);[codes[i],codes[j]]=[codes[j],codes[i]];}
+ const cnt=codes.length,sp=Math.min(.42,2.35/(cnt-1)),top=.66;
+ S.keys=codes.map((code,i)=>{
+  const g=makeKey(code);g.position.set(0,top-i*sp,0);keysRoot.add(g);
+  const obj={g,id:i,code,teeth:g.userData.teeth,mat:g.userData.mat,
+   viewed:false,revealUntil:0,dead:false};
+  g.traverse(o=>o.userData.keyRef=obj);return obj;});
+ S.keysCenter=top-(cnt-1)*sp/2;
+ S.keysNeedH=(cnt-1)*sp+.46;
+ layout();
 }
 
-/* ================= 14. 窥视 ================= */
 function peekStart(){
-  if(S.phase!=='lock'||S.peeking)return;
-  if(S.peeked){toast('这只箱子已经看过了');return;}
-  if(S.oil<=0){toast('灯油用完了<b>只能凭记忆</b>');return;}
-  S.oil--;S.peeked=true;S.peeking=true;
-  S.peekUntil=performance.now()+MODE.peek;
-  pins.forEach(p=>p.visible=true);
-  datum.visible=true;vig.classList.add('on');
-  peekBar.style.display='block';peekFill.style.transform='scaleX(1)';
-  SFX.peek();
-  msg(`记住 ${MODE.teeth} 根锁芯比基准线往下多长`);
-  updateUI();
+ if(S.phase!=='lock'||S.peeking)return;
+ if(S.peeked){toast('这只箱子已经看过了');return;}
+ if(S.oil<=0){toast('灯油用完了<b>只能凭记忆</b>');return;}
+ S.oil--;S.peeked=true;S.peeking=true;
+ S.peekUntil=performance.now()+MODE.peek;
+ pins.forEach(p=>p.visible=true);datum.visible=true;
+ vig.classList.add('on');peekBar.style.display='block';
+ peekFill.style.transform='scaleX(1)';SFX.peek();
+ msg(`记住 ${MODE.teeth} 根锁芯比基准线往下多长`);updateUI();
 }
 function peekStop(){
-  S.peeking=false;
-  pins.forEach(p=>p.visible=false);
-  datum.visible=false;vig.classList.remove('on');
-  peekBar.style.display='none';
-  msg('灯油 −1。去挑钥匙吧');
-  updateUI();
+ S.peeking=false;pins.forEach(p=>p.visible=false);datum.visible=false;
+ vig.classList.remove('on');peekBar.style.display='none';
+ msg('灯油 −1。去挑钥匙吧');updateUI();
 }
 
-/* ================= 15. 验货 ================= */
+/* ===== 验货 ===== */
 function drawItem(entry){
-  if(S.insp&&S.insp.obj){
-    itemHolder.remove(S.insp.obj);
-    S.insp.obj.traverse(o=>{if(o.geometry)o.geometry.dispose();});
-  }
-  const it=entry.item;
-  const obj=makeItemMesh(it.t);
-  const marks=[];
-  if(entry.cond>1){
-    marks.push({angle:Math.random()*Math.PI*2,found:false});
-  }
-  marks.forEach(m=>{
-    const mm=new THREE.Mesh(new THREE.SphereGeometry(.010,8,6),
-      new THREE.MeshBasicMaterial({color:0x140b06}));
-    mm.position.set(Math.sin(m.angle)*.050,.034,Math.cos(m.angle)*.050);
-    mm.visible=false;m.mesh=mm;obj.add(mm);
-  });
-  obj.scale.setScalar(.001);
-  itemHolder.add(obj);
-
-  S.insp={
-    obj,marks,entry,it,
-    cond:entry.cond,
-    fullPrice:priceOf(it,1),
-    realPrice:priceOf(it,entry.cond),
-    revealed:false,rot:0,rotTarget:0,turn:0,spin:.055,
-    crumbled:false,t0:performance.now()
-  };
-
-  markLog.innerHTML='';
-  flash(it.t);SFX.pop(it.t);
-  if(it.t>=5)SFX.big();
-
-  const c=CAT[it.c];
-  rarEl.querySelector('.q').textContent=c.name;
-  rarEl.querySelector('.q').style.background=c.css;
-  rarEl.querySelector('.n').textContent=it.n;
-  setPriceText(S.insp.fullPrice,'');
-  rarEl.classList.remove('on');
-  void rarEl.offsetWidth;
-  setTimeout(()=>rarEl.classList.add('on'),150);
-
-  const chip=document.createElement('div');
-  chip.className='chip';chip.style.background=c.css;
-  chipsEl.appendChild(chip);
-
-  $('stIdx').textContent=S.drawIdx+1;
-  stHint.textContent='转 动 查 看';
-  refreshTotal();
+ if(S.insp&&S.insp.obj){
+  itemHolder.remove(S.insp.obj);
+  S.insp.obj.traverse(o=>{if(o.geometry)o.geometry.dispose();});
+ }
+ const it=entry.item,obj=makeItemMesh(it.t);
+ obj.traverse(o=>{if(o.isMesh&&o.material&&o.material.clone)o.material=o.material.clone();});
+ const marks=[];
+ if(entry.cond>1)marks.push({angle:Math.random()*Math.PI*2,found:false});
+ marks.forEach(m=>{
+  const holder=new THREE.Group();holder.rotation.y=m.angle;
+  const crack=makeCrack(entry.cond);
+  crack.position.set(0,.028,.049);
+  holder.add(crack);obj.add(holder);
+  m.holder=holder;m.crack=crack;});
+ obj.scale.setScalar(.001);itemHolder.add(obj);
+ S.insp={obj,marks,entry,it,cond:entry.cond,
+  fullPrice:priceOf(it,1),realPrice:priceOf(it,entry.cond),
+  revealed:false,rot:0,rotTarget:0,turn:0,spin:.055,crumbled:false,t0:performance.now()};
+ markLog.innerHTML='';flash(it.t);SFX.pop(it.t);
+ if(it.t>=5)SFX.big();
+ const c=CAT[it.c];
+ rarEl.querySelector('.q').textContent=c.name;
+ rarEl.querySelector('.q').style.background=c.css;
+ rarEl.querySelector('.n').textContent=it.n;
+ setPriceText(S.insp.fullPrice,'');
+ rarEl.classList.remove('on');void rarEl.offsetWidth;
+ setTimeout(()=>rarEl.classList.add('on'),150);
+ const chip=document.createElement('div');
+ chip.className='chip';chip.style.background=c.css;chipsEl.appendChild(chip);
+ $('stIdx').textContent=S.drawIdx+1;
+ stHint.textContent='转 动 查 看';refreshTotal();
 }
 function setPriceText(v,cls){
-  const el=rarEl.querySelector('.v');
-  el.textContent=v>0?`+${v} 金币（估价）`:'一文不值';
-  el.className='v '+(cls||'');
+ const el=rarEl.querySelector('.v');
+ el.textContent=v>0?`+${v} 金币（估价）`:'一文不值';
+ el.className='v '+(cls||'');
 }
 function refreshTotal(){
-  const cur=S.insp?(S.insp.crumbled?0:S.insp.realPrice):0;
-  $('stSumVal').textContent=S.collected+cur;
+ const cur=S.insp?(S.insp.crumbled?0:S.insp.realPrice):0;
+ $('stSumVal').textContent=S.collected+cur;
 }
+function sevOp(c){return c>=5?.85:(c>=4?.72:(c>=3?.58:.42));}
 function revealCond(){
-  const insp=S.insp;
-  if(!insp||insp.revealed)return;
-  insp.revealed=true;
-  if(insp.cond>=5){
-    insp.crumbled=true;
-    SFX.shard();flash(5);
-    insp.obj.traverse(o=>{if(o.isMesh&&o.material)o.material=MAT.rubble;});
-    const d=document.createElement('div');
-    d.className='mk';d.textContent='碎 裂 了 · 0 元';
-    markLog.appendChild(d);
-    setPriceText(0,'');
-    toast('一碰就碎了<b>0 元</b>',1600);
-  } else if(insp.cond===1){
-    SFX.bonus?SFX.bonus():SFX.coin();
-    const d=document.createElement('div');
-    d.className='mk';d.style.color='#8ef2a8';
-    d.textContent='品相完好';
-    markLog.appendChild(d);
-  } else {
-    SFX.flaw();
-    const d=document.createElement('div');
-    d.className='mk';
-    d.textContent=COND_TXT[insp.cond]+'  −'+Math.round((1-COND_MUL[insp.cond])*100)+'%';
-    markLog.appendChild(d);
-    setPriceText(insp.realPrice,'hit');
-    setTimeout(()=>setPriceText(insp.realPrice,''),420);
-  }
-  refreshTotal();
+ const insp=S.insp;
+ if(!insp||insp.revealed)return;
+ insp.revealed=true;
+ insp.marks.forEach(m=>{
+  if(!m.crack)return;
+  const mt=m.crack.userData.mat;let t=0;
+  const f=()=>{t+=.12;mt.opacity=Math.min(sevOp(insp.cond),t);
+   if(t<1)requestAnimationFrame(f);};
+  f();
+ });
+ if(insp.cond>=2){
+  insp.obj.traverse(o=>{
+   if(o.isMesh&&o.material&&o.material.color){
+    o.material.color.multiplyScalar(insp.cond>=4?.78:.9);
+    if('roughness'in o.material)o.material.roughness=Math.min(1,o.material.roughness+.18);
+   }});
+ }
+ if(insp.cond>=5){
+  insp.crumbled=true;SFX.shard();flash(5);
+  insp.obj.traverse(o=>{if(o.isMesh&&o.material&&o.material.color)o.material=MAT.rubble;});
+  const d=document.createElement('div');d.className='mk';
+  d.textContent='碎 裂 了 · 0 元';markLog.appendChild(d);
+  setPriceText(0,'');toast('一碰就碎了<b>0 元</b>',1600);
+ }else if(insp.cond===1){
+  SFX.perfect();
+  const d=document.createElement('div');d.className='mk';
+  d.style.color='#8ef2a8';d.textContent='品相完好';markLog.appendChild(d);
+ }else{
+  SFX.flaw();
+  const d=document.createElement('div');d.className='mk';
+  d.textContent=COND_TXT[insp.cond]+'  −'+Math.round((1-COND_MUL[insp.cond])*100)+'%';
+  markLog.appendChild(d);
+  setPriceText(insp.realPrice,'hit');
+  setTimeout(()=>setPriceText(insp.realPrice,''),420);
+ }
+ refreshTotal();
 }
 
-/* ================= 16. 展台流程 ================= */
 function startStage(b){
-  S.phase='reveal';
-  S.loot=b.loot.slice();
-  S.drawIdx=-1;S.collected=0;S.summary=false;S.insp=null;
-  clearGroup(itemHolder);
-  chipsEl.innerHTML='';markLog.innerHTML='';
-  rarEl.classList.remove('on');
-  stSumEl.classList.remove('on');
-  stHint.style.display='block';stHint.textContent='轻 点 取 出';
-  $('stSumVal').textContent=0;$('stIdx').textContent=0;
-  uiEl.style.display='none';
-  stageEl.classList.add('on');
-  S.busy=false;
-  if(S.loot.length===0)setTimeout(showSummary,400);
+ S.phase='reveal';S.loot=b.loot.slice();
+ S.drawIdx=-1;S.collected=0;S.summary=false;S.insp=null;
+ clearGroup(itemHolder);chipsEl.innerHTML='';markLog.innerHTML='';
+ rarEl.classList.remove('on');stSumEl.classList.remove('on');
+ stHint.style.display='block';stHint.textContent='轻 点 取 出';
+ $('stSumVal').textContent=0;$('stIdx').textContent=0;
+ uiEl.style.display='none';stageEl.classList.add('on');S.busy=false;
+ layout();
+ if(S.loot.length===0)setTimeout(showSummary,400);
 }
 function tapStage(){
-  if(S.phase!=='reveal'||S.summary)return;
-  const insp=S.insp;
-  if(insp&&insp.turn<1.6&&!insp.crumbled){
-    toast('先转半圈 —— 没验过货不能收',1300);return;
-  }
-  if(insp){
-    const price=insp.crumbled?0:insp.realPrice;
-    S.collected+=price;
-    if(!insp.crumbled||insp.cond>0){
-      S.bag.push({id:insp.it.id,cond:insp.cond,fav:false,t:Date.now()});
-    }
-    save();
-  }
-  if(S.drawIdx<S.loot.length-1){
-    S.drawIdx++;
-    drawItem(S.loot[S.drawIdx]);
-  } else showSummary();
+ if(S.phase!=='reveal'||S.summary)return;
+ const insp=S.insp;
+ if(insp&&insp.turn<1.6&&!insp.crumbled){toast('先转半圈 —— 没验过货不能收',1300);return;}
+ if(insp){
+  S.collected+=insp.crumbled?0:insp.realPrice;
+  S.bag.push({id:insp.it.id,cond:insp.cond,fav:false,t:Date.now()});
+  save();
+ }
+ if(S.drawIdx<S.loot.length-1){S.drawIdx++;drawItem(S.loot[S.drawIdx]);}
+ else showSummary();
 }
 function showSummary(){
-  if(S.summary)return;
-  S.summary=true;
-  rarEl.classList.remove('on');
-  $('sumBig').textContent=S.collected;
-  const cnt=S.loot.length;
-  $('sumSub').textContent =
-    S.collected===0?'全废了…这一箱白干':
-    `共 ${cnt} 件 · 已放进背包<br>市价随时在变，先别急着卖`;
-  stHint.style.display='none';
-  stSumEl.classList.add('on');
-  updateUI();
-  SFX.open();
+ if(S.summary)return;
+ S.summary=true;rarEl.classList.remove('on');
+ $('sumBig').textContent=S.collected;
+ $('sumSub').textContent=S.collected===0?'全废了…这一箱白干'
+  :`共 ${S.loot.length} 件 · 已进背包<br>市价随时在变，先别急着卖`;
+ stHint.style.display='none';stSumEl.classList.add('on');
+ updateUI();SFX.open();
 }
 
-/* ================= 17. 买钥匙 / 暴力开 / 重看 ================= */
 function afterOpen(b){
-  S.opened++;
-  S.oil=Math.min(CFG.oilMax,S.oil+1);
-  save();updateUI();
-  S.phase='opening';S.busy=true;
-  uiEl.style.display='none';
-  S.boxes.forEach((x,i)=>{x.g.visible=(i===S.selBox);});
-  setTimeout(()=>{fadeTo(()=>startStage(b));},900);
+ S.opened++;S.oil=Math.min(CFG.oilMax,S.oil+1);save();updateUI();
+ S.phase='opening';S.busy=true;uiEl.style.display='none';
+ S.boxes.forEach((x,i)=>{x.g.visible=(i===S.selBox);});
+ setTimeout(()=>{fadeTo(()=>startStage(b));},900);
 }
 function buyKey(){
-  if(S.phase!=='keys'||S.busy||S.selKey<0)return;
-  if(S.coins<CFG.price){toast('金币不够<b>本局结束</b>');return;}
-  const k=S.keys[S.selKey],b=S.boxes[S.selBox];
-  S.busy=true;S.coins-=CFG.price;S.selKey=-1;updateUI();save();
-  const ok=same(k.code,S.lock);
-  k.dead=true;
-  setTimeout(()=>{
-    if(ok){afterOpen(b);}
-    else{
-      SFX.wrong();
-      const alive=S.keys.filter(x=>!x.dead).length;
-      toast(alive===0?'五把钥匙都不对<b>锁被换过了</b>':'钥匙卡住了<b>齿口不对</b>这把废了',
-            alive===0?2600:1900);
-      S.busy=false;updateUI();
-      msg('再挑一把 —— 箱子还在');
-    }
-  },280);
+ if(S.phase!=='keys'||S.busy||S.selKey<0)return;
+ if(S.coins<CFG.price){toast('金币不够<b>本局结束</b>');return;}
+ const k=S.keys[S.selKey],b=S.boxes[S.selBox];
+ S.busy=true;S.coins-=CFG.price;S.selKey=-1;updateUI();save();
+ const ok=same(k.code,S.lock);k.dead=true;
+ setTimeout(()=>{
+  if(ok){afterOpen(b);}
+  else{SFX.wrong();
+   const alive=S.keys.filter(x=>!x.dead).length;
+   toast(alive===0?'五把钥匙都不对<b>锁被换过了</b>':'钥匙卡住了<b>齿口不对</b>这把废了',
+    alive===0?2600:1900);
+   S.busy=false;updateUI();msg('再挑一把 —— 箱子还在');}
+ },280);
 }
 function bruteForce(){
-  if(S.phase!=='keys'||S.busy)return;
-  const b=S.boxes[S.selBox],c=bruteCost(b);
-  if(S.coins<c){toast('金币不够暴力开');return;}
-  S.coins-=c;S.busy=true;SFX.crack();
-  const sorted=b.loot.slice().sort((x,y)=>priceOf(y.item,y.cond)-priceOf(x.item,x.cond));
-  const best=sorted[0];
-  if(best) b.loot=b.loot.filter(x=>x!==best);
-  S.keys.forEach(k=>k.dead=true);
-  updateUI();save();
-  toast(best?`咔嚓 —— 锁断了<b>${best.item.n} 碎了</b>`:'咔嚓 —— 锁断了',2100);
-  setTimeout(()=>afterOpen(b),1100);
+ if(S.phase!=='keys'||S.busy)return;
+ const b=S.boxes[S.selBox],c=bruteCost(b);
+ if(S.coins<c){toast('金币不够暴力开');return;}
+ S.coins-=c;S.busy=true;SFX.crack();
+ const sorted=b.loot.slice().sort((x,y)=>priceOf(y.item,y.cond)-priceOf(x.item,x.cond));
+ const best=sorted[0];
+ if(best)b.loot=b.loot.filter(x=>x!==best);
+ S.keys.forEach(k=>k.dead=true);updateUI();save();
+ toast(best?`咔嚓 —— 锁断了<b>${best.item.n} 碎了</b>`:'咔嚓 —— 锁断了',2100);
+ setTimeout(()=>afterOpen(b),1100);
 }
 function reviewKey(){
-  if(S.phase!=='keys'||S.busy||S.selKey<0)return;
-  if(S.coins<CFG.reviewCost){toast('金币不够重看');return;}
-  const k=S.keys[S.selKey];
-  if(k.dead){toast('这把已经废了');return;}
-  S.coins-=CFG.reviewCost;
-  k.viewed=false;k.revealUntil=performance.now()+CFG.viewMs;
-  k.mat.color.setHex(0xd0a04c);k.mat.roughness=.24;
-  SFX.lift();updateUI();save();
-  toast('盯着看 —— 这次看清楚了',1400);
+ if(S.phase!=='keys'||S.busy||S.selKey<0)return;
+ if(S.coins<CFG.reviewCost){toast('金币不够重看');return;}
+ const k=S.keys[S.selKey];
+ if(k.dead){toast('这把已经废了');return;}
+ S.coins-=CFG.reviewCost;
+ k.viewed=false;k.revealUntil=performance.now()+CFG.viewMs;
+ k.mat.color.setHex(0xd0a04c);k.mat.roughness=.24;
+ SFX.lift();updateUI();save();toast('盯着看 —— 这次看清楚了',1400);
 }
 
-/* ================= 18. 背包 / 详情 ================= */
+/* ===== 背包 ===== */
 function openBag(){
-  renderBag();
-  $('bagScreen').classList.add('on');
+ S.bulk=false;S.picked.clear();
+ $('bulkBar').classList.remove('on');$('bsBulk').textContent='批量';
+ renderBag();$('bagScreen').classList.add('on');
 }
 function renderBag(){
-  const list=$('bagList');
-  list.innerHTML='';
-  const era=curEra();
-  $('bsEra').textContent='时代 · '+era.n;
-  $('bsEraDesc').textContent=era.d;
-  if(S.bag.length===0){
-    $('bagEmpty').style.display='block';
-    return;
-  }
-  $('bagEmpty').style.display='none';
-  S.bag.forEach((it,i)=>{
-    const def=ITEM_BY_ID[it.id];
-    if(!def)return;
-    const p=priceOf(def,it.cond);
-    const row=document.createElement('div');
-    row.className='brow';
-    row.innerHTML=
-      `<span class="dot" style="background:${CAT[def.c].css}"></span>`+
-      `<span class="bn">${def.n}</span>`+
-      `<span class="bc ${it.cond>1?'bad':''}">${COND_TXT[it.cond]}</span>`+
-      `<span class="bp">${p}</span>`+
-      `<span class="star">${it.fav?'★':''}</span>`;
-    row.onclick=()=>openDetail(i);
-    list.appendChild(row);
-  });
-}
-function openDetail(i){
-  const it=S.bag[i],def=ITEM_BY_ID[it.id];
-  if(!def)return;
-  S.detailIdx=i;
-  $('dName').textContent=def.n;
-  $('dMeta').textContent=`${CAT[def.c].name} · ${COND_TXT[it.cond]} · ${curEra().n}`;
-  $('dDesc').textContent='“'+def.d+'”';
+ const list=$('bagList');list.innerHTML='';
+ const era=curEra();
+ $('bsEra').textContent='时代 · '+era.n;$('bsEraDesc').textContent=era.d;
+ if(S.bag.length===0){$('bagEmpty').style.display='block';
+  $('bulkBar').classList.remove('on');return;}
+ $('bagEmpty').style.display='none';
+ S.bag.forEach((it,i)=>{
+  const def=ITEM_BY_ID[it.id];if(!def)return;
   const p=priceOf(def,it.cond);
-  $('dPrice').innerHTML=`${p}<small>当前市价</small>`;
-  $('dFav').textContent=it.fav?'取消收藏':'收藏';
-  $('dSell').textContent=p>0?`出售 · ${p} 金`:'出售 · 不值钱';
-  $('dSell').disabled=p<=0;
-  $('detail').classList.add('on');
+  const row=document.createElement('div');
+  row.className='brow'+(S.picked.has(i)?' picked':'');
+  row.innerHTML=(S.bulk?'<span class="ck">'+(S.picked.has(i)?'✓':'')+'</span>':'')+
+   `<span class="dot" style="background:${CAT[def.c].css}"></span>`+
+   `<span class="bn">${def.n}</span>`+
+   `<span class="bc ${it.cond>1?'bad':''}">${COND_TXT[it.cond]}</span>`+
+   `<span class="bp">${p}</span><span class="star">${it.fav?'★':''}</span>`;
+  row.onclick=()=>{
+   if(S.bulk){S.picked.has(i)?S.picked.delete(i):S.picked.add(i);renderBag();}
+   else openDetail(i);
+  };
+  list.appendChild(row);
+ });
+ updateBulkInfo();
+}
+function updateBulkInfo(){
+ let n=0,s=0;
+ S.picked.forEach(i=>{const it=S.bag[i];if(!it)return;
+  n++;s+=priceOf(ITEM_BY_ID[it.id],it.cond);});
+ $('bulkInfo').textContent=`${n} 件 · ${s} 金`;
+ $('bulkSell').disabled=n===0;
+ $('bulkSell').textContent=s>0?`出售 ${s} 金`:'出售';
+}
+$('bsBulk').onclick=()=>{
+ S.bulk=!S.bulk;S.picked.clear();
+ $('bulkBar').classList.toggle('on',S.bulk);
+ $('bsBulk').textContent=S.bulk?'完成':'批量';
+ if(S.bulk)S.bag.forEach((it,i)=>{if(!it.fav&&it.cond<5)S.picked.add(i);});
+ renderBag();
+};
+$('bulkAll').onclick=()=>{
+ const all=S.picked.size===S.bag.length;
+ S.picked.clear();
+ if(!all)S.bag.forEach((it,i)=>{if(it.cond<5)S.picked.add(i);});
+ renderBag();
+};
+$('bulkSell').onclick=()=>{
+ let s=0,n=0;const keep=[];
+ S.bag.forEach((it,i)=>{
+  if(S.picked.has(i)){
+   const p=priceOf(ITEM_BY_ID[it.id],it.cond);
+   if(p>0){s+=p;n++;}
+  }else keep.push(it);
+ });
+ if(n===0)return;
+ S.coins+=s;S.bag=keep;S.picked.clear();
+ SFX.coin();save();toast(`卖出 ${n} 件<b>+${s} 金</b>`,1800);
+ renderBag();updateHud();
+};
+
+/* ===== 详情 + 走势 ===== */
+function openDetail(i){
+ const it=S.bag[i],def=ITEM_BY_ID[it.id];if(!def)return;
+ S.detailIdx=i;
+ $('dName').textContent=def.n;
+ $('dMeta').textContent=`${CAT[def.c].name} · ${COND_TXT[it.cond]} · ${curEra().n}`;
+ $('dDesc').textContent='“'+def.d+'”';
+ const p=priceOf(def,it.cond);
+ $('dPrice').innerHTML=`${p}<small>当前市价</small>`;
+ $('dFav').textContent=it.fav?'取消收藏':'收藏';
+ $('dSell').textContent=p>0?`出售 · ${p} 金`:'出售 · 不值钱';
+ $('dSell').disabled=p<=0;
+ $('detail').classList.add('on');
+ requestAnimationFrame(()=>drawChart(def,it.cond));
+}
+function drawChart(item,cond){
+ const cv=$('dChart'),rect=cv.getBoundingClientRect();
+ if(rect.width<10)return;
+ const dpr=Math.min(devicePixelRatio,2);
+ cv.width=Math.round(rect.width*dpr);cv.height=Math.round(rect.height*dpr);
+ const ctx=cv.getContext('2d');
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+ const W=rect.width,H=rect.height;
+ ctx.clearRect(0,0,W,H);
+ const N=24,ep=epoch(),pts=[];
+ for(let i=N-1;i>=0;i--)pts.push(priceAt(item,cond,ep-i));
+ const mn=Math.min(...pts),mx=Math.max(...pts),span=Math.max(1,mx-mn);
+ const padT=10,padB=14;
+ const X=i=>i*(W/(N-1));
+ const Y=v=>padT+(1-(v-mn)/span)*(H-padT-padB);
+ ctx.strokeStyle='#ffffff10';ctx.lineWidth=1;
+ [0,.5,1].forEach(k=>{const yy=padT+k*(H-padT-padB);
+  ctx.beginPath();ctx.moveTo(0,yy);ctx.lineTo(W,yy);ctx.stroke();});
+ const grad=ctx.createLinearGradient(0,padT,0,H-padB);
+ grad.addColorStop(0,'rgba(230,196,127,.26)');
+ grad.addColorStop(1,'rgba(230,196,127,0)');
+ ctx.beginPath();ctx.moveTo(X(0),Y(pts[0]));
+ for(let i=1;i<N;i++)ctx.lineTo(X(i),Y(pts[i]));
+ ctx.lineTo(W,H-padB);ctx.lineTo(0,H-padB);ctx.closePath();
+ ctx.fillStyle=grad;ctx.fill();
+ const up=pts[N-1]>=pts[0];
+ ctx.beginPath();ctx.moveTo(X(0),Y(pts[0]));
+ for(let i=1;i<N;i++)ctx.lineTo(X(i),Y(pts[i]));
+ ctx.strokeStyle=up?'#8ef2a8':'#ff9a86';ctx.lineWidth=1.6;
+ ctx.lineJoin='round';ctx.stroke();
+ ctx.beginPath();ctx.arc(X(N-1),Y(pts[N-1]),3,0,Math.PI*2);
+ ctx.fillStyle=up?'#8ef2a8':'#ff9a86';ctx.fill();
+ ctx.fillStyle='#5f5548';ctx.font='9px -apple-system,sans-serif';
+ ctx.fillText('24 小时前',0,H-2);
+ ctx.textAlign='right';ctx.fillText('现在',W,H-2);ctx.textAlign='left';
+ $('chHi').textContent=mx;$('chLo').textContent=mn;
+ const d=pts[0]>0?((pts[N-1]-pts[0])/pts[0]*100):0;
+ const el=$('chDelta');
+ el.textContent=(d>=0?'+':'')+d.toFixed(1)+'%';
+ el.style.color=d>=0?'#8ef2a8':'#ff9a86';
 }
 $('dFav').onclick=()=>{
-  const it=S.bag[S.detailIdx];
-  if(!it)return;
-  it.fav=!it.fav;save();
-  $('dFav').textContent=it.fav?'取消收藏':'收藏';
-  renderBag();
+ const it=S.bag[S.detailIdx];if(!it)return;
+ it.fav=!it.fav;save();
+ $('dFav').textContent=it.fav?'取消收藏':'收藏';renderBag();
 };
 $('dSell').onclick=()=>{
-  const i=S.detailIdx,it=S.bag[i];
-  if(!it)return;
-  const def=ITEM_BY_ID[it.id];
-  const p=priceOf(def,it.cond);
-  if(p<=0)return;
-  S.coins+=p;S.bag.splice(i,1);
-  SFX.coin();save();
-  $('detail').classList.remove('on');
-  renderBag();updateUI();
-  toast(`卖了 <b>+${p} 金</b>`,1500);
+ const i=S.detailIdx,it=S.bag[i];if(!it)return;
+ const p=priceOf(ITEM_BY_ID[it.id],it.cond);
+ if(p<=0)return;
+ S.coins+=p;S.bag.splice(i,1);SFX.coin();save();
+ $('detail').classList.remove('on');renderBag();updateHud();
+ toast(`卖了 <b>+${p} 金</b>`,1500);
 };
-$('detail').onclick=e=>{ if(e.target.id==='detail') $('detail').classList.remove('on'); };
+$('detail').onclick=e=>{if(e.target.id==='detail')$('detail').classList.remove('on');};
 
-/* ================= 19. 输入 ================= */
-const ray=new THREE.Raycaster();
-const pv=new THREE.Vector2();
+/* ===== 输入 ===== */
+const ray=new THREE.Raycaster(),pv=new THREE.Vector2();
 function pickObj(ev,cam,root){
-  pv.x=(ev.clientX/innerWidth)*2-1;
-  pv.y=-(ev.clientY/innerHeight)*2+1;
-  ray.setFromCamera(pv,cam);
-  return ray.intersectObjects(root.children,true)[0];
+ pv.x=(ev.clientX/innerWidth)*2-1;
+ pv.y=-(ev.clientY/innerHeight)*2+1;
+ ray.setFromCamera(pv,cam);
+ return ray.intersectObjects(root.children,true)[0];
 }
 renderer.domElement.addEventListener('pointerdown',ev=>{
-  if(S.busy)return;
-  if(S.phase==='box'){
-    const hit=pickObj(ev,camB,boxRoot);
-    if(hit&&hit.object.userData.boxIndex>=0)chooseBox(hit.object.userData.boxIndex);
-  } else if(S.phase==='keys'){
-    const hit=pickObj(ev,camK,keysRoot);
-    if(hit&&hit.object.userData.keyRef){
-      const k=hit.object.userData.keyRef;
-      if(k.dead)return;
-      S.selKey=k.id;
-      S.keys.forEach(x=>x.mat.emissive.setHex(0));
-      k.mat.emissive.setHex(0x261a06);
-      if(!k.viewed&&k.revealUntil===0){
-        k.revealUntil=performance.now()+CFG.viewMs;
-        SFX.lift();msg('记住每个齿比脊线往下多长 —— 只能看这一次');
-      } else {SFX.tap();msg('这把看过了 —— 想重看得花钱');}
-      updateUI();
-    }
+ if(S.busy)return;
+ if(S.phase==='box'){
+  const hit=pickObj(ev,camB,boxRoot);
+  if(hit&&hit.object.userData.boxIndex>=0)chooseBox(hit.object.userData.boxIndex);
+ }else if(S.phase==='keys'){
+  const hit=pickObj(ev,camK,keysRoot);
+  if(hit&&hit.object.userData.keyRef){
+   const k=hit.object.userData.keyRef;
+   if(k.dead)return;
+   S.selKey=k.id;
+   S.keys.forEach(x=>x.mat.emissive.setHex(0));
+   k.mat.emissive.setHex(0x261a06);
+   if(!k.viewed&&k.revealUntil===0){
+    k.revealUntil=performance.now()+CFG.viewMs;
+    SFX.lift();msg('记住每个齿比脊线往下多长 —— 只能看这一次');
+   }else{SFX.tap();msg('这把看过了 —— 想重看得花钱');}
+   updateUI();
   }
+ }
 });
 const tapLayer=$('tapLayer');
 let dragging=false,lastX=0,moved=0;
 tapLayer.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;moved=0;});
 tapLayer.addEventListener('pointermove',e=>{
-  if(!dragging||!S.insp)return;
-  const dx=e.clientX-lastX;lastX=e.clientX;
-  moved+=Math.abs(dx);
-  S.insp.rotTarget+=dx*0.018;
+ if(!dragging||!S.insp)return;
+ const dx=e.clientX-lastX;lastX=e.clientX;
+ moved+=Math.abs(dx);S.insp.rotTarget+=dx*.018;
 });
-tapLayer.addEventListener('pointerup',()=>{
-  dragging=false;
-  if(moved<14)tapStage();
-});
+tapLayer.addEventListener('pointerup',()=>{dragging=false;if(moved<14)tapStage();});
 tapLayer.addEventListener('pointercancel',()=>{dragging=false;});
 
-/* ================= 20. 按钮 ================= */
+/* ===== 按钮 ===== */
 btnA.onclick=()=>{
-  if(S.phase==='box')confirmBox();
-  else if(S.phase==='lock'){S.peeking?peekStop():peekStart();}
-  else if(S.phase==='keys'){
-    toast('弃箱 —— 钱不退',1400);
-    S.busy=true;
-    setTimeout(()=>{S.busy=false;fadeTo(newRound);},700);
-  }
+ if(S.phase==='box')confirmBox();
+ else if(S.phase==='lock'){S.peeking?peekStop():peekStart();}
+ else if(S.phase==='keys'){
+  toast('弃箱 —— 钱不退',1400);S.busy=true;
+  setTimeout(()=>{S.busy=false;fadeTo(newRound);},700);
+ }
 };
 btnB.onclick=()=>{
-  if(S.phase==='box')fadeTo(newRound);
-  else if(S.phase==='lock'){
-    S.busy=true;
-    fadeTo(()=>{S.phase='keys';S.busy=false;
-      msg(`每把钥匙只能看一次 —— 共 ${MODE.keys} 把`);updateUI();});
-  }
-  else if(S.phase==='keys')buyKey();
+ if(S.phase==='box')fadeTo(newRound);
+ else if(S.phase==='lock'){
+  S.busy=true;
+  fadeTo(()=>{S.phase='keys';S.busy=false;
+   msg(`每把钥匙只能看一次 —— 共 ${MODE.keys} 把`);updateUI();});
+ }else if(S.phase==='keys')buyKey();
 };
 btnR.onclick=()=>reviewKey();
 btnC.onclick=()=>bruteForce();
 $('btnTake').onclick=()=>{
-  stageEl.classList.remove('on');
-  S.busy=false;
-  if(S.coins<CFG.price){
-    toast('金币不够了 —— 去背包卖点东西',3200);
-    S.phase='keys';updateUI();
-  } else fadeTo(newRound);
+ stageEl.classList.remove('on');S.busy=false;
+ if(S.coins<CFG.price){toast('金币不够了 —— 去背包卖点东西',3200);
+  S.phase='keys';updateUI();}
+ else fadeTo(newRound);
 };
 $('btnBag').onclick=()=>{SFX.tap();openBag();};
-$('bsClose').onclick=()=>{$('bagScreen').classList.remove('on');renderBag();updateHud();};
+$('bsClose').onclick=()=>{$('bagScreen').classList.remove('on');updateHud();};
 $('btnSet').onclick=()=>{SFX.tap();$('setScreen').classList.add('on');paintModes();};
 $('stClose').onclick=()=>$('setScreen').classList.remove('on');
 $('btnReset').onclick=()=>{
-  if(!confirm('清空所有存档？'))return;
-  localStorage.removeItem(SAVE_KEY);
-  location.reload();
+ if(!confirm('清空所有存档？'))return;
+ localStorage.removeItem(SAVE_KEY);location.reload();
 };
-
-/* ================= 21. 登录 ================= */
-function bootGame(){
-  $('login').classList.remove('on');
-  $('title')&&0;
-  fadeTo(newRound,420);
-}
 $('btnLogin').onclick=()=>{
-  const v=($('nick').value||'').trim()||'守箱人';
-  S.nick=v;save();
-  ac();bootGame();
+ const v=($('nick').value||'').trim()||'守箱人';
+ S.nick=v;save();ac();$('login').classList.remove('on');
+ fadeTo(newRound,420);
 };
-
-/* ================= 22. 难度 ================= */
 function paintModes(){
-  const cur=MODE===MODES.easy?'easy':MODE===MODES.hard?'hard':'nightmare';
-  [...document.querySelectorAll('#modeRow button')].forEach(b=>
-    b.classList.toggle('on',b.dataset.mode===cur));
+ const cur=MODE===MODES.easy?'easy':MODE===MODES.hard?'hard':'nightmare';
+ [...document.querySelectorAll('#modeRow button')].forEach(b=>
+  b.classList.toggle('on',b.dataset.mode===cur));
 }
 [...document.querySelectorAll('#modeRow button')].forEach(b=>{
-  b.onclick=()=>{MODE=MODES[b.dataset.mode];SFX.tap();paintModes();
-    toast(`难度已切换为 <b>${MODE.name}</b><br>下一局生效`,1600);};
+ b.onclick=()=>{MODE=MODES[b.dataset.mode];SFX.tap();paintModes();
+  toast(`难度已切换为 <b>${MODE.name}</b><br>下一局生效`,1600);};
 });
 
-/* ================= 23. 取景 ================= */
+/* ===== 取景 ===== */
 const hudEl=document.getElementById('hud');
 function frameCam(cam,centerY,needH,needW,tIn,bIn){
-  const W=innerWidth,H=innerHeight;
-  const top=tIn!==undefined?tIn:Math.max(0,hudEl.getBoundingClientRect().bottom-6);
-  const bottom=bIn!==undefined?bIn:Math.max(0,H-uiEl.getBoundingClientRect().top+6);
-  const availH=Math.max(160,H-top-bottom);
-  const tv=Math.tan(cam.fov*Math.PI/360);
-  const dV=(needH/2)/(tv*availH/H);
-  const dH=(needW/2)/(tv*cam.aspect);
-  const d=Math.max(dV,dH);
-  const visibleH=2*tv*d;
-  const targetPx=top+availH/2;
-  const shift=(H/2-targetPx)*visibleH/H;
-  const ty=centerY-shift;
-  cam.position.set(0,ty,d);
-  cam.lookAt(0,ty,0);
+ const W=innerWidth,H=innerHeight;
+ const top=tIn!==undefined?tIn:Math.max(0,hudEl.getBoundingClientRect().bottom-6);
+ const bottom=bIn!==undefined?bIn:Math.max(0,H-uiEl.getBoundingClientRect().top+6);
+ const availH=Math.max(160,H-top-bottom);
+ const tv=Math.tan(cam.fov*Math.PI/360);
+ const dV=(needH/2)/(tv*availH/H);
+ const dH=(needW/2)/(tv*cam.aspect);
+ const d=Math.max(dV,dH);
+ const visibleH=2*tv*d;
+ const targetPx=top+availH/2;
+ const shift=(H/2-targetPx)*visibleH/H;
+ const ty=centerY-shift;
+ cam.position.set(0,ty,d);
+ cam.lookAt(0,ty,0);
 }
 function layout(){
-  const W=innerWidth,H=innerHeight;
-  renderer.setSize(W,H,false);
-  if(composer)composer.setSize(W,H);
-  camB.aspect=camK.aspect=camP.aspect=camR.aspect=W/H;
-  camB.updateProjectionMatrix();camK.updateProjectionMatrix();
-  camP.updateProjectionMatrix();camR.updateProjectionMatrix();
-  frameCam(camB,0,3.60,1.55);
-  frameCam(camK,S.keysCenter??-0.26,S.keysNeedH??2.36,1.02);
-  frameCam(camR,0.02,0.92,0.92,150,250);
-  const tv=Math.tan(camP.fov*Math.PI/360);
-  const top=Math.max(0,hudEl.getBoundingClientRect().bottom-6);
-  const bottom=Math.max(0,H-uiEl.getBoundingClientRect().top+6);
-  const availH=Math.max(160,H-top-bottom);
-  const visPeek=2*tv*CAM_P_NEAR;
-  const shiftPx=H/2-(top+availH/2);
-  const lookY=0.128-shiftPx*visPeek/H;
-  camP.position.set(0,lookY,CAM_P_FAR);
-  camP.lookAt(0,lookY,0);
-  camP.userData.lookY=lookY;
+ const W=innerWidth,H=innerHeight;
+ renderer.setSize(W,H,false);
+ if(composer)composer.setSize(W,H);
+ camB.aspect=camK.aspect=camP.aspect=camR.aspect=W/H;
+ camB.updateProjectionMatrix();camK.updateProjectionMatrix();
+ camP.updateProjectionMatrix();camR.updateProjectionMatrix();
+ frameCam(camB,0,3.6,1.55);
+ frameCam(camK,S.keysCenter??-0.26,S.keysNeedH??2.36,1.02);
+ frameCam(camR,0.02,0.92,0.92,150,250);
+ const tv=Math.tan(camP.fov*Math.PI/360);
+ const top=Math.max(0,hudEl.getBoundingClientRect().bottom-6);
+ const bottom=Math.max(0,H-uiEl.getBoundingClientRect().top+6);
+ const availH=Math.max(160,H-top-bottom);
+ const visPeek=2*tv*CAM_P_NEAR;
+ const shiftPx=H/2-(top+availH/2);
+ const lookY=.128-shiftPx*visPeek/H;
+ camP.position.set(0,lookY,CAM_P_FAR);
+ camP.lookAt(0,lookY,0);
+ camP.userData.lookY=lookY;
 }
-addEventListener('resize',()=>{clearTimeout(window.__rz);window.__rz=setTimeout(layout,120);});
+addEventListener('resize',()=>{clearTimeout(window.__rz);
+ window.__rz=setTimeout(layout,120);});
 
-/* ================= 24. 后处理 ================= */
+/* ===== 后处理 ===== */
 let composer=null,rp=null;
 try{
-  const [{EffectComposer},{RenderPass},{UnrealBloomPass},{OutputPass}]=await Promise.all([
-    import('three/addons/postprocessing/EffectComposer.js'),
-    import('three/addons/postprocessing/RenderPass.js'),
-    import('three/addons/postprocessing/UnrealBloomPass.js'),
-    import('three/addons/postprocessing/OutputPass.js')
-  ]);
-  composer=new EffectComposer(renderer);
-  rp=new RenderPass(sceneB,camB);
-  composer.addPass(rp);
-  composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.42,.72,.86));
-  composer.addPass(new OutputPass());
-  composer.setPixelRatio(renderer.getPixelRatio());
-  composer.setSize(innerWidth,innerHeight);
+ const [{EffectComposer},{RenderPass},{UnrealBloomPass},{OutputPass}]=await Promise.all([
+  import('three/addons/postprocessing/EffectComposer.js'),
+  import('three/addons/postprocessing/RenderPass.js'),
+  import('three/addons/postprocessing/UnrealBloomPass.js'),
+  import('three/addons/postprocessing/OutputPass.js')]);
+ composer=new EffectComposer(renderer);
+ rp=new RenderPass(sceneB,camB);
+ composer.addPass(rp);
+ composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.42,.72,.86));
+ composer.addPass(new OutputPass());
+ composer.setPixelRatio(renderer.getPixelRatio());
+ composer.setSize(innerWidth,innerHeight);
 }catch(e){composer=null;console.warn('bloom off',e);}
 
 layout();
 
-/* ================= 25. 主循环 ================= */
+/* ===== 主循环 ===== */
 function tick(){
-  const now=performance.now();
-
-  S.boxes.forEach((b,i)=>{
-    const sel=(S.phase==='box'&&i===S.selBox);
-    b.g.position.z+=((sel?.55:0)-b.g.position.z)*.14;
-    const s=b.g.scale.x+((sel?1.22:1)-b.g.scale.x)*.14;
-    b.g.scale.setScalar(s);
-  });
-
-  if(S.phase==='opening'&&S.boxes[S.selBox]){
-    const lid=S.boxes[S.selBox].g.userData.lid;
-    lid.rotation.x+=(-1.15-lid.rotation.x)*.10;
+ const now=performance.now();
+ S.boxes.forEach((b,i)=>{
+  const sel=(S.phase==='box'&&i===S.selBox);
+  b.g.position.z+=((sel?.55:0)-b.g.position.z)*.14;
+  const s=b.g.scale.x+((sel?1.22:1)-b.g.scale.x)*.14;
+  b.g.scale.setScalar(s);
+ });
+ if(S.phase==='opening'&&S.boxes[S.selBox]){
+  const lid=S.boxes[S.selBox].g.userData.lid;
+  lid.rotation.x+=(-1.15-lid.rotation.x)*.1;
+ }
+ const insp=S.insp;
+ if(insp&&S.phase==='reveal'&&insp.obj){
+  const t=Math.min(1,(now-insp.t0)/420);
+  const e=1-Math.pow(1-t,3);
+  if(!insp.crumbled)
+   insp.obj.scale.setScalar(Math.max(.001,e*(1+.14*Math.sin(t*Math.PI))));
+  insp.obj.position.y=.004+Math.sin(now*.0018)*.008;
+  if(insp.spin>.001){insp.rot+=insp.spin;insp.spin*=.94;insp.rotTarget=insp.rot;}
+  const prev=insp.rot;
+  insp.rot+=(insp.rotTarget-insp.rot)*.17;
+  insp.turn+=Math.abs(insp.rot-prev);
+  insp.obj.rotation.y=insp.rot;
+  if(insp.turn>1.6&&!insp.unlocked){insp.unlocked=true;stHint.textContent='轻 点 收 下';}
+  if(!insp.unlocked)stHint.textContent='转 动 查 看';
+  for(const m of insp.marks){
+   if(m.found)continue;
+   let a=(m.angle+insp.rot)%(Math.PI*2);
+   if(a<0)a+=Math.PI*2;
+   const d=Math.min(a,Math.PI*2-a);
+   if(d<.5){m.found=true;revealCond();}
   }
-
-  const insp=S.insp;
-  if(insp&&S.phase==='reveal'&&insp.obj){
-    const t=Math.min(1,(now-insp.t0)/420);
-    const e=1-Math.pow(1-t,3);
-    if(!insp.crumbled)
-      insp.obj.scale.setScalar(Math.max(.001,e*(1+.14*Math.sin(t*Math.PI))));
-    insp.obj.position.y=.004+Math.sin(now*.0018)*.008;
-
-    if(insp.spin>0.001){
-      insp.rot+=insp.spin;insp.spin*=.94;
-      insp.rotTarget=insp.rot;
-    }
-    const prev=insp.rot;
-    insp.rot+=(insp.rotTarget-insp.rot)*.17;
-    insp.turn+=Math.abs(insp.rot-prev);
-    insp.obj.rotation.y=insp.rot;
-
-    if(insp.turn>1.6&&!insp.unlocked){
-      insp.unlocked=true;
-      stHint.textContent='轻 点 收 下';
-    }
-    if(!insp.unlocked) stHint.textContent='转 动 查 看';
-
-    for(const m of insp.marks){
-      if(m.found)continue;
-      let a=(m.angle+insp.rot)%(Math.PI*2);
-      if(a<0)a+=Math.PI*2;
-      const d=Math.min(a,Math.PI*2-a);
-      if(d<0.50){m.found=true;if(m.mesh)m.mesh.visible=true;revealCond();}
-    }
+ }
+ for(const k of S.keys){
+  if(k.revealUntil&&now>=k.revealUntil){
+   k.revealUntil=0;k.viewed=true;
+   k.mat.color.setHex(0x7d6440);k.mat.roughness=.5;
   }
-
-  for(const k of S.keys){
-    if(k.revealUntil&&now>=k.revealUntil){
-      k.revealUntil=0;k.viewed=true;
-      k.mat.color.setHex(0x7d6440);k.mat.roughness=.5;
-    }
-    const showing=k.revealUntil>0;
-    k.teeth.visible=showing;
-    const target=k.dead?0:(showing?1.2:1);
-    const s=k.g.scale.x+(target-k.g.scale.x)*.2;
-    k.g.scale.setScalar(s);
-    k.g.position.z+=((showing?.18:0)-k.g.position.z)*.18;
-    if(k.dead&&s<.03)k.g.visible=false;
-  }
-
-  const tz2=S.peeking?CAM_P_NEAR:CAM_P_FAR;
-  camP.position.z+=(tz2-camP.position.z)*.12;
-  camP.lookAt(0,camP.userData.lookY??.128,0);
-
-  if(S.peeking&&S.peekUntil){
-    const left=Math.max(0,S.peekUntil-now);
-    peekFill.style.transform=`scaleX(${left/MODE.peek})`;
-    if(left<=0)peekStop();
-  }
-
-  let sc,cm;
-  if(S.phase==='lock'){sc=sceneL;cm=camP;}
-  else if(S.phase==='keys'){sc=sceneK;cm=camK;}
-  else if(S.phase==='reveal'){sc=sceneR;cm=camR;}
-  else {sc=sceneB;cm=camB;}
-
-  if(composer){rp.scene=sc;rp.camera=cm;composer.render();}
-  else renderer.render(sc,cm);
-
-  requestAnimationFrame(tick);
+  const showing=k.revealUntil>0;
+  k.teeth.visible=showing;
+  const target=k.dead?0:(showing?1.2:1);
+  const s=k.g.scale.x+(target-k.g.scale.x)*.2;
+  k.g.scale.setScalar(s);
+  k.g.position.z+=((showing?.18:0)-k.g.position.z)*.18;
+  if(k.dead&&s<.03)k.g.visible=false;
+ }
+ const tz2=S.peeking?CAM_P_NEAR:CAM_P_FAR;
+ camP.position.z+=(tz2-camP.position.z)*.12;
+ camP.lookAt(0,camP.userData.lookY??.128,0);
+ if(S.peeking&&S.peekUntil){
+  const left=Math.max(0,S.peekUntil-now);
+  peekFill.style.transform=`scaleX(${left/MODE.peek})`;
+  if(left<=0)peekStop();
+ }
+ let sc,cm;
+ if(S.phase==='lock'){sc=sceneL;cm=camP;}
+ else if(S.phase==='keys'){sc=sceneK;cm=camK;}
+ else if(S.phase==='reveal'){sc=sceneR;cm=camR;}
+ else {sc=sceneB;cm=camB;}
+ if(composer){rp.scene=sc;rp.camera=cm;composer.render();}
+ else renderer.render(sc,cm);
+ requestAnimationFrame(tick);
 }
 
-/* ================= 26. 启动 ================= */
-buildPins(4);buildObstruction(0);
+buildPins(4);obClear();
 const hasSave=load();
-newRound();
-S.phase='title';
-uiEl.style.display='none';
-if(hasSave){
-  $('nick').value=S.nick;
-  $('btnLogin').textContent='继 续';
-}
+newRound();S.phase='title';uiEl.style.display='none';
+if(hasSave){$('nick').value=S.nick;$('btnLogin').textContent='继 续';}
 $('login').classList.add('on');
 tick();
 setInterval(updateHud,30000);
-setTimeout(()=>$('boot').classList.add('off'),500);
-</script>
-</body>
-</html>

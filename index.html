@@ -3995,51 +3995,36 @@ updateHud();
 
   setInterval(killGuide, 800);
 })();   
-setTimeout(function(){
-  var d=document.createElement('div');
-  d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#0b0b0b;color:#0f0;font:9px/1.35 monospace;padding:8px;white-space:pre;overflow:auto;display:none';
-  d.onclick=function(){ d.style.display='none'; };
-  document.body.appendChild(d);
-
-  function tree(el,depth){
-    var s='';
-    for(var i=0;i<el.children.length;i++){
-      var c=el.children[i], cls='', oc='';
-      try{ cls=(typeof c.className==='string'&&c.className)?'.'+c.className.trim().split(/\s+/).join('.'):''; }catch(e){}
-      var txt=(c.children.length===0)?(c.textContent||'').trim().slice(0,14):'';
-      if(c.onclick) oc=' [onclick]';
-      s+=new Array(depth+1).join('  ')+c.tagName+(c.id?'#'+c.id:'')+cls+(txt?' "'+txt+'"':'')+oc+'\n';
-      if(depth<5) s+=tree(c,depth+1);
+(function(){
+  var b=document.createElement('div');
+  b.textContent='抓结构';
+  b.style.cssText='position:fixed;top:6px;left:6px;z-index:2147483646;background:#0f0;color:#000;font:12px/1 sans-serif;padding:6px 8px;border-radius:6px;font-weight:700';
+  b.onclick=function(){
+    var d=document.getElementById('__dump');
+    if(!d){
+      d=document.createElement('div'); d.id='__dump';
+      d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#0b0b0b;color:#0f0;font:9px/1.3 monospace;padding:8px;white-space:pre;overflow:auto';
+      d.onclick=function(){ d.style.display='none'; };
+      document.body.appendChild(d);
     }
-    return s;
-  }
-
-  var done=false;
-  var iv=setInterval(function(){
-    if(done) return;
-    var els=document.querySelectorAll('div,span'), lab=null;
-    for(var i=0;i<els.length;i++){
-      var t=(els[i].textContent||'').trim();
-      if(t.indexOf('推理难度')>=0){ if(!lab||els[i].children.length<lab.children.length) lab=els[i]; }
-    }
-    if(!lab) return;
-    var p=lab;
-    for(var q=0;q<8&&p.parentElement;q++){
-      p=p.parentElement;
-      if((p.textContent||'').indexOf('图鉴')>=0) break;
-    }
-    done=true; clearInterval(iv);
-    var out='v36 结构\n\n'+tree(p,0)+'\n--- onclick 列表 ---\n';
-    var all=p.querySelectorAll('*');
-    for(var j=0;j<all.length;j++){
-      if(all[j].onclick){
-        out+='['+all[j].tagName+' .'+all[j].className+'] "'+(all[j].textContent||'').trim().slice(0,10)+'" => '+String(all[j].onclick).slice(0,70).replace(/\n/g,' ')+'\n';
+    function tree(el,depth,maxd){
+      var s='';
+      for(var i=0;i<el.children.length;i++){
+        var c=el.children[i];
+        if(c===b || c.id==='__dump') continue;
+        var cls='';
+        try{ cls=(typeof c.className==='string'&&c.className)?'.'+c.className.trim().split(/\s+/).join('.'):''; }catch(e){}
+        var txt=(c.children.length===0)?(c.textContent||'').trim().slice(0,16):'';
+        s+=new Array(depth+1).join('  ')+c.tagName+(c.id?'#'+c.id:'')+cls+(txt?' "'+txt+'"':'')+(c.onclick?' [oc]':'')+'\n';
+        if(depth<maxd) s+=tree(c,depth+1,maxd);
       }
+      return s;
     }
-    d.textContent=out;
+    d.textContent='v37 body结构\n'+tree(document.body,0,4);
     d.style.display='block';
-  },800);
-},600);  
+  };
+  document.body.appendChild(b);
+})();  
 </script>
 </body>
 </html>

@@ -4463,6 +4463,47 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   setTimeout(restoreKeys,600);
   setInterval(restoreKeys,1500);
 })();
+/* ===== 黑曜石：10 次保底 + 藏品价值 2~10 倍 ===== */
+(function(){
+
+  /* 1) 价值倍率（按稀有度递增：2/3/5/7/10 倍） */
+  var OMUL={obsMask:2,obsDagger:3,obsBoard:5,obsCup:7,obsEye:10};
+  try{
+    OBS_ITEMS.forEach(function(it){
+      if(OMUL[it.id]) it.b=Math.round(it.b*OMUL[it.id]);
+    });
+  }catch(e){}
+
+  /* 2) 10 次必出 */
+  var KEY='keyhole_obs_pity_v1';
+  function getPity(){ return +(localStorage.getItem(KEY)||0); }
+  function setPity(v){ try{localStorage.setItem(KEY,String(v));}catch(e){} }
+
+  try{
+    var _rl=rollLoot;
+    rollLoot=function(tier){
+      var out=_rl.apply(this,arguments);
+      try{
+        if(tier && tier.special==='obsidian'){
+          var has=false;
+          for(var i=0;i<out.length;i++){
+            if(out[i] && out[i].kind==='item' && out[i].item && out[i].item.uniq){has=true;break;}
+          }
+          var n=getPity()+1;
+          if(!has && n>=10){
+            var it=OBS_ITEMS[rnd(OBS_ITEMS.length)];
+            out[out.length-1]={kind:'item',item:it,cond:1};
+            n=0;
+            try{toast('黑曜石保底触发：<b>'+it.n+'</b>',2200);}catch(e){}
+          }
+          setPity(has?0:n);
+        }
+      }catch(e){}
+      return out;
+    };
+  }catch(e){}
+
+})();  
 </script>
 </body>
 </html>

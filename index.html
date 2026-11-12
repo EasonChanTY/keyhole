@@ -3843,21 +3843,27 @@ updateHud();
 })();  
 setTimeout(function(){
   var L=[];
-  function T(n){ try{ return eval('typeof '+n); }catch(e){ return 'X'; } }
-  var cand=['roll','pick','weightedPick','wrand','randCat','catRoll','catOf','pickQuality','rollQuality','quality','grade','tier','pickTier','randTier','loot','genLoot','makeLoot','openBox','openChest','openIt','reveal','buildBox','spawnItem','mkItem','itemOf','dropItem','drop','chance','weighted','drawCat','drawItem','rndItem','randomItem','generateItem','createItem','rollLoot','lootRoll','catPick','pickCatBy'];
-  var found=[];
-  for(var i=0;i<cand.length;i++){ if(T(cand[i])==='function') found.push(cand[i]); }
-  L.push('★候选函数: '+(found.length?found.join(', '):'（一个都没有）'));
-  try{ L.push('CAT键: '+Object.keys(CAT).join(',')); }catch(e){}
-  try{ L.push('MODES键: '+Object.keys(MODES).join(',')); }catch(e){}
-  try{ L.push('S键: '+Object.keys(S).join(',')); }catch(e){}
-  var ks=['addXp','xpNeed','priceAt','freeHours'];
-  for(var j=0;j<ks.length;j++){
-    try{ if(eval('typeof '+ks[j])==='function'){ L.push('\n===== '+ks[j]+' =====\n'+eval(ks[j]).toString()); } }catch(e){}
+  function SRC(n,max){
+    try{
+      if(eval('typeof '+n)==='function'){
+        var s=eval(n).toString();
+        return '\n===== '+n+' =====\n'+(s.length>max?s.slice(0,max)+'\n...[后略]':s);
+      }
+    }catch(e){}
+    return '\n===== '+n+' ===== 不存在';
   }
+  L.push('模式变量探测: ');
+  var mv=['mode','MODE','curMode','difficulty','diff','level','LV','DIFF'];
+  var hit=[];
+  for(var i=0;i<mv.length;i++){ try{ var t=eval('typeof '+mv[i]); if(t!=='undefined') hit.push(mv[i]+'('+t+')'); }catch(e){} }
+  L.push(hit.length?hit.join(', '):'（无同名变量）');
+  L.push(SRC('pickTier',700));
+  L.push(SRC('drawItem',700));
+  L.push(SRC('rollLoot',450));
+  L.push(SRC('lvBonus',200));
   var d=document.createElement('div');
   d.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;z-index:2147483647;background:#0b0b0b;color:#0f0;font:10px/1.45 monospace;padding:10px;white-space:pre-wrap;word-break:break-all;overflow:auto;-webkit-overflow-scrolling:touch';
-  d.textContent='v26诊断 —— 点任意处关闭\n\n'+L.join('\n');
+  d.textContent='v27诊断 —— 点任意处关闭\n'+L.join('\n');
   d.addEventListener('click',function(){ d.style.display='none'; });
   (document.body||document.documentElement).appendChild(d);
 },800);

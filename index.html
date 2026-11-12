@@ -2926,6 +2926,550 @@ confirmBox=function(){
  updateUI();
  updateHud();
 })();  
+/* ===== 补丁 v18：十大时代 / 暗市 / 黑暗物件 / 新危险物 / 推理难度 ===== */
+
+/* ---------- ① 十大时代 + 30 分钟轮换 ---------- */
+const SLOT=1800000;
+const slotNow=function(){return Math.floor(Date.now()/SLOT);};
+
+ERAS.length=0;
+ERAS.push(
+{n:'收藏热',m:{junk:.6,curio:1,antique:1.6,gem:1.3,relic:1.4},
+ d:'全城都在收老物件，街角全是鉴宝摊。'},
+{n:'大萧条',m:{junk:1.8,curio:.7,antique:.6,gem:.45,relic:.7},
+ d:'面包比宝石好使，旧铁器反而有人抢。'},
+{n:'镀金年代',m:{junk:.8,curio:1,antique:1.1,gem:1.9,relic:1.2},
+ d:'人人都想在领口别点什么，珠宝翻着倍涨。'},
+{n:'战乱',m:{junk:2.2,curio:.9,antique:.5,gem:.35,relic:.6},
+ d:'一只空罐头也能换一天粮。值钱的东西全成了累赘。'},
+{n:'考古热',m:{junk:.5,curio:1.1,antique:2.2,gem:1,relic:1.6},
+ d:'博物馆到处收东西，越旧越贵。'},
+{n:'复古潮',m:{junk:1.4,curio:1.8,antique:1.2,gem:.9,relic:1},
+ d:'年轻人开始收集旧东西，纽扣弹珠都成宝贝。'},
+{n:'平淡日子',m:{junk:1,curio:1,antique:1,gem:1,relic:1},
+ d:'没什么可炒的，一切按常理出价。'},
+{n:'拍卖狂热',m:{junk:1.6,curio:1.8,antique:2.0,gem:2.4,relic:2.6},
+ d:'槌声不停，什么都能拍出天价。'},
+{n:'熔炉时代',m:{junk:.5,curio:.45,antique:.4,gem:.35,relic:.3},
+ d:'东西都被扔进炉子，没人再要艺术品。'},
+{n:'暗市',m:{junk:.7,curio:.8,antique:.9,gem:1.1,relic:1.2},
+ d:'灯下不看的交易。只有这里收那些不该存在的东西。',dark:true}
+);
+
+eraAt=function(x){
+ const cur=slotNow();
+ const slot=(Math.abs(x-epoch())<1)?cur:Math.floor(x*2);
+ if(slot%6===0)return ERAS[9];          // 每 3 小时必开暗市
+ const i=Math.floor(hash('era'+slot)*9);
+ return ERAS[Math.min(i,8)];
+};
+
+/* ---------- ② 黑暗物件：只在暗市能卖，价格随机 ---------- */
+CAT.dark={name:'黑暗',css:'#8b5cf6'};
+
+const _priceAt=priceAt;
+priceAt=function(item,cond,ep){
+ if(item&&item.dark){
+  const era=eraAt(ep);
+  if(!era.dark)return 0;
+  const r=hash(item.id+'|dk|'+ep);
+  return Math.max(80,Math.round(item.b*(0.5+r*2.8)));
+ }
+ return _priceAt(item,cond,ep);
+};
+
+function giveDark(){
+ const A=['锈蚀的','无声的','失名的','潮湿的','低语的','无面的','逆光的','缄默的','残缺的','沉睡的'];
+ const N=['铜铃','指骨','镜片','沙漏','锁芯','怀表','齿轮','瞳孔','钥匙','铃舌'];
+ const F=['边缘有一道被反复摩挲出的凹槽','表面浮着一层擦不掉的白霜',
+  '内部偶尔传来极轻的一声响','名字被人用刀刮掉了',
+  '在暗处会微微发热','缺了一角，缺口是圆的',
+  '摸上去比周围凉几度','有一道裂纹，但从不变大'];
+ const id='dark_'+Date.now()+'_'+rnd(99999);
+ const item={id:id,n:A[rnd(A.length)]+N[rnd(N.length)],t:5,c:'dark',
+  b:120+rnd(420),dark:true,d:F[rnd(F.length)]+'。来历不明。'};
+ ITEMS.push(item);
+ ITEM_BY_ID[id]=item;
+ S.bag.push({id:id,cond:1,fav:true,t:Date.now()});
+ save();
+ toast('推理奖励：<b>'+item.n+'</b><br>只能在「暗市」出手',2600);
+}
+
+/* ---------- ③ 新危险物：放射性 / 图钉 ---------- */
+MED.radiation=45;
+MED.tack=5;
+EVT_NAME.radiation='放射性物质';
+EVT_NAME.tack='小图钉';
+
+const _mem=makeEventMesh;
+makeEventMesh=function(ev){
+ if(ev==='radiation'){
+  const g=new THREE.Group();
+  const c=new THREE.Mesh(new THREE.CylinderGeometry(.042,.042,.078,20),
+   new THREE.MeshStandardMaterial({color:0x2f3a22,metalness:.5,roughness:.5}));
+  c.position.y=.039;g.add(c);
+  const cap=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.016,12),MAT.brass);
+  cap.position.y=.086;g.add(cap);
+  const gl=new THREE.Mesh(new THREE.PlaneGeometry(.055,.055),
+   new THREE.MeshBasicMaterial({color:0x7dff4a,transparent:true,opacity:.75,
+    blending:THREE.AdditiveBlending,depthWrite:false}));
+  gl.position.set(0,.045,.044);g.add(gl);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(.02,.003,8,16),MAT.brass);
+  ring.position.set(0,.045,.043);g.add(ring);
+  return g;
+ }
+ if(ev==='tack'){
+  const g=new THREE.Group();
+  const head=new THREE.Mesh(new THREE.CylinderGeometry(.024,.026,.008,18),MAT.silver);
+  head.position.y=.028;g.add(head);
+  const pin=new THREE.Mesh(new THREE.ConeGeometry(.005,.026,8),MAT.silver);
+  pin.rotation.x=Math.PI;pin.position.y=.012;g.add(pin);
+  return g;
+ }
+ return _mem(ev);
+};
+
+const _re=resolveEvent;
+resolveEvent=function(insp){
+ if(!insp||insp.resolved||insp!==S.insp)return;
+ const ev=insp.entry.ev;
+ if(ev==='radiation'){
+  insp.resolved=true;
+  S.coins=Math.max(0,S.coins-MED.radiation);
+  SFX.sting();haptic([90,60,160,60,200]);flash(6);
+  addMk('辐射灼伤 −'+MED.radiation);
+  toast('放射性物质泄漏<b>医药费 −'+MED.radiation+'</b>',2400);
+  updateHud();save();
+  return;
+ }
+ if(ev==='tack'){
+  insp.resolved=true;
+  S.coins=Math.max(0,S.coins-MED.tack);
+  SFX.sting();haptic(20);
+  addMk('扎了一下 −'+MED.tack);
+  toast('盒底有枚小图钉<b>−'+MED.tack+' 金</b>',1600);
+  updateHud();save();
+  return;
+ }
+ _re(insp);
+};
+
+const _rl=rollLoot;
+rollLoot=function(tier){
+ const out=_rl(tier);
+ for(var i=0;i<out.length;i++){
+  if(out[i].kind==='evt'&&out[i].ev!=='oil'&&out[i].ev!=='nest'){
+   var r=Math.random();
+   if(r<.14)out[i].ev='radiation';
+   else if(r<.34)out[i].ev='tack';
+  }
+ }
+ return out;
+};
+
+/* ---------- ④ 噩梦遮挡减弱 ---------- */
+const _obAdd=obAdd;
+obAdd=function(kind){
+ if(kind==='plate'){
+  const b=new THREE.Mesh(new THREE.BoxGeometry(.11,.20,.010),MAT.rust);
+  b.position.set(-.085,-.06,0);b.rotation.z=.22;obRoot.add(b);
+  return;
+ }
+ if(kind==='cloth'){
+  const pl=new THREE.Mesh(new THREE.PlaneGeometry(.12,.20,3,4),MAT.cloth);
+  const pos=pl.geometry.attributes.position;
+  for(var i=0;i<pos.count;i++){
+   pos.setZ(i,Math.sin(pos.getY(i)*22)*.006);
+  }
+  pos.needsUpdate=true;pl.geometry.computeVertexNormals();
+  pl.position.set(-.055,.02,-.02);pl.rotation.z=.45;obRoot.add(pl);
+  return;
+ }
+ if(kind==='grime'){
+  const cv=document.createElement('canvas');cv.width=cv.height=128;
+  const x=cv.getContext('2d');
+  for(var k=0;k<34;k++){
+   var gx=Math.random()*128,gy=Math.random()*128,rr2=8+Math.random()*22;
+   var g2=x.createRadialGradient(gx,gy,0,gx,gy,rr2);
+   g2.addColorStop(0,'rgba(28,16,6,.28)');g2.addColorStop(1,'rgba(28,16,6,0)');
+   x.fillStyle=g2;x.beginPath();x.arc(gx,gy,rr2,0,Math.PI*2);x.fill();
+  }
+  const pl2=new THREE.Mesh(new THREE.PlaneGeometry(.36,.42),
+   new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,
+    opacity:.5,depthWrite:false}));
+  pl2.position.set(0,.02,-.025);obRoot.add(pl2);
+  return;
+ }
+ _obAdd(kind);
+};
+
+/* ---------- ⑤ 推理模式独立难度 ---------- */
+let LOGIC_LV=0;
+(function(){
+ const setList=document.getElementById('setList');
+ const lab=document.createElement('div');
+ lab.className='lab';lab.style.marginTop='14px';lab.textContent='推 理 难 度';
+ const row=document.createElement('div');
+ row.className='mrow';row.id='logicRow';
+ row.innerHTML='<button data-l="0" class="on">简单</button>'+
+  '<button data-l="1">困难</button><button data-l="2">噩梦</button>';
+ setList.insertBefore(row,setList.lastElementChild);
+ setList.insertBefore(lab,row);
+ [].slice.call(row.querySelectorAll('button')).forEach(function(b){
+  b.onclick=function(){
+   LOGIC_LV=+b.dataset.l;
+   [].slice.call(row.querySelectorAll('button')).forEach(function(x){
+    x.classList.remove('on');
+   });
+   b.classList.add('on');
+   toast('推理难度：'+b.textContent+'<br>下一局生效',1500);
+  };
+ });
+})();
+
+const _bk4=buildKeys;
+buildKeys=function(swan,n){
+ if(!MODE.logic){ _bk4(swan,n); return; }
+
+ clearGroup(keysRoot);
+ const lock=S.lock;
+ const K=[6,7,8][LOGIC_LV];
+ const nClue=[2,1,1][LOGIC_LV];
+ const vi=rnd(4);
+ const codes=[lock.slice()];
+ var guard=0,c,i;
+
+ const sameWant=Math.min(3,K-3);
+ while(codes.length-1<sameWant&&guard++<900){
+  c=lock.slice();
+  for(i=0;i<4;i++) if(i!==vi) c[i]=rnd(5);
+  if(same(c,lock))continue;
+  if(codes.some(function(x){return same(x,c);}))continue;
+  codes.push(c);
+ }
+ guard=0;
+ while(codes.length<K&&guard++<1400){
+  c=lock.slice();
+  var v=rnd(5);
+  if(v===lock[vi])v=(v+1+rnd(4))%5;
+  c[vi]=v;
+  if(codes.some(function(x){return same(x,c);}))continue;
+  codes.push(c);
+ }
+
+ const pool=codes.filter(function(x){return x[vi]===lock[vi];});
+ var set=pickClueSet(pool,lock);
+ if(nClue===1)set=[set[0]];
+
+ S.logicVi=vi;
+ S.logicClues=set;
+ S.logicSolo=null;
+ S.logicSurv=codes.filter(function(x){
+  if(x[vi]!==lock[vi])return false;
+  return set.every(function(s){return s.test(x);});
+ });
+
+ for(var q=codes.length-1;q>0;q--){
+  var j2=rnd(q+1),tt=codes[q];codes[q]=codes[j2];codes[j2]=tt;
+ }
+ S.keys=codes.map(function(code,k){
+  var g=makeKey(code);
+  g.position.set((Math.random()-.5)*.62,
+                 .52-k*.28+(Math.random()-.5)*.14,
+                 -.04+k*.015);
+  g.rotation.z=(Math.random()-.5)*.85;
+  g.rotation.x=(Math.random()-.5)*.20;
+  keysRoot.add(g);
+  var obj={g:g,id:k,code:code,teeth:g.userData.teeth,mat:g.userData.mat,
+   viewed:true,revealUntil:Infinity,dead:false};
+  g.traverse(function(o){o.userData.keyRef=obj;});
+  return obj;
+ });
+ S.keysCenter=0.02;
+ S.keysNeedH=3.1;
+ layout();
+};
+
+/* ---------- ⑥ 推理开完箱：掉黑暗物件 ---------- */
+const _ss=showSummary;
+showSummary=function(exploded){
+ if(MODE.logic&&!exploded&&!S.darkGiven&&Math.random()<0.6){
+  S.darkGiven=true;
+  giveDark();
+ }
+ _ss(exploded);
+};
+
+/* ---------- ⑦ 详情页：黑暗物件的说明 ---------- */
+const _od=openDetail;
+openDetail=function(i){
+ _od(i);
+ const it=S.bag[i];
+ const def=it&&ITEM_BY_ID[it.id];
+ if(!def||!def.dark)return;
+ const card=document.querySelector('#detail .card');
+ const old=document.getElementById('darkNote');
+ if(old)old.remove();
+ const p=priceOf(def,it.cond);
+ const d=document.createElement('div');
+ d.id='darkNote';
+ d.style.cssText='margin-top:12px;padding:11px 13px;border-radius:11px;'+
+  'background:#1c1420;border:1px solid #8b5cf655;font-size:11px;'+
+  'color:#b8a6c8;line-height:1.85';
+ d.innerHTML='◆ <b style="color:#b98cff">黑暗物件</b> · 独一无二<br>'+
+  '<span style="color:#7a6a86">'+(p>0
+   ?'暗市正开着，现在能卖 '+p+' 金。'
+   :'现在没人收这个。等「暗市」开市才能出手。')+'</span>';
+ card.insertBefore(d,card.querySelector('.drow'));
+ if(p<=0){
+  const sb=document.getElementById('dSell');
+  sb.textContent='暗市未开 · 无法出手';
+  sb.disabled=true;
+ }
+};
+
+/* ---------- ⑧ HUD：30 分钟倒计时 ---------- */
+updateHud=function(){
+ hCoins.textContent=S.coins;
+ bagCount.textContent=S.bag.length;
+ var d='';
+ for(var i=0;i<CFG.oilMax;i++)d+=(i<S.oil?'●':'○');
+ hOil.innerHTML='灯油 <span style="color:#e6c47f;letter-spacing:1.5px">'+d+
+  '</span> <span style="color:#6f6558">'+S.oil+'/'+CFG.oilMax+'</span>';
+ var era=curEra();
+ btnEra.textContent='时代 · '+era.n+(era.dark?' ★':'')+' ›';
+ hLeft.textContent='时代 '+Math.ceil((SLOT-(Date.now()%SLOT))/60000)+' 分后变';
+};
+
+/* ---------- ⑨ 时代面板补充说明 ---------- */
+const _oe=openEra;
+openEra=function(){
+ _oe();
+ const b=document.getElementById('esBody');
+ if(!b)return;
+ b.innerHTML=b.innerHTML
+  .replace('时代每 4 小时换一次','时代每 30 分钟换一次（每 3 小时必开一次暗市）')
+  .replace('偶尔会出现暴涨或暴跌（极低概率的十倍天价）。',
+   '偶尔会出现暴涨或暴跌（极低概率的十倍天价）。<br>'+
+   '黑暗物件只有在「暗市」才能出手，价格每次不同。');
+};
+
+/* ---------- ⑩ 清场 ---------- */
+S.darkGiven=false;
+updateHud();
+/* ===== 补丁 v19：图鉴（见过才显示） ===== */
+
+const CXK='keyhole_codex_v1';
+let CX={era:{},item:{},evt:{},mode:{}};
+try{const d=JSON.parse(localStorage.getItem(CXK)||'null');if(d)CX=Object.assign(CX,d);}catch(e){}
+function cxSave(){try{localStorage.setItem(CXK,JSON.stringify(CX));}catch(e){}}
+function cxMark(kind,key){
+ if(!key)return;
+ if(!CX[kind])CX[kind]={};
+ if(CX[kind][key])return;
+ CX[kind][key]=1;
+ cxSave();
+}
+
+/* ---------- 图鉴用到的说明表 ---------- */
+const EVT_DESC={
+ scorpion:'箱底藏着毒蝎子。被蜇后要付医药费。',
+ sulfur:'一瓶不稳定的硫磺，开盖就炸。',
+ bomb:'炸弹。出现即全废，还要赔钱。',
+ radiation:'放射性物质。所有危险物里最痛的一种。',
+ tack:'盒底一枚小图钉。只疼一下。',
+ oil:'箱底的备用灯油，可以多看几次锁孔。',
+ nest:'箱中箱。开完这一箱还能再开一只。'
+};
+const EVT_COST_TXT={
+ scorpion:'−'+MED.scorpion+' 金',
+ sulfur:'−'+MED.sulfur+' 金',
+ bomb:'−'+MED.bomb+' 金 · 本箱全废',
+ radiation:'−'+MED.radiation+' 金',
+ tack:'−'+MED.tack+' 金',
+ oil:'灯油 +2',
+ nest:'再开一只箱子'
+};
+const MODE_DESC={
+ easy:'4 根锁芯，窥视 5 秒，锁孔无遮挡，5 把钥匙。',
+ hard:'5 根锁芯，窥视 3.6 秒，锁孔 1 种遮挡，6 把钥匙。',
+ nightmare:'6 根锁芯，窥视 2.4 秒，锁孔 2 种遮挡，7 把钥匙。',
+ logic:'没有时间限制。只看得清 1 根锁芯，其余靠线索推理。只有一次机会，猜错作废。'
+};
+const LV_DESC={
+ 'L0':'推理 · 简单：6 把钥匙，2 条线索。',
+ 'L1':'推理 · 困难：7 把钥匙，只有 1 条线索。',
+ 'L2':'推理 · 噩梦：8 把钥匙，1 条线索，候选更多。'
+};
+
+/* ---------- 自动记录 ---------- */
+const _di2=drawItem;
+drawItem=function(entry){
+ if(entry){
+  if(entry.kind==='item'&&entry.item)cxMark('item',entry.item.id);
+  if(entry.kind==='evt'&&entry.ev)cxMark('evt',entry.ev);
+ }
+ _di2(entry);
+};
+const _nr2=newRound;
+newRound=function(){
+ cxMark('mode',(MODE&&MODE.key)||'easy');
+ if(MODE&&MODE.logic)cxMark('mode','L'+LOGIC_LV);
+ _nr2();
+};
+setInterval(function(){
+ try{cxMark('era',curEra().n);}catch(e){}
+},8000);
+
+/* ---------- 面板 ---------- */
+(function(){
+ const p=document.createElement('section');
+ p.id='cxScreen';
+ p.className='panel';
+ p.innerHTML='<div class="phead"><h2 style="letter-spacing:.3em">图 鉴</h2>'+
+  '<div class="sp"></div><button id="cxClose">关闭</button></div>'+
+  '<div class="mrow" id="cxTabs" style="margin-bottom:12px">'+
+  '<button data-t="era" class="on">时代</button>'+
+  '<button data-t="item">物品</button>'+
+  '<button data-t="evt">危险</button>'+
+  '<button data-t="mode">玩法</button></div>'+
+  '<div id="cxBody" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>';
+ document.body.appendChild(p);
+
+ const setList=document.getElementById('setList');
+ const lab=document.createElement('div');
+ lab.className='lab';lab.style.marginTop='16px';lab.textContent='收 藏';
+ const row=document.createElement('div');
+ row.className='mrow';
+ row.innerHTML='<button id="btnCodex">图鉴</button>';
+ setList.insertBefore(row,setList.lastElementChild);
+ setList.insertBefore(lab,row);
+
+ let tab='era';
+
+ function head(title,txt){
+  return '<div style="display:flex;justify-content:space-between;align-items:baseline;'+
+   'margin:4px 0 10px"><span style="font-size:10px;letter-spacing:.22em;color:#7d7266">'+
+   title+'</span><span style="font-size:10.5px;color:#5f5548">'+txt+'</span></div>';
+ }
+ function locked(label){
+  return '<div class="brow" style="margin-bottom:7px;opacity:.55">'+
+   '<span class="dot" style="background:#2a241c"></span>'+
+   '<span class="bn" style="color:#5f5548">？？？</span>'+
+   '<span class="bc">'+label+'</span></div>';
+ }
+ function open1(dotColor,title,tag,desc){
+  return '<div style="margin-bottom:10px;padding:11px 13px;border-radius:12px;'+
+   'background:#16121099;border:1px solid #ffffff10">'+
+   '<div style="display:flex;align-items:center;gap:9px">'+
+   '<span class="dot" style="background:'+dotColor+'"></span>'+
+   '<span style="flex:1;font-size:14px;color:#ddd2c0">'+title+'</span>'+
+   '<span style="font-size:10.5px;color:#8f8270">'+tag+'</span></div>'+
+   '<div style="font-size:11.5px;color:#8c7e69;line-height:1.8;margin-top:6px">'+
+   desc+'</div></div>';
+ }
+
+ function render(){
+  const body=document.getElementById('cxBody');
+  let h='';
+
+  if(tab==='era'){
+   let n=0;
+   ERAS.forEach(function(e){ if(CX.era[e.n])n++; });
+   h+=head('时 代',n+' / '+ERAS.length);
+   ERAS.forEach(function(e){
+    if(CX.era[e.n]){
+     h+=open1(e.dark?'#8b5cf6':'#e6c47f',e.n,e.dark?'暗市':'已见过',e.d);
+    }else{
+     h+=locked('尚未经历');
+    }
+   });
+  }else if(tab==='item'){
+   const list=ITEMS.filter(function(x){return !x.dark;});
+   let n=0;
+   list.forEach(function(x){ if(CX.item[x.id])n++; });
+   h+=head('物 品',n+' / '+list.length);
+   ['junk','curio','antique','gem','relic'].forEach(function(c){
+    h+='<div style="font-size:10px;letter-spacing:.2em;color:#7d7266;'+
+     'margin:14px 0 8px">'+CAT[c].name+'</div>';
+    list.filter(function(x){return x.c===c;}).forEach(function(x){
+     if(CX.item[x.id]){
+      h+=open1(CAT[c].css,x.n,'基础价 '+x.b,x.d);
+     }else{
+      h+=locked(CAT[c].name);
+     }
+    });
+   });
+   h+='<div style="font-size:10px;letter-spacing:.2em;color:#7d7266;'+
+    'margin:14px 0 8px">黑 暗 物 件</div>';
+   const anyDark=Object.keys(CX.item).some(function(k){return k.indexOf('dark_')===0;});
+   h+= anyDark
+    ? open1('#8b5cf6','黑暗物件','推理专属',
+      '只在推理模式掉落，每一件都有独一无二的名字和瑕疵。'+
+      '普通时代卖不掉，只能在「暗市」出手，价格每次不同。')
+    : locked('推理模式');
+  }else if(tab==='evt'){
+   const keys=Object.keys(EVT_NAME);
+   let n=0;
+   keys.forEach(function(k){ if(CX.evt[k])n++; });
+   h+=head('危 险 物',n+' / '+keys.length);
+   keys.forEach(function(k){
+    if(CX.evt[k]){
+     const bad=(k!=='oil'&&k!=='nest');
+     h+=open1(bad?'#c0453a':'#4faf7a',EVT_NAME[k],EVT_COST_TXT[k],EVT_DESC[k]);
+    }else{
+     h+=locked('尚未遇到');
+    }
+   });
+  }else{
+   const rows=[
+    ['mode','easy','开箱 · 简单'],
+    ['mode','hard','开箱 · 困难'],
+    ['mode','nightmare','开箱 · 噩梦'],
+    ['mode','logic','推理模式'],
+    ['mode','L0','推理 · 简单'],
+    ['mode','L1','推理 · 困难'],
+    ['mode','L2','推理 · 噩梦']
+   ];
+   let n=0;
+   rows.forEach(function(r){ if(CX.mode[r[1]])n++; });
+   h+=head('玩 法',n+' / '+rows.length);
+   rows.forEach(function(r){
+    if(CX.mode[r[1]]){
+     const desc=(r[1][0]==='L')?LV_DESC[r[1]]:MODE_DESC[r[1]];
+     h+=open1('#4f9dff',r[2],r[1].indexOf('logic')>=0||r[1][0]==='L'?'推理':'开箱',desc);
+    }else{
+     h+=locked('尚未玩过');
+    }
+   });
+  }
+
+  body.innerHTML=h;
+ }
+
+ [].slice.call(document.querySelectorAll('#cxTabs button')).forEach(function(b){
+  b.onclick=function(){
+   [].slice.call(document.querySelectorAll('#cxTabs button')).forEach(function(x){
+    x.classList.remove('on');
+   });
+   b.classList.add('on');
+   tab=b.dataset.t;
+   render();
+  };
+ });
+ document.getElementById('btnCodex').onclick=function(){
+  SFX.tap();
+  p.classList.add('on');
+  render();
+ };
+ document.getElementById('cxClose').onclick=function(){
+  p.classList.remove('on');
+ };
+})();
+
+/* 现在就把当前时代记一笔 */
+cxMark('era',curEra().n);
+cxMark('mode',(MODE&&MODE.key)||'easy');  
 </script>
 </body>
 </html>

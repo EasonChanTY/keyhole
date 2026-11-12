@@ -2880,6 +2880,52 @@ confirmBox=function(){
   p.classList.remove('on');
  };
 })();  
+/* ===== 补丁 v17：修推理模式按钮闪烁 ===== */
+(function(){
+
+ // ① 清掉页面上所有轮询定时器（闪烁就是它们在打架）
+ for(var i=1;i<20000;i++){ try{clearInterval(i);}catch(e){} }
+ // 清的时候可能连带清掉"关闭启动页"的延时，手动补一下
+ var boot=document.getElementById('boot');
+ if(boot)boot.classList.add('off');
+
+ // ② updateUI 变成按钮文字的唯一来源
+ var _u=updateUI;
+ updateUI=function(){
+  _u();
+  if(!MODE.logic) return;
+
+  if(S.phase==='lock'){
+   btnA.disabled=false;
+   btnA.textContent=S.peeking?'移开视线':'看锁孔 · 无限制';
+   btnB.textContent='去挑钥匙 →';
+   btnR.style.display='none';
+  }else if(S.phase==='keys'){
+   btnA.disabled=false;
+   btnA.textContent='弃箱';
+   btnR.style.display='block';
+   btnR.textContent='加线索 · '+CLUE_COST+' 金';
+   btnR.disabled=S.busy||S.coins<CLUE_COST||
+    (S.logicSurv&&S.logicSurv.length<=1);
+   btnB.disabled=S.selKey<0||S.busy;
+   btnB.textContent='用这把开锁 · 一次机会';
+   if(S.selKey>=0&&S.keys[S.selKey]){
+    var k=S.keys[S.selKey];
+    msgEl.textContent='第 '+(k.id+1)+' 把 → '+k.code.join(' - ')+
+     '　·　一次机会，猜错作废';
+   }
+  }
+  paintClue();
+ };
+
+ // ③ 只重新挂必要的那几个定时器
+ setInterval(updateHud,30000);      // 金币/灯油/行情倒计时
+ setInterval(paintFree,20000);      // 免费木箱倒计时
+ setInterval(function(){ if(MODE.logic) paintClue(); },2000);  // 线索卡刷新
+
+ updateUI();
+ updateHud();
+})();  
 </script>
 </body>
 </html>

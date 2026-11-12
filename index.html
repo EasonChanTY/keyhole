@@ -4060,6 +4060,42 @@ updateHud();
     '#stHint{top:15%!important;bottom:auto!important;pointer-events:none!important}';
   document.head.appendChild(st);
 })();  
+(function(){
+  var b=document.createElement('div');
+  b.textContent='抓配置';
+  b.style.cssText='position:fixed;top:6px;left:6px;z-index:2147483645;background:#0f0;color:#000;font:12px/1 sans-serif;padding:6px 8px;border-radius:6px;font-weight:700';
+  b.onclick=function(){
+    var d=document.getElementById('__dump2');
+    if(!d){
+      d=document.createElement('div'); d.id='__dump2';
+      d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#0b0b0b;color:#0f0;font:9px/1.3 monospace;padding:8px;white-space:pre-wrap;word-break:break-all;overflow:auto';
+      d.onclick=function(){ d.style.display='none'; };
+      document.body.appendChild(d);
+    }
+    var L=[];
+    function j(n){ try{ return JSON.stringify(eval(n)); }catch(e){ return 'ERR'; } }
+    L.push('=== MODES ===\n'+j('MODES'));
+    L.push('=== TIERS ===\n'+j('TIERS'));
+    try{ L.push('=== OB_LIST ===\n'+JSON.stringify(OB_LIST)); }catch(e){ L.push('=== OB_LIST === ERR'); }
+    try{ L.push('=== LOGIC_LV === '+JSON.stringify(LOGIC_LV)); }catch(e){}
+    try{ L.push('=== MODE ===\n'+j('MODE')); }catch(e){}
+    try{
+      var bs=document.getElementById('modeRow').querySelectorAll('button');
+      for(var i=0;i<bs.length;i++) L.push('[modeRow] '+(bs[i].textContent||'').trim()+' => '+String(bs[i].onclick).slice(0,180));
+    }catch(e){}
+    try{
+      var b2=document.getElementById('logicRow').querySelectorAll('button');
+      for(var k=0;k<b2.length;k++) L.push('[logicRow] '+(b2[k].textContent||'').trim()+' => '+String(b2[k].onclick).slice(0,180));
+    }catch(e){}
+    var fns=['buildKeys','genKeys','makeKeys','rollLoot','_rl','makeLock','genLock','drawLock','peekInit'];
+    for(var m=0;m<fns.length;m++){
+      try{ if(typeof eval(fns[m])==='function') L.push('=== '+fns[m]+' ===\n'+eval(fns[m]).toString().slice(0,700)); }catch(e){}
+    }
+    d.textContent=L.join('\n\n');
+    d.style.display='block';
+  };
+  document.body.appendChild(b);
+})();  
 </script>
 </body>
 </html>

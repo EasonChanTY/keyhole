@@ -1,1 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="齿口">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0705">
+<title>齿口 · Keyhole</title>
+<style>
+:root{--gold:#e6c47f;--ink:#efe6d6;--bg:#0a0705}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,"PingFang SC",system-ui,sans-serif;
+  -webkit-user-select:none;user-select:none;touch-action:none;-webkit-font-smoothing:antialiased}
+#scene{position:fixed;inset:0;width:100%;height:100%;display:block}
 
+#hole{position:fixed;inset:0;z-index:4;display:none;pointer-events:none}
+#hole svg{width:100%;height:100%;display:block}
+
+#hud{position:fixed;top:0;left:0;right:0;z-index:6;pointer-events:none;
+  padding:calc(14px + env(safe-area-inset-top)) 18px 26px;
+  display:flex;gap:20px;align-items:flex-start;
+  font-size:10px;letter-spacing:.12em;color:#8f8270;
+  background:linear-gradient(#000000d9,#0000)}
+#hud b{display:block;color:var(--gold);font-size:18px;font-weight:700;
+  letter-spacing:0;margin-top:3px}
+#hud .sp{flex:1}
+#btnReset{pointer-events:auto;flex:0 0 auto;padding:8px 12px;font-size:11px;letter-spacing:.05em;
+  border-radius:10px;border:1px solid #ffffff1c;background:#ffffff08;color:#877c6c}
+
+#ui{position:fixed;left:0;right:0;bottom:0;z-index:6;
+  padding:18px 16px calc(18px + env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;gap:11px;
+  background:linear-gradient(#0000,#000000e8 46%)}
+.row{display:flex;gap:10px}
+button{font-family:inherit;flex:1;padding:17px 6px;border-radius:16px;
+  border:1px solid #ffffff1a;background:#171210e0;color:var(--ink);
+  font-size:15px;font-weight:600;transition:transform .12s,opacity .25s;
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+button:active{transform:scale(.972)}
+button:disabled{opacity:.26}
+button.gold{background:linear-gradient(#eccd85,#a8853c);color:#1c1206;
+  border-color:#f6e2b4;box-shadow:0 8px 26px #e6c47f30}
+#msg{text-align:center;font-size:12.5px;line-height:1.55;color:#a2957f;min-height:19px}
+
+#peekBar{position:fixed;left:0;right:0;bottom:0;height:3px;z-index:7;
+  background:#ffffff12;display:none}
+#peekBar i{display:block;height:100%;width:100%;transform-origin:left;
+  background:linear-gradient(90deg,#e6c47f,#fff6dd)}
+
+#toast{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%) scale(.94);
+  z-index:9;padding:24px 32px;border-radius:22px;text-align:center;
+  background:#0b0806f7;border:1px solid #ffffff1f;
+  box-shadow:0 26px 80px #000d,inset 0 1px 0 #ffffff12;
+  opacity:0;transition:.26s cubic-bezier(.2,.9,.3,1.15);pointer-events:none;
+  font-size:13px;line-height:1.7;color:#c0b4a0;white-space:nowrap}
+#toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#toast b{display:block;font-size:25px;font-weight:700;color:var(--gold);margin:5px 0}
+
+#title{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:32px;
+  background:radial-gradient(120% 75% at 50% 32%,#20160d 0%,#0a0705 60%,#040302 100%);
+  transition:opacity .55s,visibility .55s}
+#title.off{opacity:0;visibility:hidden}
+#title h1{margin:0;font-size:46px;font-weight:200;color:var(--gold);
+  letter-spacing:.44em;text-indent:.44em;text-shadow:0 0 46px #e6c47f55}
+#title .en{font-size:9px;letter-spacing:.52em;text-indent:.52em;color:#7a6a53;margin-top:14px}
+#title .rule{width:54px;height:1px;margin:28px 0;
+  background:linear-gradient(90deg,#0000,#e6c47f,#0000)}
+#title p{font-size:12.5px;line-height:2.05;color:#9c8f7b;text-align:center;
+  margin:0;max-width:310px}
+#title p em{color:var(--gold);font-style:normal}
+#btnStart{margin-top:36px;flex:0 0 auto;padding:17px 56px;border-radius:100px;border:none;
+  background:linear-gradient(#eccd85,#a8853c);color:#1c1206;font-size:16px;
+  font-weight:700;letter-spacing:.16em;box-shadow:0 12px 36px #e6c47f38}
+#best{margin-top:22px;font-size:11px;color:#6b6050;letter-spacing:.12em}
+</style>
+</head>
+<body>
+
+<canvas id="scene"></canvas>
+
+<div id="hole">
+  <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+    <path fill="#050403" fill-rule="evenodd"
+      d="M0,0 H100 V100 H0 Z M39.5,55.4 A17,17 0 1,1 60.5,55.4 L65,86 H35 Z"/>
+    <path fill="none" stroke="#e6c47f" stroke-opacity=".16" stroke-width=".7"
+      d="M39.5,55.4 A17,17 0 1,1 60.5,55.4 L65,86 H35 Z"/>
+  </svg>
+</div>
+
+<header id="hud">
+  <div>金币<b id="hCoins">120</b></div>
+  <div>灯油<b id="hOil">5</b></div>
+  <div>箱子<b id="hBox">1</b></div>
+  <div class="sp"></div>
+  <button id="btnReset">重开</button>
+</header>
+
+<section id="ui">
+  <div id="msg">轻点一把钥匙，看它的齿口</div>
+  <div class="row">
+    <button id="btnPeek">窥视锁孔</button>
+    <button id="btnBuy" class="gold" disabled>买下并试开</button>
+  </div>
+</section>
+
+<div id="peekBar"><i></i></div>
+<div id="toast"></div>
+
+<div id="title">
+  <h1>齿口</h1>
+  <div class="en">K E Y H O L E</div>
+  <div class="rule"></div>
+  <p>
+    从锁孔窥进去，<em>记住四根锁芯</em>的高低。<br>
+    再到五把钥匙里，凭记忆找出<em>齿口相同</em>的那一把。<br>
+    买错＝钱打水漂，开了箱子也可能<em>空空如也</em>。
+  </p>
+  <button id="btnStart">开 始</button>
+  <div id="best">最高记录 · 0 箱</div>
+</div>
+
+<script>
+window.addEventListener('error', e => err(e.message));
+window.addEventListener('unhandledrejection', e => err((e.reason && e.reason.message) || e.reason));
+function err(m){
+  document.body.insertAdjacentHTML('beforeend',
+    '<div style="position:fixed;inset:0;z-index:99;background:#000;color:#ff9c9c;padding:24px;'+
+    'font-size:12px;line-height:1.7;overflow:auto;white-space:pre-wrap">出错了：\n' + m + '</div>');
+}
+</script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* ============ 0. 数值配置 ============ */
+const CFG = {
+  startCoins: 120,
+  price     : 20,
+  oilMax    : 5,
+  oilStart  : 5,
+  keyCount  : 5,
+  viewMs    : 2600,
+  peekMs    : 5000,
+  teeth     : 0.05,
+  aim       : 0.09,
+  loot: [
+    { p: 0.35, gold: 0  },
+    { p: 0.40, gold: 45 },
+    { p: 0.25, gold: 90 }
+  ]
+};
+
+/* ============ 1. 音效 ============ */
+let AC = null;
+function ac(){
+  if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function tone(freq, dur, type = 'sine', vol = 0.12, to = 0){
+  const c = ac(), o = c.createOscillator(), g = c.createGain();
+  o.type = type; o.frequency.value = freq;
+  if (to) o.frequency.exponentialRampToValueAtTime(to, c.currentTime + dur);
+  g.gain.setValueAtTime(vol, c.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + dur);
+  o.connect(g); g.connect(c.destination);
+  o.start(); o.stop(c.currentTime + dur + 0.03);
+}
+function noise(dur, vol = 0.08, hp = 1600){
+  const c = ac();
+  const buf = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
+  const s = c.createBufferSource(); s.buffer = buf;
+  const f = c.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp;
+  const g = c.createGain(); g.gain.value = vol;
+  s.connect(f); f.connect(g); g.connect(c.destination); s.start();
+}
+const SFX = {
+  tap  : () => tone(920, 0.05, 'triangle', 0.07),
+  lift : () => { tone(560, 0.13, 'sine', 0.09, 760); },
+  peek : () => { noise(0.45, 0.05, 900); tone(170, 0.7, 'sine', 0.045, 110); },
+  wrong: () => { tone(115, 0.4, 'sawtooth', 0.09, 62); noise(0.22, 0.07, 260); },
+  open : () => { [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => tone(f, 0.55, 'sine', 0.09), i * 85)); },
+  empty: () => { tone(88, 0.6, 'sine', 0.09, 58); noise(0.2, 0.04, 400); }
+};
+
+/* ============ 2. 渲染器 ============ */
+const renderer = new THREE.WebGLRenderer({
+  canvas: document.getElementById('scene'), antialias: true
+});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.08;
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+const ENV = pmrem.fromScene(new RoomEnvironment(), 0.05).texture;
+
+const MAT = {
+  brass : new THREE.MeshStandardMaterial({ color: 0xcf9f4a, metalness: 1, roughness: 0.26 }),
+  brass2: new THREE.MeshStandardMaterial({ color: 0x87682c, metalness: 1, roughness: 0.55 }),
+  cloth : new THREE.MeshStandardMaterial({ color: 0x22120a, roughness: 0.97 }),
+  cavity: new THREE.MeshStandardMaterial({ color: 0x120e0a, roughness: 0.95, side: THREE.BackSide })
+};
+
+function lightRig(scene){
+  scene.add(new THREE.HemisphereLight(0x6d7d9a, 0x1a0f07, 0.5));
+  const a = new THREE.DirectionalLight(0xfff1d6, 2.7); a.position.set(1.5, 2.1, 2.5); scene.add(a);
+  const b = new THREE.DirectionalLight(0x7fa6ff, 0.75); b.position.set(-2.1, -0.5, 1.1); scene.add(b);
+}
+function glowTex(){
+  const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+  const x = cv.getContext('2d');
+  const g = x.createRadialGradient(128, 128, 0, 128, 128, 128);
+  g.addColorStop(0, 'rgba(255,216,155,.55)');
+  g.addColorStop(.45, 'rgba(255,188,120,.12)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = g; x.fillRect(0, 0, 256, 256);
+  return new THREE.CanvasTexture(cv);
+}
+const GLOW = glowTex();
+const glowMat = () => new THREE.MeshBasicMaterial({
+  map: GLOW, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
+});
+
+/* ============ 3-A. 场景：钥匙架 ============ */
+const sceneR = new THREE.Scene();
+sceneR.background = new THREE.Color(0x080605);
+sceneR.environment = ENV;
+lightRig(sceneR);
+
+const board = new THREE.Mesh(new THREE.BoxGeometry(3.4, 4.6, 0.08), MAT.cloth);
+board.position.set(0, -0.18, -0.26); sceneR.add(board);
+
+const bloomR = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 4.2), glowMat());
+bloomR.position.set(0, -0.18, -0.20); sceneR.add(bloomR);
+
+const keysRoot = new THREE.Group(); sceneR.add(keysRoot);
+
+const DUST_N = 240;
+const dustPos = new Float32Array(DUST_N * 3);
+for (let i = 0; i < DUST_N; i++){
+  dustPos[i*3]   = (Math.random() - .5) * 2.6;
+  dustPos[i*3+1] = (Math.random() - .5) * 3.6 - 0.18;
+  dustPos[i*3+2] = Math.random() * 1.4 - 0.1;
+}
+const dustGeo = new THREE.BufferGeometry();
+dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({
+  size: 0.012, color: 0xffd9a0, transparent: true, opacity: 0.5,
+  depthWrite: false, blending: THREE.AdditiveBlending
+}));
+sceneR.add(dust);
+
+const camR = new THREE.PerspectiveCamera(45, 1, 0.1, 60);
+
+/* ============ 3-B. 场景：锁孔内部 ============ */
+const sceneP = new THREE.Scene();
+sceneP.background = new THREE.Color(0x050403);
+sceneP.environment = ENV;
+lightRig(sceneP);
+
+const glowP = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 1.8), glowMat());
+glowP.position.set(0, 0.16, -0.6); sceneP.add(glowP);
+
+const cavity = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.2), MAT.cavity);
+cavity.position.set(0, 0.16, -0.5); sceneP.add(cavity);
+
+const plate = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.18, 0.5), MAT.brass2);
+plate.position.set(0, 0.46, -0.06); sceneP.add(plate);
+
+const pins = [];
+for (let i = 0; i < 4; i++){
+  const p = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1, 20), MAT.brass);
+  p.position.x = -0.24 + i * 0.16;
+  sceneP.add(p); pins.push(p);
+}
+const camP = new THREE.PerspectiveCamera(38, 1, 0.1, 60);
+
+/* ============ 4. 造钥匙 ============ */
+function makeKey(code){
+  const mat = MAT.brass.clone();
+  const g = new THREE.Group();
+
+  const bow = new THREE.Mesh(new THREE.TorusGeometry(0.088, 0.021, 16, 30), mat);
+  bow.position.x = -0.235; g.add(bow);
+
+  const neck = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.046, 0.026), mat);
+  neck.position.x = -0.155; g.add(neck);
+
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.058, 0.026), mat);
+  blade.position.x = 0.085; g.add(blade);
+
+  const teeth = new THREE.Group();
+  for (let i = 0; i < 4; i++){
+    const dep = 0.04 + code[i] * CFG.teeth;
+    const t = new THREE.Mesh(new THREE.BoxGeometry(0.058, dep, 0.026), mat);
+    t.position.set(-0.085 + i * 0.062, -0.029 - dep / 2, 0);
+    teeth.add(t);
+  }
+  g.add(teeth);
+  g.userData = { teeth, mat };
+  return g;
+}
+
+/* ============ 5. 状态与逻辑 ============ */
+const S = {
+  coins: CFG.startCoins, oil: CFG.oilStart, boxNo: 1, solved: 0,
+  lock: [], keys: [], sel: -1,
+  phase: 'title', busy: false, peekedBox: -1, peekUntil: 0
+};
+const rnd  = n => Math.floor(Math.random() * n);
+const same = (a, b) => a.every((v, i) => v === b[i]);
+
+const $ = id => document.getElementById(id);
+const hCoins = $('hCoins'), hOil = $('hOil'), hBox = $('hBox');
+const msgEl = $('msg'), toastEl = $('toast'), holeEl = $('hole');
+const btnPeek = $('btnPeek'), btnBuy = $('btnBuy');
+const peekBar = $('peekBar'), peekFill = peekBar.querySelector('i');
+
+function updateHud(){
+  hCoins.textContent = S.coins;
+  hOil.textContent   = S.oil;
+  hBox.textContent   = S.boxNo;
+
+  if (S.phase === 'peek') btnPeek.textContent = '移开视线';
+  else if (S.oil <= 0) btnPeek.textContent = '灯油已尽';
+  else if (S.peekedBox === S.boxNo) btnPeek.textContent = '本箱已看过';
+  else btnPeek.textContent = '窥视锁孔 · −1 灯油';
+
+  btnBuy.textContent = `买下并试开 · ${CFG.price} 金币`;
+  btnBuy.disabled = (S.sel < 0) || S.busy;
+}
+const msg = t => msgEl.textContent = t;
+
+let toastTimer = 0;
+function toast(html, ms = 2100){
+  toastEl.innerHTML = html;
+  toastEl.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('on'), ms);
+}
+
+function newBox(){
+  S.lock = [rnd(5), rnd(5), rnd(5), rnd(5)];
+  const codes = [S.lock.slice()];
+  while (codes.length < CFG.keyCount){
+    const c = [rnd(5), rnd(5), rnd(5), rnd(5)];
+    if (codes.some(x => same(x, c))) continue;
+    codes.push(c);
+  }
+  for (let i = codes.length - 1; i > 0; i--){
+    const j = rnd(i + 1);
+    [codes[i], codes[j]] = [codes[j], codes[i]];
+  }
+  buildKeys(codes);
+
+  S.lock.forEach((c, i) => {
+    const dep = 0.04 + c * CFG.teeth;
+    pins[i].scale.y = dep;
+    pins[i].position.y = 0.37 - dep / 2;
+  });
+
+  S.sel = -1; S.busy = false; S.phase = 'rack';
+  holeEl.style.display = 'none';
+  peekBar.style.display = 'none';
+  msg('轻点一把钥匙，看它的齿口');
+  updateHud();
+}
+
+function buildKeys(codes){
+  while (keysRoot.children.length){
+    const c = keysRoot.children[0];
+    keysRoot.remove(c);
+    c.traverse(o => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material && o.material !== MAT.brass) o.material.dispose();
+    });
+  }
+  S.keys = codes.map((code, i) => {
+    const g = makeKey(code);
+    g.position.set(0, 0.64 - i * 0.42, 0);
+    keysRoot.add(g);
+    const obj = { g, id: i, code, teeth: g.userData.teeth, mat: g.userData.mat,
+                  viewed: false, revealUntil: 0, dead: false };
+    g.traverse(o => { o.userData.keyRef = obj; });
+    return obj;
+  });
+}
+
+function selectKey(i){
+  if (S.busy || S.phase !== 'rack') return;
+  const k = S.keys[i];
+  if (!k || k.dead) return;
+
+  S.sel = i;
+  S.keys.forEach(x => x.mat.emissive.setHex(0x000000));
+  k.mat.emissive.setHex(0x261a06);
+  updateHud();
+
+  if (!k.viewed && k.revealUntil === 0){
+    k.revealUntil = performance.now() + CFG.viewMs;
+    SFX.lift();
+    msg('记住这四个齿的高低 —— 只能看这一次');
+  } else {
+    SFX.tap();
+    msg('这把看过了，凭记忆决定');
+  }
+}
+
+function openPeek(){
+  if (S.busy || S.oil <= 0 || S.peekedBox === S.boxNo){
+    if (S.oil <= 0) toast('灯油用完了<b>只能凭记忆</b>');
+    else toast('这个箱子已经看过了');
+    return;
+  }
+  S.oil--; S.peekedBox = S.boxNo;
+  S.phase = 'peek';
+  S.peekUntil = performance.now() + CFG.peekMs;
+  holeEl.style.display = 'block';
+  peekBar.style.display = 'block';
+  SFX.peek();
+  msg('记住四根锁芯的高低（左→右 ＝ 齿 1–4）');
+  updateHud();
+}
+function closePeek(){
+  S.phase = 'rack';
+  S.peekUntil = 0;
+  holeEl.style.display = 'none';
+  peekBar.style.display = 'none';
+  msg('灯油 −1。现在去挑钥匙');
+  updateHud();
+}
+
+btnPeek.onclick = () => { if (S.phase === 'peek') closePeek(); else openPeek(); };
+
+btnBuy.onclick = () => {
+  if (S.busy || S.sel < 0) return;
+  if (S.coins < CFG.price){ toast('金币不够<b>本局结束</b>'); return; }
+
+  const k = S.keys[S.sel];
+  S.busy = true;
+  S.coins -= CFG.price;
+  S.sel = -1;
+  updateHud();
+
+  const ok = same(k.code, S.lock);
+  k.dead = true;
+
+  setTimeout(() => {
+    if (ok){
+      const r = Math.random();
+      let acc = 0, gold = 0;
+      for (const it of CFG.loot){ acc += it.p; if (r < acc){ gold = it.gold; break; } }
+
+      if (gold === 0){
+        SFX.empty();
+        toast('咔哒 —— 开了<b>里面是空的</b>只有一层灰', 2100);
+      } else {
+        SFX.open();
+        S.coins += gold;
+        toast(`咔哒 —— 开了<b>+${gold} 金币</b>齿口全中`, 2100);
+      }
+      S.solved++;
+      S.oil = Math.min(CFG.oilMax, S.oil + 1);
+      S.boxNo++;
+      updateHud();
+
+      setTimeout(() => {
+        if (S.coins < CFG.price){
+          S.busy = false;
+          saveBest();
+          toast('金币不够了<b>点右上角重开</b>', 4200);
+        } else {
+          newBox();
+        }
+      }, 2150);
+    } else {
+      SFX.wrong();
+      toast('钥匙卡住了<b>齿口不对</b>这把钥匙废了', 1900);
+      S.busy = false;
+      updateHud();
+      msg('再挑一把 —— 箱子还在');
+    }
+  }, 280);
+};
+
+const BEST_KEY = 'keyhole_best';
+function saveBest(){
+  const best = +(localStorage.getItem(BEST_KEY) || 0);
+  if (S.solved > best) localStorage.setItem(BEST_KEY, S.solved);
+  paintBest();
+}
+function paintBest(){
+  $('best').textContent = '最高记录 · ' + (+(localStorage.getItem(BEST_KEY) || 0)) + ' 箱';
+}
+$('btnReset').onclick = () => {
+  saveBest();
+  S.coins = CFG.startCoins; S.oil = CFG.oilStart;
+  S.boxNo = 1; S.solved = 0; S.peekedBox = -1;
+  toastEl.classList.remove('on');
+  newBox();
+};
+$('btnStart').onclick = () => {
+  ac();
+  $('title').classList.add('off');
+  newBox();
+};
+
+const ray = new THREE.Raycaster();
+const pv = new THREE.Vector2();
+renderer.domElement.addEventListener('pointerdown', e => {
+  if (S.phase !== 'rack' || S.busy) return;
+  pv.x = (e.clientX / innerWidth) * 2 - 1;
+  pv.y = -(e.clientY / innerHeight) * 2 + 1;
+  ray.setFromCamera(pv, camR);
+  const hit = ray.intersectObjects(keysRoot.children, true)[0];
+  if (hit && hit.object.userData.keyRef) selectKey(hit.object.userData.keyRef.id);
+});
+
+function fit(cam, needH, needW){
+  const tv = Math.tan(cam.fov * Math.PI / 360);
+  return Math.max((needH / 2) / tv, (needW / 2) / (tv * cam.aspect));
+}
+function layout(){
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false);
+  camR.aspect = camP.aspect = w / h;
+  camR.updateProjectionMatrix(); camP.updateProjectionMatrix();
+
+  camR.position.set(0, -0.20, fit(camR, 2.35, 1.02));
+  camR.lookAt(0, -0.20, 0);
+
+  camP.position.set(0, 0.21, fit(camP, 0.36, 0.72));
+  camP.lookAt(0, 0.21 - CFG.aim, 0);
+}
+addEventListener('resize', layout);
+layout();
+
+function tick(){
+  const now = performance.now();
+
+  for (const k of S.keys){
+    if (k.revealUntil && now >= k.revealUntil){
+      k.revealUntil = 0;
+      k.viewed = true;
+      k.mat.color.setHex(0x7d6440);
+      k.mat.roughness = 0.5;
+    }
+    const showing = k.revealUntil > 0;
+    k.teeth.visible = showing;
+    const target = k.dead ? 0 : (showing ? 1.22 : 1);
+    const s = k.g.scale.x + (target - k.g.scale.x) * 0.2;
+    k.g.scale.setScalar(s);
+    k.g.position.z += ((showing ? 0.2 : 0) - k.g.position.z) * 0.18;
+    if (k.dead && s < 0.03) k.g.visible = false;
+  }
+
+  const dp = dustGeo.attributes.position.array;
+  for (let i = 0; i < DUST_N; i++){
+    dp[i*3+1] += 0.0009;
+    if (dp[i*3+1] > 1.9) dp[i*3+1] = -1.9;
+  }
+  dustGeo.attributes.position.needsUpdate = true;
+
+  if (S.phase === 'peek' && S.peekUntil){
+    const left = Math.max(0, S.peekUntil - now);
+    peekFill.style.transform = `scaleX(${left / CFG.peekMs})`;
+    if (left <= 0) closePeek();
+  }
+
+  const peekOn = S.phase === 'peek';
+  renderer.render(peekOn ? sceneP : sceneR, peekOn ? camP : camR);
+  requestAnimationFrame(tick);
+}
+
+paintBest();
+newBox();
+S.phase = 'title';
+tick();
+</script>
+</body>
+</html>

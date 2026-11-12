@@ -3841,6 +3841,20 @@ updateHud();
  /* ⑤ 画一遍最新状态 */
  paintFree();
 })();  
+<script>
+setTimeout(function(){
+  var out=[], list=['xpNeed','addXp','gainXp','gainExp','MAXLV','LVMAX','LV_MAX','MAX_LV','rollItem','genItem','makeItem','pickCat','rollCat','CAT','MODES','priceAt','freeHours','S'];
+  function t(n){try{return eval('typeof '+n);}catch(e){return 'X';}}
+  for(var i=0;i<list.length;i++){out.push(list[i]+':'+t(list[i]));}
+  var src='';
+  var cand=['rollItem','genItem','makeItem','pickCat','rollCat'];
+  for(var j=0;j<cand.length;j++){try{if(eval('typeof '+cand[j])==='function'){src+='\n--- '+cand[j]+' ---\n'+eval(cand[j]).toString().slice(0,700);break;}}catch(e){}}
+  var d=document.createElement('div');
+  d.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:99999;background:#000;color:#0f0;font:10px monospace;line-height:1.35;padding:8px;white-space:pre-wrap;word-break:break-all;max-height:60%;overflow:auto';
+  d.textContent='V22体检\n'+out.join(' | ')+src;
+  document.body.appendChild(d);
+},1500);
+</script>  
 </script>
 </body>
 </html>

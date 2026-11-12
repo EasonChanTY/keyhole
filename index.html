@@ -4328,6 +4328,70 @@ paintModes = function(){
   }catch(e){}
 };
 setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
+/* ===== v48：保留钥匙新位置 · 去掉大圆光标 · 钥匙描边发光 ===== */
+(function(){
+
+  function applyKeyTransform(){
+    try{
+      if(typeof keysRoot!=='undefined' && keysRoot){
+        if(keysRoot.__by===undefined) keysRoot.__by=keysRoot.position.y;
+        keysRoot.position.y = keysRoot.__by + 0.18;
+        keysRoot.scale.set(0.86,0.86,0.86);
+      }
+    }catch(e){}
+  }
+
+  /* 隐藏不在钥匙组里的圆环/圆盘（那个大圆光标） */
+  function hideRing(){
+    try{
+      scene.traverse(function(o){
+        if(!o.isMesh || !o.geometry) return;
+        var g=o.geometry.type;
+        if(g!=='RingGeometry' && g!=='CircleGeometry') return;
+        var p=o, inKeys=false;
+        for(var d=0; d<6 && p; d++){ if(p===keysRoot){ inKeys=true; break; } p=p.parent; }
+        if(!inKeys) o.visible=false;
+      });
+    }catch(e){}
+  }
+
+  /* 给每把钥匙套一层金色描边 */
+  function addOutlines(){
+    try{
+      var ks=keysRoot.children;
+      for(var i=0;i<ks.length;i++){
+        var key=ks[i];
+        if(!key || key.__outlined) continue;
+        key.__outlined=true;
+        var meshes=[];
+        key.traverse(function(m){ if(m.isMesh && m.geometry) meshes.push(m); });
+        for(var j=0;j<meshes.length;j++){
+          try{
+            var m=meshes[j];
+            var ol=new THREE.Mesh(
+              m.geometry,
+              new THREE.MeshBasicMaterial({ color:0xffd27a, side:THREE.BackSide })
+            );
+            ol.scale.set(1.14,1.14,1.14);
+            m.add(ol);
+          }catch(e){}
+        }
+      }
+    }catch(e){}
+  }
+
+  /* 每次重建钥匙后自动应用 */
+  try{
+    var _bk=buildKeys;
+    buildKeys=function(){
+      var r=_bk.apply(this,arguments);
+      try{ applyKeyTransform(); hideRing(); addOutlines(); }catch(e){}
+      return r;
+    };
+  }catch(e){}
+
+  setTimeout(function(){ try{ applyKeyTransform(); hideRing(); addOutlines(); }catch(e){} },1200);
+})();
 </script>
 </body>
 </html>

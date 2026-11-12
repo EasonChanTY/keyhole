@@ -2088,6 +2088,7 @@ freeBtn.onclick=()=>{
  paintFree();
 };  
 /* ===== 尺寸与镜头 ===== */
+var camL=new THREE.PerspectiveCamera(45,1,.05,20);   
 function layout(){
  const w=innerWidth,h=innerHeight,dpr=Math.min(devicePixelRatio,1.9);
  renderer.setPixelRatio(dpr);

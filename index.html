@@ -3841,62 +3841,62 @@ updateHud();
  /* ⑤ 画一遍最新状态 */
  paintFree();
 })();  
-/* ============ v28：等级上限 180 + 难度爆率分档 ============ */
+/* ===== v29：资料卡显示修正 + 真正清空存档 ===== */
 (function(){
-  /* ---- 1. 等级：30 → 180 ---- */
-  xpNeed = function(lv){ return Math.round(18*Math.pow(lv,1.4)); };
 
-  addXp = function(n){
-    if(!n||n<=0||S.lv>=180)return;
-    S.xp+=n;
-    let up=false;
-    while(S.lv<180&&S.xp>=xpNeed(S.lv)){
-      S.xp-=xpNeed(S.lv);
-      S.lv++;
-      up=true;
+  /* 1) 清空时禁止自动回写 */
+  var _save0 = save;
+  save = function(){ if(window.__wiping) return; return _save0.apply(this, arguments); };
+
+  /* 2) 接管「清空存档、重新开始」按钮 */
+  document.addEventListener('click', function(e){
+    var el = e.target;
+    for(var d=0; d<6 && el && el!==document.body; d++){
+      if(el.textContent && el.textContent.trim()==='清空存档、重新开始'){
+        e.preventDefault(); e.stopPropagation();
+        if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+        if(!confirm('确定清空全部存档？\n等级、头像、金币、物品全部清零。')) return;
+        window.__wiping = true;
+        var ks = Object.keys(localStorage);
+        for(var m=0;m<ks.length;m++){
+          if(ks[m].indexOf('keyhole')===0) localStorage.removeItem(ks[m]);
+        }
+        setTimeout(function(){ location.reload(); }, 60);
+        return;
+      }
+      el = el.parentNode;
     }
-    if(up){
-      applyLvPrice();
-      SFX.cheer();haptic([20,30,60]);
-      toast('升 级 了 ！<b>Lv.'+S.lv+'</b><br>'+
-        (S.lv%5===0?'箱子价格上涨 '+Math.round(lvBonus()*100)+'%！免费箱更快了':''),2600);
-      updateHud();
-    }
-    save();
-    paintProf();
-  };
+  }, true);
 
-  freeHours = function(){ return Math.max(4, 24 - S.lv*0.12); };
-
-  /* ---- 2. 难度爆率：垃圾 / 杂物 / 古物 / 珠宝 / 传世 ---- */
-  var W = {
-    easy:      [58,   30,   9.5,  2.5,  0  ],
-    hard:      [42,   30,   18,   8,    2  ],
-    nightmare: [30,   28,   24,   14,   4  ],
-    logic:     [25,   26,   26,   17,   6  ]
-  };
-
-  pickTier = function(){
-    var key='logic';
+  /* 3) 资料卡：/30 → /180，免费箱小时按新公式 */
+  function fixProf(){
     try{
-      if(MODE===MODES.easy)key='easy';
-      else if(MODE===MODES.hard)key='hard';
-      else if(MODE===MODES.nightmare)key='nightmare';
+      var all = document.querySelectorAll('div,span,p,b,em'), lvEl=null, hrEl=null;
+      for(var i=0;i<all.length;i++){
+        var t = all[i].textContent || '';
+        if(t.indexOf('等级')>=0 && (t.indexOf('/ 30')>=0 || t.indexOf('/30')>=0)){
+          if(!lvEl || t.length < lvEl.textContent.length) lvEl = all[i];
+        }
+        if(t.indexOf('箱子价格')>=0 && t.indexOf('免费箱')>=0){
+          if(!hrEl || t.length < hrEl.textContent.length) hrEl = all[i];
+        }
+      }
+      if(lvEl) lvEl.innerHTML = lvEl.innerHTML.replace(/\/\s*30/, '/ 180');
+      if(hrEl) hrEl.innerHTML = hrEl.innerHTML.replace(
+        /免费箱[\s\d.]+小时/,
+        '免费箱 ' + (Math.max(4, 24 - S.lv*0.12)).toFixed(1) + ' 小时'
+      );
     }catch(e){}
-    var w=W[key]||W.hard, n=TIERS.length, total=0, i, ws=[];
-    for(i=0;i<n;i++){
-      ws[i]=(i<w.length)?w[i]:((TIERS[i].wt||1)*0.25);
-      total+=ws[i];
-    }
-    if(total<=0)return TIERS[0];
-    var r=Math.random()*total, a=0;
-    for(i=0;i<n;i++){ a+=ws[i]; if(r<a)return TIERS[i]; }
-    return TIERS[n-1];
+  }
+
+  var _paintProf = paintProf;
+  paintProf = function(){
+    var r = _paintProf.apply(this, arguments);
+    fixProf();
+    return r;
   };
 
-  setTimeout(function(){
-    try{ toast('v28 已装 · 上限180级 · 爆率分档（品质共'+TIERS.length+'档）',3500); }catch(e){}
-  },900);
+  setTimeout(fixProf, 1500);
 })();
 </script>
 </body>

@@ -3898,6 +3898,73 @@ updateHud();
 
   setTimeout(fixProf, 1500);
 })();
+/* ===== v30：分步新手引导（点击消失） ===== */
+(function(){
+  var st=document.createElement('style');
+  st.textContent='#tipBar{display:none!important}';
+  document.head.appendChild(st);
+
+  var box=document.createElement('div');
+  box.id='guideCard';
+  box.style.cssText='position:fixed;left:10px;right:10px;bottom:88px;z-index:60;background:rgba(18,16,12,.96);border:1px solid #e6c47f66;border-radius:14px;padding:14px;color:#efe6d6;font-size:13px;line-height:1.65;box-shadow:0 8px 30px #000a;display:none;max-width:520px;margin:0 auto';
+  box.innerHTML='<div id="gcTitle" style="color:#e6c47f;font-weight:700;margin-bottom:6px;font-size:14px"></div>'
+    +'<div id="gcBody"></div>'
+    +'<div style="display:flex;gap:8px;margin-top:10px">'
+    +'<button id="gcOk" style="flex:1;background:#e6c47f;color:#231a0c;border:0;border-radius:10px;padding:9px;font-weight:700;font-size:13px">知道了</button>'
+    +'<button id="gcOff" style="background:transparent;color:#9d9384;border:1px solid #ffffff22;border-radius:10px;padding:9px;font-size:12px">不再提示</button>'
+    +'</div>';
+  document.body.appendChild(box);
+
+  var STEPS={
+    intro:['欢迎来到「齿口」','你是一名寻宝经纪人，全程只有 5 步：<br>① 买一只箱子　② 窥视锁孔、记住齿口　③ 挑一把钥匙<br>④ 花 20 金试开　⑤ 开箱：好货卖钱，危险物会扣钱。<br>开局有 <b>1800 金币</b>；<b>灯油</b>是"窥视"的次数，用光要等回复。'],
+    choose:['第 1 步 · 选箱子','下面 5 只箱子价钱不同，越贵出好货的概率越高。<br>先点一只（建议先买最便宜的<b>木箱</b>），再点金色按钮<b>「买下这只」</b>。'],
+    peek:['第 2 步 · 窥视锁孔','点<b>「窥视锁孔」</b>，会看到箱里锁芯的形状，<b>只有几秒</b>！<br>记住每根齿的高矮，看完扣 1 点灯油。'],
+    pickKey:['第 3 步 · 挑钥匙','下面是一排钥匙，每把<b>只能偷看一次</b>形状（约 2.6 秒）。<br>看完和你记住的齿口比对，挑一样的那把。'],
+    tryKey:['第 4 步 · 试开','点<b>「买下试开」</b>（20 金）。<br>对 → 开箱；错 → 这把钥匙报废，可以再挑一把。'],
+    opened:['第 5 步 · 开箱','箱里可能是古物珠宝，也可能是蝎子、炸弹。<br>好东西去<b>「背包」</b>卖掉换钱，再用钱买更贵的箱子。']
+  };
+
+  function curStep(){
+    try{
+      var sb=S.selBox;
+      if(sb==null||sb===-1||sb===false) return 'choose';
+      if(!S.peeked) return 'peek';
+      if(!S.selKey) return 'pickKey';
+      return 'tryKey';
+    }catch(e){ return 'choose'; }
+  }
+
+  function render(step){
+    var t=STEPS[step]; if(!t) return;
+    document.getElementById('gcTitle').innerHTML=t[0];
+    document.getElementById('gcBody').innerHTML=t[1];
+    box.style.display='block';
+  }
+
+  var lastStep=null, dismissed=null, introShown=false;
+  var introDone=localStorage.getItem('keyhole_guide_intro')==='1';
+
+  document.getElementById('gcOk').onclick=function(){
+    dismissed=lastStep;
+    if(lastStep==='intro') localStorage.setItem('keyhole_guide_intro','1');
+    box.style.display='none';
+  };
+  document.getElementById('gcOff').onclick=function(){
+    localStorage.setItem('keyhole_guide_v1','0');
+    box.style.display='none';
+  };
+
+  setInterval(function(){
+    if(localStorage.getItem('keyhole_guide_v1')==='0'){ if(box.style.display!=='none') box.style.display='none'; return; }
+    if(!introShown && !introDone){ introShown=true; lastStep='intro'; render('intro'); return; }
+    introShown=true;
+    var s=curStep();
+    if(s!==lastStep){
+      lastStep=s;
+      if(dismissed!==s) render(s);
+    }
+  },600);
+})();  
 </script>
 </body>
 </html>

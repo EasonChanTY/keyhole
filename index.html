@@ -15,17 +15,16 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--
   font-family:-apple-system,"PingFang SC",system-ui,sans-serif;
   -webkit-user-select:none;user-select:none;touch-action:none;-webkit-font-smoothing:antialiased}
 #scene{position:fixed;inset:0;width:100%;height:100%;display:block}
-
-#hole{position:fixed;inset:0;z-index:4;display:none;pointer-events:none}
-#hole svg{width:100%;height:100%;display:block}
+#vig{position:fixed;inset:0;z-index:3;pointer-events:none;opacity:0;transition:opacity .45s;
+  background:radial-gradient(circle at 50% 46%,#0000 24%,#00000066 46%,#000000e8 74%)}
+#vig.on{opacity:1}
 
 #hud{position:fixed;top:0;left:0;right:0;z-index:6;pointer-events:none;
   padding:calc(14px + env(safe-area-inset-top)) 18px 26px;
-  display:flex;gap:20px;align-items:flex-start;
+  display:flex;gap:18px;align-items:flex-start;
   font-size:10px;letter-spacing:.12em;color:#8f8270;
   background:linear-gradient(#000000d9,#0000)}
-#hud b{display:block;color:var(--gold);font-size:18px;font-weight:700;
-  letter-spacing:0;margin-top:3px}
+#hud b{display:block;color:var(--gold);font-size:18px;font-weight:700;letter-spacing:0;margin-top:3px}
 #hud .sp{flex:1}
 #btnReset{pointer-events:auto;flex:0 0 auto;padding:8px 12px;font-size:11px;letter-spacing:.05em;
   border-radius:10px;border:1px solid #ffffff1c;background:#ffffff08;color:#877c6c}
@@ -45,8 +44,7 @@ button.gold{background:linear-gradient(#eccd85,#a8853c);color:#1c1206;
   border-color:#f6e2b4;box-shadow:0 8px 26px #e6c47f30}
 #msg{text-align:center;font-size:12.5px;line-height:1.55;color:#a2957f;min-height:19px}
 
-#peekBar{position:fixed;left:0;right:0;bottom:0;height:3px;z-index:7;
-  background:#ffffff12;display:none}
+#peekBar{position:fixed;left:0;right:0;bottom:0;height:3px;z-index:7;background:#ffffff12;display:none}
 #peekBar i{display:block;height:100%;width:100%;transform-origin:left;
   background:linear-gradient(90deg,#e6c47f,#fff6dd)}
 
@@ -67,43 +65,33 @@ button.gold{background:linear-gradient(#eccd85,#a8853c);color:#1c1206;
 #title h1{margin:0;font-size:46px;font-weight:200;color:var(--gold);
   letter-spacing:.44em;text-indent:.44em;text-shadow:0 0 46px #e6c47f55}
 #title .en{font-size:9px;letter-spacing:.52em;text-indent:.52em;color:#7a6a53;margin-top:14px}
-#title .rule{width:54px;height:1px;margin:28px 0;
+#title .rule{width:54px;height:1px;margin:26px 0;
   background:linear-gradient(90deg,#0000,#e6c47f,#0000)}
-#title p{font-size:12.5px;line-height:2.05;color:#9c8f7b;text-align:center;
-  margin:0;max-width:310px}
+#title p{font-size:12.5px;line-height:2.05;color:#9c8f7b;text-align:center;margin:0;max-width:312px}
 #title p em{color:var(--gold);font-style:normal}
-#btnStart{margin-top:36px;flex:0 0 auto;padding:17px 56px;border-radius:100px;border:none;
+#btnStart{margin-top:34px;flex:0 0 auto;padding:17px 56px;border-radius:100px;border:none;
   background:linear-gradient(#eccd85,#a8853c);color:#1c1206;font-size:16px;
   font-weight:700;letter-spacing:.16em;box-shadow:0 12px 36px #e6c47f38}
-#best{margin-top:22px;font-size:11px;color:#6b6050;letter-spacing:.12em}
 </style>
 </head>
 <body>
 
 <canvas id="scene"></canvas>
-
-<div id="hole">
-  <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
-    <path fill="#050403" fill-rule="evenodd"
-      d="M0,0 H100 V100 H0 Z M39.5,55.4 A17,17 0 1,1 60.5,55.4 L65,86 H35 Z"/>
-    <path fill="none" stroke="#e6c47f" stroke-opacity=".16" stroke-width=".7"
-      d="M39.5,55.4 A17,17 0 1,1 60.5,55.4 L65,86 H35 Z"/>
-  </svg>
-</div>
+<div id="vig"></div>
 
 <header id="hud">
   <div>金币<b id="hCoins">120</b></div>
   <div>灯油<b id="hOil">5</b></div>
-  <div>箱子<b id="hBox">1</b></div>
+  <div>开箱<b id="hOpened">0</b></div>
   <div class="sp"></div>
   <button id="btnReset">重开</button>
 </header>
 
 <section id="ui">
-  <div id="msg">轻点一把钥匙，看它的齿口</div>
+  <div id="msg">点开一个箱子</div>
   <div class="row">
-    <button id="btnPeek">窥视锁孔</button>
-    <button id="btnBuy" class="gold" disabled>买下并试开</button>
+    <button id="btnA">…</button>
+    <button id="btnB" class="gold">…</button>
   </div>
 </section>
 
@@ -115,12 +103,11 @@ button.gold{background:linear-gradient(#eccd85,#a8853c);color:#1c1206;
   <div class="en">K E Y H O L E</div>
   <div class="rule"></div>
   <p>
-    从锁孔窥进去，<em>记住四根锁芯</em>的高低。<br>
-    再到五把钥匙里，凭记忆找出<em>齿口相同</em>的那一把。<br>
-    买错＝钱打水漂，开了箱子也可能<em>空空如也</em>。
+    三只箱子，玻璃下只露出<em>最上层</em>的东西。<br>
+    选定后，只能看<em>一次</em>锁孔，再凭记忆挑钥匙。<br>
+    开了才归你 —— 但箱底可能<em>什么都没有</em>。
   </p>
   <button id="btnStart">开 始</button>
-  <div id="best">最高记录 · 0 箱</div>
 </div>
 
 <script>
@@ -146,63 +133,63 @@ function err(m){
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-/* ============ 0. 数值配置 ============ */
+/* ================= 配置 ================= */
 const CFG = {
   startCoins: 120,
   price     : 20,
   oilMax    : 5,
   oilStart  : 5,
+  boxCount  : 3,
   keyCount  : 5,
-  viewMs    : 2600,
   peekMs    : 5000,
+  viewMs    : 2600,
   teeth     : 0.05,
-  aim       : 0.09,
-  loot: [
-    { p: 0.35, gold: 0  },
-    { p: 0.40, gold: 45 },
-    { p: 0.25, gold: 90 }
+  tiers: [
+    { name:'木箱', frame:0x6b4a2a, wide:0.50, n:[1,1],
+      mult:[{p:.60,v:1},{p:.25,v:2},{p:.15,v:0}] },
+    { name:'铁箱', frame:0x9aa1aa, wide:0.35, n:[2,2],
+      mult:[{p:.55,v:1},{p:.30,v:2.2},{p:.15,v:0}] },
+    { name:'金箱', frame:0xc9a227, wide:0.15, n:[3,3],
+      mult:[{p:.40,v:1},{p:.25,v:2.5},{p:.35,v:0}] }
   ]
 };
 
-/* ============ 1. 音效 ============ */
+/* ================= 音效 ================= */
 let AC = null;
 function ac(){
   if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
   if (AC.state === 'suspended') AC.resume();
   return AC;
 }
-function tone(freq, dur, type = 'sine', vol = 0.12, to = 0){
+function tone(f, d, t='sine', v=0.12, to=0){
   const c = ac(), o = c.createOscillator(), g = c.createGain();
-  o.type = type; o.frequency.value = freq;
-  if (to) o.frequency.exponentialRampToValueAtTime(to, c.currentTime + dur);
-  g.gain.setValueAtTime(vol, c.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + dur);
-  o.connect(g); g.connect(c.destination);
-  o.start(); o.stop(c.currentTime + dur + 0.03);
+  o.type = t; o.frequency.value = f;
+  if (to) o.frequency.exponentialRampToValueAtTime(to, c.currentTime + d);
+  g.gain.setValueAtTime(v, c.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + d);
+  o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + d + .03);
 }
-function noise(dur, vol = 0.08, hp = 1600){
+function noise(d, v=0.08, hp=1600){
   const c = ac();
-  const buf = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate);
-  const d = buf.getChannelData(0);
-  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
-  const s = c.createBufferSource(); s.buffer = buf;
-  const f = c.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp;
-  const g = c.createGain(); g.gain.value = vol;
+  const b = c.createBuffer(1, Math.floor(c.sampleRate*d), c.sampleRate);
+  const a = b.getChannelData(0);
+  for (let i=0;i<a.length;i++) a[i] = (Math.random()*2-1) * Math.pow(1-i/a.length, 3);
+  const s = c.createBufferSource(); s.buffer = b;
+  const f = c.createBiquadFilter(); f.type='highpass'; f.frequency.value = hp;
+  const g = c.createGain(); g.gain.value = v;
   s.connect(f); f.connect(g); g.connect(c.destination); s.start();
 }
 const SFX = {
-  tap  : () => tone(920, 0.05, 'triangle', 0.07),
-  lift : () => { tone(560, 0.13, 'sine', 0.09, 760); },
-  peek : () => { noise(0.45, 0.05, 900); tone(170, 0.7, 'sine', 0.045, 110); },
-  wrong: () => { tone(115, 0.4, 'sawtooth', 0.09, 62); noise(0.22, 0.07, 260); },
-  open : () => { [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => tone(f, 0.55, 'sine', 0.09), i * 85)); },
-  empty: () => { tone(88, 0.6, 'sine', 0.09, 58); noise(0.2, 0.04, 400); }
+  tap  : () => tone(920,.05,'triangle',.07),
+  lift : () => tone(560,.13,'sine',.09,760),
+  peek : () => { noise(.45,.05,900); tone(170,.7,'sine',.045,110); },
+  wrong: () => { tone(115,.4,'sawtooth',.09,62); noise(.22,.07,260); },
+  open : () => [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.55,'sine',.09),i*85)),
+  empty: () => { tone(88,.6,'sine',.09,58); noise(.2,.04,400); }
 };
 
-/* ============ 2. 渲染器 ============ */
-const renderer = new THREE.WebGLRenderer({
-  canvas: document.getElementById('scene'), antialias: true
-});
+/* ================= 渲染 ================= */
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('scene'), antialias:true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.08;
@@ -211,100 +198,221 @@ const pmrem = new THREE.PMREMGenerator(renderer);
 const ENV = pmrem.fromScene(new RoomEnvironment(), 0.05).texture;
 
 const MAT = {
-  brass : new THREE.MeshStandardMaterial({ color: 0xcf9f4a, metalness: 1, roughness: 0.26 }),
-  brass2: new THREE.MeshStandardMaterial({ color: 0x87682c, metalness: 1, roughness: 0.55 }),
-  cloth : new THREE.MeshStandardMaterial({ color: 0x22120a, roughness: 0.97 }),
-  cavity: new THREE.MeshStandardMaterial({ color: 0x120e0a, roughness: 0.95, side: THREE.BackSide })
+  brass : new THREE.MeshStandardMaterial({ color:0xcf9f4a, metalness:1, roughness:0.26 }),
+  brass2: new THREE.MeshStandardMaterial({ color:0x87682c, metalness:1, roughness:0.55 }),
+  gold  : new THREE.MeshStandardMaterial({ color:0xe8c26a, metalness:1, roughness:0.22 }),
+  silver: new THREE.MeshStandardMaterial({ color:0xd8dde3, metalness:1, roughness:0.2 }),
+  pearl : new THREE.MeshStandardMaterial({ color:0xf4eae2, metalness:0.1, roughness:0.32 }),
+  gem   : new THREE.MeshStandardMaterial({ color:0x4f9dff, metalness:0.2, roughness:0.08,
+            emissive:0x184a8a, emissiveIntensity:0.6 }),
+  wood  : new THREE.MeshStandardMaterial({ color:0x2c1a10, metalness:0.1, roughness:0.9 }),
+  velvet: new THREE.MeshStandardMaterial({ color:0x0b0705, roughness:1 }),
+  cloth : new THREE.MeshStandardMaterial({ color:0x22120a, roughness:0.97 })
 };
 
-function lightRig(scene){
-  scene.add(new THREE.HemisphereLight(0x6d7d9a, 0x1a0f07, 0.5));
-  const a = new THREE.DirectionalLight(0xfff1d6, 2.7); a.position.set(1.5, 2.1, 2.5); scene.add(a);
-  const b = new THREE.DirectionalLight(0x7fa6ff, 0.75); b.position.set(-2.1, -0.5, 1.1); scene.add(b);
+function lightRig(s, k = 2.6){
+  s.add(new THREE.HemisphereLight(0x6d7d9a, 0x1a0f07, 0.5));
+  const a = new THREE.DirectionalLight(0xfff1d6, k); a.position.set(1.5, 2.2, 2.6); s.add(a);
+  const b = new THREE.DirectionalLight(0x7fa6ff, 0.8); b.position.set(-2, -0.6, 1.2); s.add(b);
 }
 function glowTex(){
   const cv = document.createElement('canvas'); cv.width = cv.height = 256;
   const x = cv.getContext('2d');
-  const g = x.createRadialGradient(128, 128, 0, 128, 128, 128);
-  g.addColorStop(0, 'rgba(255,216,155,.55)');
-  g.addColorStop(.45, 'rgba(255,188,120,.12)');
-  g.addColorStop(1, 'rgba(0,0,0,0)');
-  x.fillStyle = g; x.fillRect(0, 0, 256, 256);
+  const g = x.createRadialGradient(128,128,0,128,128,128);
+  g.addColorStop(0,'rgba(255,216,155,.55)');
+  g.addColorStop(.45,'rgba(255,188,120,.12)');
+  g.addColorStop(1,'rgba(0,0,0,0)');
+  x.fillStyle = g; x.fillRect(0,0,256,256);
   return new THREE.CanvasTexture(cv);
 }
 const GLOW = glowTex();
-const glowMat = () => new THREE.MeshBasicMaterial({
-  map: GLOW, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
+const glowMat = o => new THREE.MeshBasicMaterial({
+  map:GLOW, transparent:true, opacity:o||1, blending:THREE.AdditiveBlending, depthWrite:false
 });
-
-/* ============ 3-A. 场景：钥匙架 ============ */
-const sceneR = new THREE.Scene();
-sceneR.background = new THREE.Color(0x080605);
-sceneR.environment = ENV;
-lightRig(sceneR);
-
-const board = new THREE.Mesh(new THREE.BoxGeometry(3.4, 4.6, 0.08), MAT.cloth);
-board.position.set(0, -0.18, -0.26); sceneR.add(board);
-
-const bloomR = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 4.2), glowMat());
-bloomR.position.set(0, -0.18, -0.20); sceneR.add(bloomR);
-
-const keysRoot = new THREE.Group(); sceneR.add(keysRoot);
-
-const DUST_N = 240;
-const dustPos = new Float32Array(DUST_N * 3);
-for (let i = 0; i < DUST_N; i++){
-  dustPos[i*3]   = (Math.random() - .5) * 2.6;
-  dustPos[i*3+1] = (Math.random() - .5) * 3.6 - 0.18;
-  dustPos[i*3+2] = Math.random() * 1.4 - 0.1;
+function disposeTree(o){
+  o.traverse(m => {
+    if (m.geometry) m.geometry.dispose();
+    if (m.material && ![MAT.brass, MAT.brass2, MAT.wood, MAT.velvet, MAT.cloth,
+                        MAT.gold, MAT.silver, MAT.pearl, MAT.gem].includes(m.material)){
+      m.material.dispose();
+    }
+  });
 }
-const dustGeo = new THREE.BufferGeometry();
-dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
-const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({
-  size: 0.012, color: 0xffd9a0, transparent: true, opacity: 0.5,
-  depthWrite: false, blending: THREE.AdditiveBlending
-}));
-sceneR.add(dust);
 
-const camR = new THREE.PerspectiveCamera(45, 1, 0.1, 60);
+/* ================= 场景 A：选箱 ================= */
+const sceneB = new THREE.Scene();
+sceneB.background = new THREE.Color(0x080605);
+sceneB.environment = ENV;
+lightRig(sceneB, 2.8);
 
-/* ============ 3-B. 场景：锁孔内部 ============ */
-const sceneP = new THREE.Scene();
-sceneP.background = new THREE.Color(0x050403);
-sceneP.environment = ENV;
-lightRig(sceneP);
+const backB = new THREE.Mesh(new THREE.PlaneGeometry(4, 8), MAT.cloth);
+backB.position.set(0, 0, -1.1); sceneB.add(backB);
+const glowB = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 4.6), glowMat(.85));
+glowB.position.set(0, 0, -1.0); sceneB.add(glowB);
 
-const glowP = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 1.8), glowMat());
-glowP.position.set(0, 0.16, -0.6); sceneP.add(glowP);
+const boxRoot = new THREE.Group(); sceneB.add(boxRoot);
+const camB = new THREE.PerspectiveCamera(45, 1, 0.1, 60);
 
-const cavity = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.2), MAT.cavity);
-cavity.position.set(0, 0.16, -0.5); sceneP.add(cavity);
+/* ================= 场景 B：锁 ================= */
+const sceneL = new THREE.Scene();
+sceneL.background = new THREE.Color(0x050403);
+sceneL.environment = ENV;
+lightRig(sceneL, 1.2);
+const pointL = new THREE.PointLight(0xffcf95, 6, 4);
+pointL.position.set(0.3, 0.5, 1.0); sceneL.add(pointL);
 
-const plate = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.18, 0.5), MAT.brass2);
-plate.position.set(0, 0.46, -0.06); sceneP.add(plate);
+function plateTex(){
+  const N = 512, cv = document.createElement('canvas');
+  cv.width = cv.height = N;
+  const x = cv.getContext('2d');
+  const g = x.createLinearGradient(0, 0, N, N);
+  g.addColorStop(0, '#d3aa55'); g.addColorStop(.42, '#8a6a2b');
+  g.addColorStop(.72, '#6a4f1c'); g.addColorStop(1, '#a8843c');
+  x.fillStyle = g; x.fillRect(0, 0, N, N);
+  for (let i = 0; i < 3000; i++){
+    x.fillStyle = 'rgba(0,0,0,' + (Math.random() * .1) + ')';
+    x.fillRect(Math.random() * N, Math.random() * N, 2, 2);
+  }
+  for (let i = 0; i < 40; i++){
+    x.strokeStyle = 'rgba(255,240,200,' + (Math.random() * .06) + ')';
+    x.beginPath(); x.moveTo(Math.random()*N, Math.random()*N);
+    x.lineTo(Math.random()*N, Math.random()*N); x.stroke();
+  }
+  [[0.10,0.10],[0.90,0.10],[0.10,0.90],[0.90,0.90]].forEach(([a,b]) => {
+    x.beginPath(); x.arc(a*N, b*N, 9, 0, Math.PI*2);
+    x.fillStyle = '#5b421a'; x.fill();
+    x.beginPath(); x.arc(a*N-2, b*N-2, 7, 0, Math.PI*2);
+    x.fillStyle = '#c9a45c'; x.fill();
+  });
+  x.globalCompositeOperation = 'destination-out';
+  x.beginPath(); x.arc(N*.5, N*.42, N*.085, 0, Math.PI*2); x.fill();
+  x.beginPath();
+  x.moveTo(N*.5 - N*.036, N*.46); x.lineTo(N*.5 + N*.036, N*.46);
+  x.lineTo(N*.5 + N*.058, N*.70); x.lineTo(N*.5 - N*.058, N*.70);
+  x.closePath(); x.fill();
+  x.globalCompositeOperation = 'source-over';
+  const t = new THREE.CanvasTexture(cv);
+  t.anisotropy = 4;
+  return t;
+}
+const plate = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.6),
+  new THREE.MeshStandardMaterial({ map: plateTex(), metalness:.85, roughness:.42, alphaTest:.5 }));
+sceneL.add(plate);
 
 const pins = [];
 for (let i = 0; i < 4; i++){
-  const p = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1, 20), MAT.brass);
-  p.position.x = -0.24 + i * 0.16;
-  sceneP.add(p); pins.push(p);
+  const p = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 1, 16), MAT.brass);
+  p.position.set(-0.12 + i * 0.08, 0.16, -0.09);
+  p.visible = false;
+  sceneL.add(p); pins.push(p);
 }
-const camP = new THREE.PerspectiveCamera(38, 1, 0.1, 60);
+const camP = new THREE.PerspectiveCamera(40, 1, 0.05, 60);
+camP.position.set(0, 0.128, 1.95);
+camP.lookAt(0, 0.128, 0);
+const CAM_P_NEAR = 1.05, CAM_P_FAR = 1.95;
 
-/* ============ 4. 造钥匙 ============ */
+/* ================= 场景 C：钥匙架 ================= */
+const sceneK = new THREE.Scene();
+sceneK.background = new THREE.Color(0x080605);
+sceneK.environment = ENV;
+lightRig(sceneK, 2.4);
+
+const backK = new THREE.Mesh(new THREE.BoxGeometry(3.4, 4.6, 0.08), MAT.cloth);
+backK.position.set(0, -0.18, -0.26); sceneK.add(backK);
+const glowK = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 4.2), glowMat(.9));
+glowK.position.set(0, -0.18, -0.2); sceneK.add(glowK);
+
+const keysRoot = new THREE.Group(); sceneK.add(keysRoot);
+const camK = new THREE.PerspectiveCamera(45, 1, 0.1, 60);
+
+/* ================= 物品 & 箱子 ================= */
+const ITEMS = [
+  { name:'金币', value:12, kind:'coin' },
+  { name:'银戒', value:22, kind:'ring' },
+  { name:'珍珠', value:28, kind:'pearl' },
+  { name:'宝石', value:45, kind:'gem' }
+];
+function makeItem(kind){
+  let m;
+  if (kind === 'coin'){
+    m = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.011, 22), MAT.gold);
+  } else if (kind === 'ring'){
+    m = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.011, 12, 24), MAT.silver);
+    m.rotation.x = Math.PI / 2;
+  } else if (kind === 'pearl'){
+    m = new THREE.Mesh(new THREE.SphereGeometry(0.038, 18, 14), MAT.pearl);
+    m.position.y = 0.032;
+  } else {
+    m = new THREE.Mesh(new THREE.OctahedronGeometry(0.05), MAT.gem);
+    m.rotation.set(0.3, 0.6, 0.2);
+    m.position.y = 0.03;
+  }
+  return m;
+}
+
+function makeBox(tier, items){
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.40, 0.58), MAT.wood);
+  g.add(body);
+
+  const frameMat = new THREE.MeshStandardMaterial({ color:tier.frame, metalness:.9, roughness:.35 });
+
+  [ -0.12, 0.12 ].forEach(y => {
+    const band = new THREE.Mesh(new THREE.BoxGeometry(0.94, 0.05, 0.60), frameMat);
+    band.position.y = y; g.add(band);
+  });
+
+  const velvet = new THREE.Mesh(new THREE.PlaneGeometry(0.80, 0.46), MAT.velvet);
+  velvet.rotation.x = -Math.PI / 2; velvet.position.y = 0.201;
+  g.add(velvet);
+
+  const lit = new THREE.Mesh(new THREE.PlaneGeometry(0.86, 0.56), glowMat(.55));
+  lit.rotation.x = -Math.PI / 2; lit.position.y = 0.206;
+  g.add(lit);
+
+  items.forEach((it, i) => {
+    const m = makeItem(it.kind);
+    m.position.x = -0.24 + i * 0.24;
+    m.position.z = (Math.random() - 0.5) * 0.12;
+    m.position.y += 0.208;
+    m.userData.boxIndex = -1;
+    g.add(m);
+  });
+
+  const glass = new THREE.Mesh(new THREE.PlaneGeometry(0.80, 0.46),
+    new THREE.MeshStandardMaterial({ color:0xa8c8ff, transparent:true, opacity:0.14,
+      roughness:0.05, metalness:0.1, side:THREE.DoubleSide, depthWrite:false }));
+  glass.rotation.x = -Math.PI / 2; glass.position.y = 0.30;
+  g.add(glass);
+
+  [[-0.44,0.46,0.30,0.05],[-0.44,-0.46,0.30,0.05],
+   [-0.44,0.23,0.05,0.50],[-0.44,-0.23,0.05,0.50]].forEach(()=>{});
+  const rimT = new THREE.Mesh(new THREE.BoxGeometry(0.96, 0.035, 0.05), frameMat);
+  rimT.position.set(0, 0.30, 0.255); g.add(rimT);
+  const rimB = rimT.clone(); rimB.position.z = -0.255; g.add(rimB);
+  const rimL = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.035, 0.56), frameMat);
+  rimL.position.set(-0.455, 0.30, 0); g.add(rimL);
+  const rimR = rimL.clone(); rimR.position.x = 0.455; g.add(rimR);
+
+  [-0.42, 0.42].forEach(x => [-0.24, 0.24].forEach(z => {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.11, 0.035), frameMat);
+    post.position.set(x, 0.25, z); g.add(post);
+  }));
+
+  g.rotation.x = 0.52;
+  return g;
+}
+
+/* ================= 钥匙 ================= */
 function makeKey(code){
   const mat = MAT.brass.clone();
   const g = new THREE.Group();
-
   const bow = new THREE.Mesh(new THREE.TorusGeometry(0.088, 0.021, 16, 30), mat);
   bow.position.x = -0.235; g.add(bow);
-
   const neck = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.046, 0.026), mat);
   neck.position.x = -0.155; g.add(neck);
-
   const blade = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.058, 0.026), mat);
   blade.position.x = 0.085; g.add(blade);
-
   const teeth = new THREE.Group();
   for (let i = 0; i < 4; i++){
     const dep = 0.04 + code[i] * CFG.teeth;
@@ -317,36 +425,23 @@ function makeKey(code){
   return g;
 }
 
-/* ============ 5. 状态与逻辑 ============ */
+/* ================= 状态 ================= */
 const S = {
-  coins: CFG.startCoins, oil: CFG.oilStart, boxNo: 1, solved: 0,
-  lock: [], keys: [], sel: -1,
-  phase: 'title', busy: false, peekedBox: -1, peekUntil: 0
+  coins: CFG.startCoins, oil: CFG.oilStart, opened: 0,
+  boxes: [], selBox: -1,
+  lock: [], keys: [], selKey: -1,
+  phase: 'title', peeking: false, peeked: false,
+  busy: false, peekUntil: 0
 };
-const rnd  = n => Math.floor(Math.random() * n);
+const rnd = n => Math.floor(Math.random() * n);
 const same = (a, b) => a.every((v, i) => v === b[i]);
-
 const $ = id => document.getElementById(id);
-const hCoins = $('hCoins'), hOil = $('hOil'), hBox = $('hBox');
-const msgEl = $('msg'), toastEl = $('toast'), holeEl = $('hole');
-const btnPeek = $('btnPeek'), btnBuy = $('btnBuy');
+const hCoins = $('hCoins'), hOil = $('hOil'), hOpened = $('hOpened');
+const msgEl = $('msg'), toastEl = $('toast'), vig = $('vig');
+const btnA = $('btnA'), btnB = $('btnB');
 const peekBar = $('peekBar'), peekFill = peekBar.querySelector('i');
 
-function updateHud(){
-  hCoins.textContent = S.coins;
-  hOil.textContent   = S.oil;
-  hBox.textContent   = S.boxNo;
-
-  if (S.phase === 'peek') btnPeek.textContent = '移开视线';
-  else if (S.oil <= 0) btnPeek.textContent = '灯油已尽';
-  else if (S.peekedBox === S.boxNo) btnPeek.textContent = '本箱已看过';
-  else btnPeek.textContent = '窥视锁孔 · −1 灯油';
-
-  btnBuy.textContent = `买下并试开 · ${CFG.price} 金币`;
-  btnBuy.disabled = (S.sel < 0) || S.busy;
-}
 const msg = t => msgEl.textContent = t;
-
 let toastTimer = 0;
 function toast(html, ms = 2100){
   toastEl.innerHTML = html;
@@ -355,8 +450,100 @@ function toast(html, ms = 2100){
   toastTimer = setTimeout(() => toastEl.classList.remove('on'), ms);
 }
 
-function newBox(){
+function updateUI(){
+  hCoins.textContent = S.coins;
+  hOil.textContent = S.oil;
+  hOpened.textContent = S.opened;
+
+  if (S.phase === 'box'){
+    btnA.disabled = S.selBox < 0;
+    btnA.textContent = S.selBox < 0 ? '先点一只箱子' : '选定这只箱子';
+    btnB.disabled = false; btnB.textContent = '换一批';
+  } else if (S.phase === 'lock'){
+    btnA.disabled = S.peeked || S.oil <= 0;
+    btnA.textContent = S.peeking ? '移开视线'
+      : (S.peeked ? '已窥视过' : (S.oil <= 0 ? '灯油已尽' : '窥视锁孔 · −1 灯油'));
+    btnB.disabled = false; btnB.textContent = '去挑钥匙 →';
+  } else {
+    btnA.disabled = false; btnA.textContent = '放弃这只箱子';
+    btnB.disabled = S.selKey < 0 || S.busy;
+    btnB.textContent = `买下并试开 · ${CFG.price} 金币`;
+  }
+}
+
+/* ================= 回合 ================= */
+function pickTier(){
+  const r = Math.random();
+  let acc = 0;
+  for (let i = 0; i < CFG.tiers.length; i++){
+    acc += CFG.tiers[i].wide;
+    if (r < acc) return i;
+  }
+  return 0;
+}
+function pickMult(list){
+  const r = Math.random();
+  let acc = 0;
+  for (const m of list){ acc += m.p; if (r < acc) return m.v; }
+  return 1;
+}
+
+function newRound(){
+  while (boxRoot.children.length){
+    const c = boxRoot.children[0];
+    boxRoot.remove(c); disposeTree(c);
+  }
+  S.boxes = [];
+  for (let i = 0; i < CFG.boxCount; i++){
+    const ti = pickTier(), tier = CFG.tiers[ti];
+    const n = tier.n[0] + rnd(tier.n[1] - tier.n[0] + 1);
+    const items = [];
+    for (let j = 0; j < n; j++) items.push(ITEMS[rnd(ITEMS.length)]);
+    const surface = items.reduce((a, b) => a + b.value, 0);
+    const g = makeBox(tier, items);
+    g.position.set(0, 1.05 - i * 1.05, 0);
+    boxRoot.add(g);
+    g.traverse(o => o.userData.boxIndex = i);
+    S.boxes.push({ tier, items, surface, mult: pickMult(tier.mult), g });
+  }
+  S.selBox = -1; S.selKey = -1; S.busy = false;
+  S.phase = 'box'; S.peeking = false; S.peeked = false;
+  vig.classList.remove('on');
+  peekBar.style.display = 'none';
+  pins.forEach(p => p.visible = false);
+  msg('点一只箱子看清玻璃下的东西 —— 但底下是什么，谁也不知道');
+  updateUI();
+}
+
+function chooseBox(i){
+  if (S.phase !== 'box' || S.busy) return;
+  S.selBox = i;
+  SFX.tap();
+  const b = S.boxes[i];
+  const names = [...new Set(b.items.map(x => x.name))];
+  msg(`${b.tier.name}｜玻璃下：${names.join('、')}　底下还有什么？不知道`);
+  updateUI();
+}
+
+function confirmBox(){
+  if (S.phase !== 'box' || S.selBox < 0) return;
   S.lock = [rnd(5), rnd(5), rnd(5), rnd(5)];
+  S.lock.forEach((c, i) => {
+    const dep = (0.04 + c * CFG.teeth) * 0.95;
+    pins[i].scale.y = dep;
+    pins[i].position.y = 0.16 - dep / 2;
+  });
+  buildKeys();
+  S.phase = 'lock'; S.peeking = false; S.peeked = false;
+  msg('看清锁芯 —— 但只有一次机会');
+  updateUI();
+}
+
+function buildKeys(){
+  while (keysRoot.children.length){
+    const c = keysRoot.children[0];
+    keysRoot.remove(c); disposeTree(c);
+  }
   const codes = [S.lock.slice()];
   while (codes.length < CFG.keyCount){
     const c = [rnd(5), rnd(5), rnd(5), rnd(5)];
@@ -367,171 +554,146 @@ function newBox(){
     const j = rnd(i + 1);
     [codes[i], codes[j]] = [codes[j], codes[i]];
   }
-  buildKeys(codes);
-
-  S.lock.forEach((c, i) => {
-    const dep = 0.04 + c * CFG.teeth;
-    pins[i].scale.y = dep;
-    pins[i].position.y = 0.37 - dep / 2;
-  });
-
-  S.sel = -1; S.busy = false; S.phase = 'rack';
-  holeEl.style.display = 'none';
-  peekBar.style.display = 'none';
-  msg('轻点一把钥匙，看它的齿口');
-  updateHud();
-}
-
-function buildKeys(codes){
-  while (keysRoot.children.length){
-    const c = keysRoot.children[0];
-    keysRoot.remove(c);
-    c.traverse(o => {
-      if (o.geometry) o.geometry.dispose();
-      if (o.material && o.material !== MAT.brass) o.material.dispose();
-    });
-  }
   S.keys = codes.map((code, i) => {
     const g = makeKey(code);
     g.position.set(0, 0.64 - i * 0.42, 0);
     keysRoot.add(g);
-    const obj = { g, id: i, code, teeth: g.userData.teeth, mat: g.userData.mat,
-                  viewed: false, revealUntil: 0, dead: false };
-    g.traverse(o => { o.userData.keyRef = obj; });
+    const obj = { g, id:i, code, teeth:g.userData.teeth, mat:g.userData.mat,
+                  viewed:false, revealUntil:0, dead:false };
+    g.traverse(o => o.userData.keyRef = obj);
     return obj;
   });
+  keysRoot.visible = true;
 }
 
-function selectKey(i){
-  if (S.busy || S.phase !== 'rack') return;
-  const k = S.keys[i];
-  if (!k || k.dead) return;
-
-  S.sel = i;
-  S.keys.forEach(x => x.mat.emissive.setHex(0x000000));
-  k.mat.emissive.setHex(0x261a06);
-  updateHud();
-
-  if (!k.viewed && k.revealUntil === 0){
-    k.revealUntil = performance.now() + CFG.viewMs;
-    SFX.lift();
-    msg('记住这四个齿的高低 —— 只能看这一次');
-  } else {
-    SFX.tap();
-    msg('这把看过了，凭记忆决定');
-  }
-}
-
-function openPeek(){
-  if (S.busy || S.oil <= 0 || S.peekedBox === S.boxNo){
-    if (S.oil <= 0) toast('灯油用完了<b>只能凭记忆</b>');
-    else toast('这个箱子已经看过了');
-    return;
-  }
-  S.oil--; S.peekedBox = S.boxNo;
-  S.phase = 'peek';
+/* ================= 窥视 ================= */
+function peekStart(){
+  if (S.phase !== 'lock' || S.peeking) return;
+  if (S.peeked){ toast('这只箱子已经看过了'); return; }
+  if (S.oil <= 0){ toast('灯油用完了<b>只能凭记忆</b>'); return; }
+  S.oil--; S.peeked = true; S.peeking = true;
   S.peekUntil = performance.now() + CFG.peekMs;
-  holeEl.style.display = 'block';
+  pins.forEach(p => p.visible = true);
+  vig.classList.add('on');
   peekBar.style.display = 'block';
+  peekFill.style.transform = 'scaleX(1)';
   SFX.peek();
   msg('记住四根锁芯的高低（左→右 ＝ 齿 1–4）');
-  updateHud();
+  updateUI();
 }
-function closePeek(){
-  S.phase = 'rack';
-  S.peekUntil = 0;
-  holeEl.style.display = 'none';
+function peekStop(){
+  S.peeking = false;
+  pins.forEach(p => p.visible = false);
+  vig.classList.remove('on');
   peekBar.style.display = 'none';
-  msg('灯油 −1。现在去挑钥匙');
-  updateHud();
+  msg('灯油 −1。去挑钥匙吧');
+  updateUI();
 }
 
-btnPeek.onclick = () => { if (S.phase === 'peek') closePeek(); else openPeek(); };
-
-btnBuy.onclick = () => {
-  if (S.busy || S.sel < 0) return;
+/* ================= 买钥匙 ================= */
+function buyKey(){
+  if (S.phase !== 'keys' || S.busy || S.selKey < 0) return;
   if (S.coins < CFG.price){ toast('金币不够<b>本局结束</b>'); return; }
-
-  const k = S.keys[S.sel];
+  const k = S.keys[S.selKey];
+  const b = S.boxes[S.selBox];
   S.busy = true;
   S.coins -= CFG.price;
-  S.sel = -1;
-  updateHud();
+  S.selKey = -1;
+  updateUI();
 
   const ok = same(k.code, S.lock);
   k.dead = true;
 
   setTimeout(() => {
     if (ok){
-      const r = Math.random();
-      let acc = 0, gold = 0;
-      for (const it of CFG.loot){ acc += it.p; if (r < acc){ gold = it.gold; break; } }
-
-      if (gold === 0){
+      const gain = Math.round(b.surface * b.mult);
+      if (gain <= 0){
         SFX.empty();
-        toast('咔哒 —— 开了<b>里面是空的</b>只有一层灰', 2100);
+        toast('开了 —— <b>空的</b>玻璃下那些是镀金的假货', 2300);
       } else {
         SFX.open();
-        S.coins += gold;
-        toast(`咔哒 —— 开了<b>+${gold} 金币</b>齿口全中`, 2100);
+        S.coins += gain;
+        toast(`开了 —— <b>+${gain} 金币</b>这只箱子归你了`, 2300);
       }
-      S.solved++;
+      S.opened++;
       S.oil = Math.min(CFG.oilMax, S.oil + 1);
-      S.boxNo++;
-      updateHud();
-
+      updateUI();
       setTimeout(() => {
+        S.busy = false;
         if (S.coins < CFG.price){
-          S.busy = false;
-          saveBest();
           toast('金币不够了<b>点右上角重开</b>', 4200);
         } else {
-          newBox();
+          newRound();
         }
-      }, 2150);
+      }, 2250);
     } else {
       SFX.wrong();
-      toast('钥匙卡住了<b>齿口不对</b>这把钥匙废了', 1900);
+      toast('钥匙卡住了<b>齿口不对</b>这把废了', 1900);
       S.busy = false;
-      updateHud();
+      updateUI();
       msg('再挑一把 —— 箱子还在');
     }
   }, 280);
-};
+}
 
-const BEST_KEY = 'keyhole_best';
-function saveBest(){
-  const best = +(localStorage.getItem(BEST_KEY) || 0);
-  if (S.solved > best) localStorage.setItem(BEST_KEY, S.solved);
-  paintBest();
+/* ================= 输入 ================= */
+const ray = new THREE.Raycaster();
+const pv = new THREE.Vector2();
+function pick(ev, cam, root){
+  pv.x = (ev.clientX / innerWidth) * 2 - 1;
+  pv.y = -(ev.clientY / innerHeight) * 2 + 1;
+  ray.setFromCamera(pv, cam);
+  return ray.intersectObjects(root.children, true)[0];
 }
-function paintBest(){
-  $('best').textContent = '最高记录 · ' + (+(localStorage.getItem(BEST_KEY) || 0)) + ' 箱';
-}
+renderer.domElement.addEventListener('pointerdown', ev => {
+  if (S.busy) return;
+  if (S.phase === 'box'){
+    const hit = pick(ev, camB, boxRoot);
+    if (hit && hit.object.userData.boxIndex >= 0) chooseBox(hit.object.userData.boxIndex);
+  } else if (S.phase === 'keys'){
+    const hit = pick(ev, camK, keysRoot);
+    if (hit && hit.object.userData.keyRef){
+      const k = hit.object.userData.keyRef;
+      if (k.dead) return;
+      S.selKey = k.id;
+      S.keys.forEach(x => x.mat.emissive.setHex(0x000000));
+      k.mat.emissive.setHex(0x261a06);
+      if (!k.viewed && k.revealUntil === 0){
+        k.revealUntil = performance.now() + CFG.viewMs;
+        SFX.lift();
+        msg('记住这四个齿 —— 只能看这一次');
+      } else {
+        SFX.tap();
+        msg('这把看过了，凭记忆决定');
+      }
+      updateUI();
+    }
+  }
+});
+
+/* ================= 按钮 ================= */
+btnA.onclick = () => {
+  if (S.phase === 'box') confirmBox();
+  else if (S.phase === 'lock'){ if (S.peeking) peekStop(); else peekStart(); }
+  else if (S.phase === 'keys'){ newRound(); }
+};
+btnB.onclick = () => {
+  if (S.phase === 'box'){ newRound(); }
+  else if (S.phase === 'lock'){ S.phase = 'keys'; msg('每把钥匙只能看一次，看完凭记忆买'); updateUI(); }
+  else if (S.phase === 'keys'){ buyKey(); }
+};
 $('btnReset').onclick = () => {
-  saveBest();
-  S.coins = CFG.startCoins; S.oil = CFG.oilStart;
-  S.boxNo = 1; S.solved = 0; S.peekedBox = -1;
+  S.coins = CFG.startCoins; S.oil = CFG.oilStart; S.opened = 0;
   toastEl.classList.remove('on');
-  newBox();
+  newRound();
 };
 $('btnStart').onclick = () => {
   ac();
   $('title').classList.add('off');
-  newBox();
+  newRound();
 };
 
-const ray = new THREE.Raycaster();
-const pv = new THREE.Vector2();
-renderer.domElement.addEventListener('pointerdown', e => {
-  if (S.phase !== 'rack' || S.busy) return;
-  pv.x = (e.clientX / innerWidth) * 2 - 1;
-  pv.y = -(e.clientY / innerHeight) * 2 + 1;
-  ray.setFromCamera(pv, camR);
-  const hit = ray.intersectObjects(keysRoot.children, true)[0];
-  if (hit && hit.object.userData.keyRef) selectKey(hit.object.userData.keyRef.id);
-});
-
+/* ================= 布局 ================= */
 function fit(cam, needH, needW){
   const tv = Math.tan(cam.fov * Math.PI / 360);
   return Math.max((needH / 2) / tv, (needW / 2) / (tv * cam.aspect));
@@ -539,27 +701,35 @@ function fit(cam, needH, needW){
 function layout(){
   const w = innerWidth, h = innerHeight;
   renderer.setSize(w, h, false);
-  camR.aspect = camP.aspect = w / h;
-  camR.updateProjectionMatrix(); camP.updateProjectionMatrix();
+  camB.aspect = camK.aspect = camP.aspect = w / h;
+  camB.updateProjectionMatrix(); camK.updateProjectionMatrix(); camP.updateProjectionMatrix();
 
-  camR.position.set(0, -0.20, fit(camR, 2.35, 1.02));
-  camR.lookAt(0, -0.20, 0);
+  camB.position.set(0, 0, fit(camB, 3.0, 1.35));
+  camB.lookAt(0, 0, 0);
 
-  camP.position.set(0, 0.21, fit(camP, 0.36, 0.72));
-  camP.lookAt(0, 0.21 - CFG.aim, 0);
+  camK.position.set(0, -0.20, fit(camK, 2.35, 1.02));
+  camK.lookAt(0, -0.20, 0);
 }
 addEventListener('resize', layout);
 layout();
 
+/* ================= 主循环 ================= */
 function tick(){
   const now = performance.now();
 
+  // 选箱：选中前移
+  S.boxes.forEach((b, i) => {
+    const sel = (S.phase === 'box' && i === S.selBox);
+    b.g.position.z += ((sel ? 0.5 : 0) - b.g.position.z) * 0.14;
+    const s = b.g.scale.x + ((sel ? 1.1 : 1) - b.g.scale.x) * 0.14;
+    b.g.scale.setScalar(s);
+  });
+
+  // 钥匙动画
   for (const k of S.keys){
     if (k.revealUntil && now >= k.revealUntil){
-      k.revealUntil = 0;
-      k.viewed = true;
-      k.mat.color.setHex(0x7d6440);
-      k.mat.roughness = 0.5;
+      k.revealUntil = 0; k.viewed = true;
+      k.mat.color.setHex(0x7d6440); k.mat.roughness = 0.5;
     }
     const showing = k.revealUntil > 0;
     k.teeth.visible = showing;
@@ -570,26 +740,25 @@ function tick(){
     if (k.dead && s < 0.03) k.g.visible = false;
   }
 
-  const dp = dustGeo.attributes.position.array;
-  for (let i = 0; i < DUST_N; i++){
-    dp[i*3+1] += 0.0009;
-    if (dp[i*3+1] > 1.9) dp[i*3+1] = -1.9;
-  }
-  dustGeo.attributes.position.needsUpdate = true;
+  // 锁孔推拉
+  const targetZ = S.peeking ? CAM_P_NEAR : CAM_P_FAR;
+  camP.position.z += (targetZ - camP.position.z) * 0.12;
 
-  if (S.phase === 'peek' && S.peekUntil){
+  // 窥视计时
+  if (S.peeking && S.peekUntil){
     const left = Math.max(0, S.peekUntil - now);
     peekFill.style.transform = `scaleX(${left / CFG.peekMs})`;
-    if (left <= 0) closePeek();
+    if (left <= 0) peekStop();
   }
 
-  const peekOn = S.phase === 'peek';
-  renderer.render(peekOn ? sceneP : sceneR, peekOn ? camP : camR);
+  if (S.phase === 'lock' || S.phase === 'peek') renderer.render(sceneL, camP);
+  else if (S.phase === 'keys') renderer.render(sceneK, camK);
+  else renderer.render(sceneB, camB);
+
   requestAnimationFrame(tick);
 }
 
-paintBest();
-newBox();
+newRound();
 S.phase = 'title';
 tick();
 </script>

@@ -2536,7 +2536,7 @@ setTimeout(()=>{
  const b=document.getElementById('boot');
  if(b)b.classList.add('off');
 },400);
-
+window.addEventListener('error',e=>{document.title='ERR:'+e.message;});
 </script>
 </body>
 </html>    

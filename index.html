@@ -3994,145 +3994,52 @@ updateHud();
   if(MUTE_TOAST){ try{ toast=function(){}; }catch(e){} }
 
   setInterval(killGuide, 800);
-})();  
-/* ===== v32：推理难度并为一行 + 提示黑框不挡物件 ===== */
-(function(){
+})();   
+setTimeout(function(){
+  var d=document.createElement('div');
+  d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#0b0b0b;color:#0f0;font:9px/1.35 monospace;padding:8px;white-space:pre;overflow:auto;display:none';
+  d.onclick=function(){ d.style.display='none'; };
+  document.body.appendChild(d);
 
-  /* ---- 1. 设置页：推理难度 标题 + 3 按钮 并成一行 ---- */
-  function layoutLogic(){
-    var divs=document.querySelectorAll('div'), sec=null;
-    for(var i=0;i<divs.length;i++){
-      var d=divs[i], t=d.textContent||'';
-      if(t.indexOf('推理难度')>=0 && d.querySelectorAll('button').length>=3){
-        if(!sec || t.length < sec.textContent.length) sec=d;
-      }
+  function tree(el,depth){
+    var s='';
+    for(var i=0;i<el.children.length;i++){
+      var c=el.children[i], cls='', oc='';
+      try{ cls=(typeof c.className==='string'&&c.className)?'.'+c.className.trim().split(/\s+/).join('.'):''; }catch(e){}
+      var txt=(c.children.length===0)?(c.textContent||'').trim().slice(0,14):'';
+      if(c.onclick) oc=' [onclick]';
+      s+=new Array(depth+1).join('  ')+c.tagName+(c.id?'#'+c.id:'')+cls+(txt?' "'+txt+'"':'')+oc+'\n';
+      if(depth<5) s+=tree(c,depth+1);
     }
-    if(!sec || sec.getAttribute('data-laid')==='1') return;
-    sec.setAttribute('data-laid','1');
-    sec.style.display='flex';
-    sec.style.alignItems='center';
-    sec.style.gap='8px';
-    sec.style.flexWrap='nowrap';
-
-    var rowEl=null, ch=sec.children;
-    for(var c=0;c<ch.length;c++){
-      if(ch[c].tagName!=='BUTTON' && ch[c].querySelector && ch[c].querySelector('button')){ rowEl=ch[c]; break; }
-    }
-    if(rowEl){ rowEl.style.flex='1'; rowEl.style.minWidth='0'; rowEl.style.display='flex'; rowEl.style.gap='8px'; }
-
-    var bs=sec.querySelectorAll('button');
-    for(var k=0;k<bs.length;k++){
-      bs[k].style.flex='1';
-      bs[k].style.minWidth='0';
-      bs[k].style.padding='8px 4px';
-      bs[k].style.fontSize='13px';
-    }
-    for(var c2=0;c2<ch.length;c2++){
-      if(ch[c2].tagName!=='BUTTON'){ ch[c2].style.flex='0 0 auto'; ch[c2].style.whiteSpace='nowrap'; }
-    }
-  }
-  setInterval(layoutLogic, 800);
-
-  /* ---- 2. 提示黑框：挪到底部 + 点击穿透 ---- */
-  try{
-    var _toast = toast;
-    toast = function(msg, ms){
-      var r = _toast.apply(this, arguments);
-      try{
-        var txt = String(msg||'').replace(/<[^>]+>/g,'').replace(/\s+/g,'').slice(0,8);
-        setTimeout(function(){
-          if(!txt) return;
-          var all = document.body.getElementsByTagName('*');
-          for(var i=0;i<all.length;i++){
-            var el=all[i];
-            if(el.children.length) continue;
-            var s=(el.textContent||'').replace(/\s+/g,'');
-            if(s.indexOf(txt)<0) continue;
-            var p=el, hops=0;
-            while(p && hops<3){
-              var cs=getComputedStyle(p);
-              if(cs.position==='fixed'){
-                p.style.pointerEvents='none';
-                p.style.top='auto';
-                p.style.bottom='10px';
-                p.style.maxWidth='92vw';
-                break;
-              }
-              p=p.parentElement; hops++;
-            }
-          }
-        }, 30);
-      }catch(e){}
-      return r;
-    };
-  }catch(e){}
-
-})();  
-/* ===== v35：设置页拆成「普通模式 / 推理模式」两块，上下排列 ===== */
-(function(){
-  function findReasonBtn(){
-    var els=document.querySelectorAll('div,span,a');
-    for(var i=0;i<els.length;i++){
-      if(els[i].getAttribute && els[i].getAttribute('data-reason')==='1') return els[i];
-    }
-    return null;
+    return s;
   }
 
-  function layout(){
-    var els=document.querySelectorAll('div,span'), logicLabel=null, diffLabel=null;
+  var done=false;
+  var iv=setInterval(function(){
+    if(done) return;
+    var els=document.querySelectorAll('div,span'), lab=null;
     for(var i=0;i<els.length;i++){
       var t=(els[i].textContent||'').trim();
-      if(t==='推理难度' || t==='推理模式'){
-        if(!logicLabel || els[i].children.length < logicLabel.children.length) logicLabel=els[i];
+      if(t.indexOf('推理难度')>=0){ if(!lab||els[i].children.length<lab.children.length) lab=els[i]; }
+    }
+    if(!lab) return;
+    var p=lab;
+    for(var q=0;q<8&&p.parentElement;q++){
+      p=p.parentElement;
+      if((p.textContent||'').indexOf('图鉴')>=0) break;
+    }
+    done=true; clearInterval(iv);
+    var out='v36 结构\n\n'+tree(p,0)+'\n--- onclick 列表 ---\n';
+    var all=p.querySelectorAll('*');
+    for(var j=0;j<all.length;j++){
+      if(all[j].onclick){
+        out+='['+all[j].tagName+' .'+all[j].className+'] "'+(all[j].textContent||'').trim().slice(0,10)+'" => '+String(all[j].onclick).slice(0,70).replace(/\n/g,' ')+'\n';
       }
-      if(t.indexOf('下局生效')>=0 && t.length<20){
-        if(!diffLabel || els[i].children.length < diffLabel.children.length) diffLabel=els[i];
-      }
     }
-    if(!logicLabel || !diffLabel) return;
-    var logicSec = logicLabel.parentElement, diffSec = diffLabel.parentElement;
-    if(!logicSec || !diffSec) return;
-
-    /* 标题 */
-    if((diffLabel.textContent||'').indexOf('普通模式')<0) diffLabel.textContent='普通模式（下局生效）';
-    if((logicLabel.textContent||'').trim()!=='推理模式') logicLabel.textContent='推理模式';
-
-    /* 第一排里的「推理」按钮：藏起来，但保留它用来切换模式 */
-    var cands = diffSec.querySelectorAll('*'), reason=null;
-    for(var j=0;j<cands.length;j++){
-      var e=cands[j];
-      if(e.children.length===0 && (e.textContent||'').trim()==='推理'){ reason=e; break; }
-    }
-    if(reason){
-      reason.setAttribute('data-reason','1');
-      reason.style.display='none';
-    }
-
-    /* 上下排列：推理模式紧贴在普通模式下面 */
-    if(diffSec.nextElementSibling !== logicSec){
-      diffSec.parentNode.insertBefore(logicSec, diffSec.nextElementSibling);
-    }
-
-    /* 点推理模式的难度时，先触发一次「推理」按钮 → 真正切到推理模式 */
-    if(logicSec.getAttribute('data-proxy')!=='1'){
-      logicSec.setAttribute('data-proxy','1');
-      logicSec.addEventListener('click', function(ev){
-        var t=ev.target, txt='';
-        for(var k=0;k<4 && t && t!==logicSec;k++){
-          txt=(t.textContent||'').trim();
-          if(txt) break;
-          t=t.parentNode;
-        }
-        if(txt==='简单'||txt==='困难'||txt==='噩梦'){
-          var rb=findReasonBtn();
-          if(rb) rb.click();
-        }
-      }, true);
-    }
-  }
-
-  setInterval(layout, 900);
-})();  
+    d.textContent=out;
+    d.style.display='block';
+  },800);
+},600);  
 </script>
 </body>
 </html>

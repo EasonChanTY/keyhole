@@ -3964,6 +3964,36 @@ updateHud();
       if(dismissed!==s) render(s);
     }
   },600);
+})();
+/* ===== v31：暂停全部新手教程 / 提示条（后续重做） ===== */
+(function(){
+  /* 引导开关：1 = 关闭（默认关） */
+  var MUTE_TOAST = false;   // 若连"金币不足/升级"这类弹窗也想停，把 false 改成 true
+
+  try{
+    localStorage.setItem('keyhole_guide_v1','0');
+    localStorage.setItem('keyhole_guide_intro','1');
+  }catch(e){}
+
+  var st=document.createElement('style');
+  st.textContent='#tipBar{display:none!important}#guideCard{display:none!important}';
+  document.head.appendChild(st);
+
+  function killGuide(){
+    var g=document.getElementById('guideCard');
+    if(g && g.parentNode) g.parentNode.removeChild(g);
+    var b=document.getElementById('tipBar');
+    if(b) b.style.display='none';
+  }
+  killGuide();
+
+  /* 关掉设置里的"新手提示" */
+  try{ if(typeof S!=='undefined' && S) S.tutorial=false; }catch(e){}
+
+  /* 可选：连 toast 也静默 */
+  if(MUTE_TOAST){ try{ toast=function(){}; }catch(e){} }
+
+  setInterval(killGuide, 800);
 })();  
 </script>
 </body>

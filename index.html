@@ -4442,7 +4442,27 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
 
   setTimeout(function(){ try{ applyKeyTransform(); hideCursor(); }catch(e){} },1200);
 })();
-
+/* 钥匙位置恢复原样（去掉上移 + 缩放） */
+(function(){
+  function restoreKeys(){
+    try{
+      if(typeof keysRoot==='undefined' || !keysRoot) return;
+      if(keysRoot.__by===undefined) keysRoot.__by=keysRoot.position.y;
+      keysRoot.position.y=keysRoot.__by;   /* 回到底部原位 */
+      keysRoot.scale.set(1,1,1);           /* 恢复原始大小 */
+    }catch(e){}
+  }
+  try{
+    var _bk=buildKeys;
+    buildKeys=function(){
+      var r=_bk.apply(this,arguments);
+      try{ restoreKeys(); }catch(e){}
+      return r;
+    };
+  }catch(e){}
+  setTimeout(restoreKeys,600);
+  setInterval(restoreKeys,1500);
+})();
 </script>
 </body>
 </html>

@@ -3995,6 +3995,79 @@ updateHud();
 
   setInterval(killGuide, 800);
 })();  
+/* ===== v32：推理难度并为一行 + 提示黑框不挡物件 ===== */
+(function(){
+
+  /* ---- 1. 设置页：推理难度 标题 + 3 按钮 并成一行 ---- */
+  function layoutLogic(){
+    var divs=document.querySelectorAll('div'), sec=null;
+    for(var i=0;i<divs.length;i++){
+      var d=divs[i], t=d.textContent||'';
+      if(t.indexOf('推理难度')>=0 && d.querySelectorAll('button').length>=3){
+        if(!sec || t.length < sec.textContent.length) sec=d;
+      }
+    }
+    if(!sec || sec.getAttribute('data-laid')==='1') return;
+    sec.setAttribute('data-laid','1');
+    sec.style.display='flex';
+    sec.style.alignItems='center';
+    sec.style.gap='8px';
+    sec.style.flexWrap='nowrap';
+
+    var rowEl=null, ch=sec.children;
+    for(var c=0;c<ch.length;c++){
+      if(ch[c].tagName!=='BUTTON' && ch[c].querySelector && ch[c].querySelector('button')){ rowEl=ch[c]; break; }
+    }
+    if(rowEl){ rowEl.style.flex='1'; rowEl.style.minWidth='0'; rowEl.style.display='flex'; rowEl.style.gap='8px'; }
+
+    var bs=sec.querySelectorAll('button');
+    for(var k=0;k<bs.length;k++){
+      bs[k].style.flex='1';
+      bs[k].style.minWidth='0';
+      bs[k].style.padding='8px 4px';
+      bs[k].style.fontSize='13px';
+    }
+    for(var c2=0;c2<ch.length;c2++){
+      if(ch[c2].tagName!=='BUTTON'){ ch[c2].style.flex='0 0 auto'; ch[c2].style.whiteSpace='nowrap'; }
+    }
+  }
+  setInterval(layoutLogic, 800);
+
+  /* ---- 2. 提示黑框：挪到底部 + 点击穿透 ---- */
+  try{
+    var _toast = toast;
+    toast = function(msg, ms){
+      var r = _toast.apply(this, arguments);
+      try{
+        var txt = String(msg||'').replace(/<[^>]+>/g,'').replace(/\s+/g,'').slice(0,8);
+        setTimeout(function(){
+          if(!txt) return;
+          var all = document.body.getElementsByTagName('*');
+          for(var i=0;i<all.length;i++){
+            var el=all[i];
+            if(el.children.length) continue;
+            var s=(el.textContent||'').replace(/\s+/g,'');
+            if(s.indexOf(txt)<0) continue;
+            var p=el, hops=0;
+            while(p && hops<3){
+              var cs=getComputedStyle(p);
+              if(cs.position==='fixed'){
+                p.style.pointerEvents='none';
+                p.style.top='auto';
+                p.style.bottom='10px';
+                p.style.maxWidth='92vw';
+                break;
+              }
+              p=p.parentElement; hops++;
+            }
+          }
+        }, 30);
+      }catch(e){}
+      return r;
+    };
+  }catch(e){}
+
+})();  
 </script>
 </body>
 </html>

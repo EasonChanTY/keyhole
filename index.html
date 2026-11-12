@@ -3841,32 +3841,63 @@ updateHud();
  /* ⑤ 画一遍最新状态 */
  paintFree();
 })();  
-setTimeout(function(){
-  var L=[];
-  function SRC(n,max){
+/* ============ v28：等级上限 180 + 难度爆率分档 ============ */
+(function(){
+  /* ---- 1. 等级：30 → 180 ---- */
+  xpNeed = function(lv){ return Math.round(18*Math.pow(lv,1.4)); };
+
+  addXp = function(n){
+    if(!n||n<=0||S.lv>=180)return;
+    S.xp+=n;
+    let up=false;
+    while(S.lv<180&&S.xp>=xpNeed(S.lv)){
+      S.xp-=xpNeed(S.lv);
+      S.lv++;
+      up=true;
+    }
+    if(up){
+      applyLvPrice();
+      SFX.cheer();haptic([20,30,60]);
+      toast('升 级 了 ！<b>Lv.'+S.lv+'</b><br>'+
+        (S.lv%5===0?'箱子价格上涨 '+Math.round(lvBonus()*100)+'%！免费箱更快了':''),2600);
+      updateHud();
+    }
+    save();
+    paintProf();
+  };
+
+  freeHours = function(){ return Math.max(4, 24 - S.lv*0.12); };
+
+  /* ---- 2. 难度爆率：垃圾 / 杂物 / 古物 / 珠宝 / 传世 ---- */
+  var W = {
+    easy:      [58,   30,   9.5,  2.5,  0  ],
+    hard:      [42,   30,   18,   8,    2  ],
+    nightmare: [30,   28,   24,   14,   4  ],
+    logic:     [25,   26,   26,   17,   6  ]
+  };
+
+  pickTier = function(){
+    var key='logic';
     try{
-      if(eval('typeof '+n)==='function'){
-        var s=eval(n).toString();
-        return '\n===== '+n+' =====\n'+(s.length>max?s.slice(0,max)+'\n...[后略]':s);
-      }
+      if(MODE===MODES.easy)key='easy';
+      else if(MODE===MODES.hard)key='hard';
+      else if(MODE===MODES.nightmare)key='nightmare';
     }catch(e){}
-    return '\n===== '+n+' ===== 不存在';
-  }
-  L.push('模式变量探测: ');
-  var mv=['mode','MODE','curMode','difficulty','diff','level','LV','DIFF'];
-  var hit=[];
-  for(var i=0;i<mv.length;i++){ try{ var t=eval('typeof '+mv[i]); if(t!=='undefined') hit.push(mv[i]+'('+t+')'); }catch(e){} }
-  L.push(hit.length?hit.join(', '):'（无同名变量）');
-  L.push(SRC('pickTier',700));
-  L.push(SRC('drawItem',700));
-  L.push(SRC('rollLoot',450));
-  L.push(SRC('lvBonus',200));
-  var d=document.createElement('div');
-  d.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;z-index:2147483647;background:#0b0b0b;color:#0f0;font:10px/1.45 monospace;padding:10px;white-space:pre-wrap;word-break:break-all;overflow:auto;-webkit-overflow-scrolling:touch';
-  d.textContent='v27诊断 —— 点任意处关闭\n'+L.join('\n');
-  d.addEventListener('click',function(){ d.style.display='none'; });
-  (document.body||document.documentElement).appendChild(d);
-},800);
+    var w=W[key]||W.hard, n=TIERS.length, total=0, i, ws=[];
+    for(i=0;i<n;i++){
+      ws[i]=(i<w.length)?w[i]:((TIERS[i].wt||1)*0.25);
+      total+=ws[i];
+    }
+    if(total<=0)return TIERS[0];
+    var r=Math.random()*total, a=0;
+    for(i=0;i<n;i++){ a+=ws[i]; if(r<a)return TIERS[i]; }
+    return TIERS[n-1];
+  };
+
+  setTimeout(function(){
+    try{ toast('v28 已装 · 上限180级 · 爆率分档（品质共'+TIERS.length+'档）',3500); }catch(e){}
+  },900);
+})();
 </script>
 </body>
 </html>

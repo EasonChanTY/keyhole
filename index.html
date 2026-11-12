@@ -4068,6 +4068,71 @@ updateHud();
   }catch(e){}
 
 })();  
+/* ===== v35：设置页拆成「普通模式 / 推理模式」两块，上下排列 ===== */
+(function(){
+  function findReasonBtn(){
+    var els=document.querySelectorAll('div,span,a');
+    for(var i=0;i<els.length;i++){
+      if(els[i].getAttribute && els[i].getAttribute('data-reason')==='1') return els[i];
+    }
+    return null;
+  }
+
+  function layout(){
+    var els=document.querySelectorAll('div,span'), logicLabel=null, diffLabel=null;
+    for(var i=0;i<els.length;i++){
+      var t=(els[i].textContent||'').trim();
+      if(t==='推理难度' || t==='推理模式'){
+        if(!logicLabel || els[i].children.length < logicLabel.children.length) logicLabel=els[i];
+      }
+      if(t.indexOf('下局生效')>=0 && t.length<20){
+        if(!diffLabel || els[i].children.length < diffLabel.children.length) diffLabel=els[i];
+      }
+    }
+    if(!logicLabel || !diffLabel) return;
+    var logicSec = logicLabel.parentElement, diffSec = diffLabel.parentElement;
+    if(!logicSec || !diffSec) return;
+
+    /* 标题 */
+    if((diffLabel.textContent||'').indexOf('普通模式')<0) diffLabel.textContent='普通模式（下局生效）';
+    if((logicLabel.textContent||'').trim()!=='推理模式') logicLabel.textContent='推理模式';
+
+    /* 第一排里的「推理」按钮：藏起来，但保留它用来切换模式 */
+    var cands = diffSec.querySelectorAll('*'), reason=null;
+    for(var j=0;j<cands.length;j++){
+      var e=cands[j];
+      if(e.children.length===0 && (e.textContent||'').trim()==='推理'){ reason=e; break; }
+    }
+    if(reason){
+      reason.setAttribute('data-reason','1');
+      reason.style.display='none';
+    }
+
+    /* 上下排列：推理模式紧贴在普通模式下面 */
+    if(diffSec.nextElementSibling !== logicSec){
+      diffSec.parentNode.insertBefore(logicSec, diffSec.nextElementSibling);
+    }
+
+    /* 点推理模式的难度时，先触发一次「推理」按钮 → 真正切到推理模式 */
+    if(logicSec.getAttribute('data-proxy')!=='1'){
+      logicSec.setAttribute('data-proxy','1');
+      logicSec.addEventListener('click', function(ev){
+        var t=ev.target, txt='';
+        for(var k=0;k<4 && t && t!==logicSec;k++){
+          txt=(t.textContent||'').trim();
+          if(txt) break;
+          t=t.parentNode;
+        }
+        if(txt==='简单'||txt==='困难'||txt==='噩梦'){
+          var rb=findReasonBtn();
+          if(rb) rb.click();
+        }
+      }, true);
+    }
+  }
+
+  setInterval(layout, 900);
+})();  
 </script>
 </body>
 </html>

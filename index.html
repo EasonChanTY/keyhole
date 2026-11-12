@@ -2224,6 +2224,252 @@ setTimeout(()=>{
  const b=document.getElementById('boot');
  if(b)b.classList.add('off');
 },400);
+/* ===== 补丁 v14：灯油显示 / 免费箱挪位 / 初始1800 / 推理模式 ===== */
+
+/* ---------- ① 初始金币 1800 ---------- */
+CFG.startCoins=1800;
+(function(){
+ const K='keyhole_v14_money';
+ if(!localStorage.getItem(K)){
+  localStorage.setItem(K,'1');
+  S.coins=Math.max(S.coins,1800);
+  save();
+ }
+})();
+
+/* ---------- ② 灯油明确显示 ---------- */
+updateHud=function(){
+ hCoins.textContent=S.coins;
+ bagCount.textContent=S.bag.length;
+ var d='';
+ for(var i=0;i<CFG.oilMax;i++) d+= (i<S.oil?'●':'○');
+ hOil.innerHTML='灯油 <span style="color:#e6c47f;letter-spacing:1.5px">'+d+
+  '</span> <span style="color:#6f6558">'+S.oil+'/'+CFG.oilMax+'</span>';
+ btnEra.textContent='时代 · '+curEra().n+' ›';
+ hLeft.textContent='行情 '+Math.floor((HOUR-(Date.now()%HOUR))/60000)+' 分后变';
+};
+
+/* ---------- ③ 免费木箱挪进顶栏 ---------- */
+paintFree=function(){
+ var rm=freeRemain();
+ if(rm<=0){
+  freeBtn.innerHTML='🎁 领取';
+  freeBtn.classList.add('ready');
+ }else{
+  var h=Math.floor(rm/3600000),m=Math.floor(rm%3600000/60000);
+  freeBtn.innerHTML='🎁 '+(h>0?h+'时':'')+m+'分';
+  freeBtn.classList.remove('ready');
+ }
+};
+(function(){
+ var h2=document.querySelector('#hud .h2');
+ var era=document.getElementById('btnEra');
+ if(h2&&era){
+  h2.insertBefore(freeBtn,era.nextSibling);
+  freeBtn.style.position='static';
+  freeBtn.style.padding='4px 9px';
+  freeBtn.style.fontSize='10.5px';
+  freeBtn.style.borderRadius='8px';
+  freeBtn.style.boxShadow='none';
+  freeBtn.style.background='#ffffff10';
+  freeBtn.style.color='#9fd7a0';
+  freeBtn.classList.remove('hide');
+ }
+ paintFree();
+})();
+
+/* ---------- ④ 推理模式 ---------- */
+MODES.easy.key='easy';
+MODES.hard.key='hard';
+MODES.nightmare.key='nightmare';
+MODES.logic={name:'推理',teeth:4,step:.050,peek:0,keys:6,obs:0,haz:0,key:'logic',logic:true};
+
+paintModes=function(){
+ [].slice.call(document.querySelectorAll('#modeRow button')).forEach(function(b){
+  b.classList.toggle('on',b.dataset.mode===(MODE.key||'easy'));
+ });
+};
+(function(){
+ var mr=document.getElementById('modeRow');
+ if(!mr)return;
+ var b=document.createElement('button');
+ b.dataset.mode='logic';
+ b.textContent='推理';
+ mr.appendChild(b);
+ b.onclick=function(){
+  MODE=MODES.logic;
+  SFX.tap();haptic(10);paintModes();
+  toast('难度已切换为 <b>推理</b><br>下一局生效',1600);
+ };
+})();
+
+/* ---------- ⑤ 推理：线索生成 ---------- */
+function buildClue(lock,vis){
+ var hidden=[0,1,2,3].filter(function(i){return vis.indexOf(i)<0;});
+ var sum=lock.reduce(function(a,b){return a+b;},0);
+ var opts=[];
+ opts.push({t:'sum',v:sum,txt:'四根锁芯的格数加起来 = '+sum});
+ for(var i=0;i<hidden.length;i++){
+  for(var j=0;j<hidden.length;j++){
+   if(i===j)continue;
+   var a=hidden[i],b=hidden[j];
+   var d=lock[a]-lock[b];
+   if(d>0)opts.push({t:'diff',a:a,b:b,d:d,
+    txt:'第 '+(a+1)+' 根比第 '+(b+1)+' 根长 '+d+' 格'});
+  }
+ }
+ var mx=Math.max.apply(null,lock);
+ if(lock.filter(function(x){return x===mx;}).length===1){
+  var k=lock.indexOf(mx);
+  opts.push({t:'max',k:k,txt:'四根里最长的是第 '+(k+1)+' 根'});
+ }
+ return opts[rnd(opts.length)];
+}
+function clueTest(cl,c){
+ if(!cl)return true;
+ if(cl.t==='sum')return c.reduce(function(a,b){return a+b;},0)===cl.v;
+ if(cl.t==='diff')return (c[cl.a]-c[cl.b])===cl.d;
+ if(cl.t==='max'){
+  var mx=Math.max.apply(null,c);
+  if(c.filter(function(x){return x===mx;}).length!==1)return false;
+  return c.indexOf(mx)===cl.k;
+ }
+ return true;
+}
+function logicCodes(){
+ var lock=S.lock,vis=S.logicVis;
+ var codes=[lock.slice()];
+ var hidden=[0,1,2,3].filter(function(i){return vis.indexOf(i)<0;});
+ var guard=0;
+ // 两个「看得见的都对、但违反线索」的干扰项
+ while(codes.length<3&&guard++<600){
+  var c=lock.slice();
+  for(var i=0;i<hidden.length;i++) c[hidden[i]]=rnd(5);
+  if(same(c,lock))continue;
+  if(codes.some(function(x){return same(x,c);}))continue;
+  if(clueTest(S.logicClue,c))continue;
+  codes.push(c);
+ }
+ // 三个「看得见的就不对」的干扰项
+ guard=0;
+ while(codes.length<6&&guard++<600){
+  var c2=lock.slice();
+  var vi=vis[rnd(vis.length)];
+  c2[vi]=rnd(5);
+  if(c2[vi]===lock[vi])continue;
+  if(codes.some(function(x){return same(x,c2);}))continue;
+  codes.push(c2);
+ }
+ while(codes.length<6){
+  var c3=lock.map(function(){return rnd(5);});
+  if(codes.some(function(x){return same(x,c3);}))continue;
+  codes.push(c3);
+ }
+ for(var i=codes.length-1;i>0;i--){
+  var j=rnd(i+1);var t=codes[i];codes[i]=codes[j];codes[j]=t;
+ }
+ return codes;
+}
+
+/* ---------- ⑥ 推理：钥匙乱堆 ---------- */
+var _buildKeys=buildKeys;
+buildKeys=function(swan,n){
+ if(!MODE.logic){ _buildKeys(swan,n); return; }
+
+ clearGroup(keysRoot);
+ var idx=[0,1,2,3].sort(function(){return Math.random()-.5;}).slice(0,2).sort();
+ S.logicVis=idx;
+ S.logicClue=buildClue(S.lock,idx);
+
+ var codes=logicCodes();
+ S.keys=codes.map(function(code,i){
+  var g=makeKey(code);
+  g.position.set((Math.random()-.5)*.62,
+                 .52-i*.30+(Math.random()-.5)*.14,
+                 -.04+i*.015);
+  g.rotation.z=(Math.random()-.5)*.85;
+  g.rotation.x=(Math.random()-.5)*.20;
+  keysRoot.add(g);
+  var obj={g:g,id:i,code:code,teeth:g.userData.teeth,mat:g.userData.mat,
+   viewed:true,revealUntil:Infinity,dead:false};
+  g.traverse(function(o){o.userData.keyRef=obj;});
+  return obj;
+ });
+ S.keysCenter=0.02;
+ S.keysNeedH=2.95;
+ layout();
+};
+
+/* ---------- ⑦ 推理：锁孔只看两根 ---------- */
+var _peekStart=peekStart;
+peekStart=function(){
+ if(!MODE.logic){ _peekStart(); return; }
+ if(S.phase!=='lock'||S.peeking)return;
+ if(!S.logicVis)return;
+ S.peeked=false;
+ S.peeking=true;
+ S.peekUntil=0;
+ pins.forEach(function(p,i){ p.visible=(S.logicVis.indexOf(i)>=0); });
+ datum.visible=true;
+ vig.classList.add('on');
+ peekBar.style.display='none';
+ SFX.peek();
+ msg('看锁孔 · 没有时间限制 · 看清楚能看的那两根');
+ updateUI();
+};
+
+/* ---------- ⑧ 推理：线索卡片 ---------- */
+var clueCard=document.createElement('div');
+clueCard.id='clueCard';
+clueCard.style.cssText='position:fixed;left:16px;right:16px;'+
+ 'top:calc(96px + env(safe-area-inset-top));z-index:10;padding:12px 14px;'+
+ 'border-radius:13px;background:#0b0806f0;border:1px solid #e6c47f44;'+
+ 'font-size:12.5px;line-height:1.75;color:#d8cdb9;display:none;'+
+ 'text-shadow:0 0 4px #000;box-shadow:0 12px 40px #000a';
+document.body.appendChild(clueCard);
+
+function paintClue(){
+ var show=MODE.logic&&(S.phase==='lock'||S.phase==='keys');
+ clueCard.style.display=show?'block':'none';
+ if(!show)return;
+ if(!S.logicClue||!S.logicVis)return;
+ var vis=S.logicVis.map(function(i){
+  return '第'+(i+1)+'根 '+S.lock[i]+'格';
+ }).join('　');
+ var html='<div style="font-size:10px;letter-spacing:.2em;color:#8f8270;'+
+  'margin-bottom:6px">推理模式 · 没有时间限制</div>'+
+  '<div style="color:#a2957f">能看清：<b style="color:#e6c47f">'+vis+'</b></div>'+
+  '<div style="color:#a2957f;margin-top:4px">线索：<b style="color:#9fd7a0">'+
+  S.logicClue.txt+'</b></div>';
+ if(S.phase==='keys'&&S.selKey>=0&&S.keys[S.selKey]){
+  var k=S.keys[S.selKey];
+  html+='<div style="margin-top:6px;color:#e6c47f">已选 第 '+(k.id+1)+
+   ' 把 → '+k.code.join(' - ')+'</div>';
+ }
+ clueCard.innerHTML=html;
+}
+
+/* ---------- ⑨ 推理：按钮文字修正 ---------- */
+setInterval(function(){
+ paintClue();
+ if(!MODE.logic)return;
+ if(S.phase==='lock'){
+  btnA.disabled=false;
+  btnA.textContent=S.peeking?'移开视线':'看锁孔 · 无限制';
+  btnB.textContent='去挑钥匙 →';
+ }else if(S.phase==='keys'){
+  btnR.style.display='none';
+  if(S.selKey>=0&&S.keys[S.selKey]){
+   msgEl.textContent='第 '+(S.keys[S.selKey].id+1)+' 把 → '+
+    S.keys[S.selKey].code.join(' - ')+'　点「买下并试开」验证';
+  }
+ }else if(S.phase==='box'){
+  btnA.textContent=(S.selBox<0)?'先点一只箱子'
+   :('买下这只 · '+S.boxes[S.selBox].tier.price+' 金');
+ }
+},400);
+
+updateHud();  
 </script>
 </body>
 </html>

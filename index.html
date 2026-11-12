@@ -4025,6 +4025,71 @@ updateHud();
   };
   document.body.appendChild(b);
 })();  
+/* ===== v38：设置页拆成「普通模式 / 推理模式」两块 + 提示框挪到底部 ===== */
+(function(){
+
+  /* 提示黑框：移到底部、点击穿透，不再挡物件 */
+  var st=document.createElement('style');
+  st.textContent='#toast{position:fixed!important;left:50%!important;right:auto!important;top:auto!important;bottom:12px!important;transform:translateX(-50%)!important;pointer-events:none!important;max-width:92vw!important}';
+  document.head.appendChild(st);
+
+  function run(){
+    var setList  = document.getElementById('setList');
+    var modeRow  = document.getElementById('modeRow');
+    var logicRow = document.getElementById('logicRow');
+    if(!setList || !modeRow || !logicRow) return;
+
+    /* 找两个小标题 */
+    var ch=setList.children, labDiff=null, labLogic=null;
+    for(var i=0;i<ch.length;i++){
+      var el=ch[i];
+      if(!el.classList || !el.classList.contains('lab')) continue;
+      var t=(el.textContent||'').replace(/\s+/g,'');
+      if(t.indexOf('下局生效')>=0) labDiff=el;
+      else if(t.indexOf('推理')>=0) labLogic=el;
+    }
+
+    if(labDiff && (labDiff.textContent||'').indexOf('普通模式')<0) labDiff.textContent='普通模式（下局生效）';
+    if(labLogic && (labLogic.textContent||'').replace(/\s+/g,'')!=='推理模式') labLogic.textContent='推理模式';
+
+    /* 把第一排里的「推理」按钮藏起来（保留它，用来切换模式） */
+    var bs=modeRow.querySelectorAll('button'), reason=null;
+    for(var k=0;k<bs.length;k++){
+      if((bs[k].textContent||'').replace(/\s+/g,'')==='推理'){ reason=bs[k]; break; }
+    }
+    if(reason){
+      reason.setAttribute('data-reason','1');
+      if(reason.style.display!=='none') reason.style.display='none';
+    }
+
+    /* 推理模式整块移到普通模式正下方 */
+    if(labLogic && modeRow.nextElementSibling!==labLogic){
+      setList.insertBefore(labLogic, modeRow.nextElementSibling);
+      setList.insertBefore(logicRow, labLogic.nextElementSibling);
+    }
+
+    /* 点推理模式的难度时，先触发隐藏的「推理」按钮 → 真正进入推理模式 */
+    if(!logicRow.getAttribute('data-proxy')){
+      logicRow.setAttribute('data-proxy','1');
+      logicRow.addEventListener('click', function(){
+        var rb=modeRow.querySelector('button[data-reason="1"]');
+        if(rb) rb.click();
+      }, true);
+    }
+  }
+
+  setInterval(run, 700);
+})();
+/* ===== v39：提示文字上移，不遮挡物件 ===== */
+(function(){
+  var st=document.createElement('style');
+  st.textContent =
+    '#toast{position:fixed!important;left:50%!important;right:auto!important;' +
+      'top:13%!important;bottom:auto!important;transform:translateX(-50%)!important;' +
+      'pointer-events:none!important;max-width:90vw!important;z-index:55!important}' +
+    '#stHint{top:15%!important;bottom:auto!important;pointer-events:none!important}';
+  document.head.appendChild(st);
+})();  
 </script>
 </body>
 </html>

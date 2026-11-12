@@ -3842,27 +3842,25 @@ updateHud();
  paintFree();
 })();  
 setTimeout(function(){
-  var out=[], names=['xpNeed','addXp','gainXp','gainExp','MAXLV','LVMAX','LV_MAX','MAX_LV','rollItem','genItem','makeItem','pickCat','rollCat','CAT','MODES','priceAt','freeHours','S'];
-  for(var i=0;i<names.length;i++){
-    var v='X';
-    try{ v=eval('typeof '+names[i]); }catch(e){ v='X'; }
-    out.push(names[i]+':'+v);
-  }
-  var src='';
-  var cand=['rollItem','genItem','makeItem','pickCat','rollCat'];
-  for(var j=0;j<cand.length;j++){
-    try{
-      if(eval('typeof '+cand[j])==='function'){
-        src='\n----- '+cand[j]+' -----\n'+eval(cand[j]).toString().slice(0,600);
-        break;
-      }
-    }catch(e){}
+  var L=[];
+  function T(n){ try{ return eval('typeof '+n); }catch(e){ return 'X'; } }
+  var cand=['roll','pick','weightedPick','wrand','randCat','catRoll','catOf','pickQuality','rollQuality','quality','grade','tier','pickTier','randTier','loot','genLoot','makeLoot','openBox','openChest','openIt','reveal','buildBox','spawnItem','mkItem','itemOf','dropItem','drop','chance','weighted','drawCat','drawItem','rndItem','randomItem','generateItem','createItem','rollLoot','lootRoll','catPick','pickCatBy'];
+  var found=[];
+  for(var i=0;i<cand.length;i++){ if(T(cand[i])==='function') found.push(cand[i]); }
+  L.push('★候选函数: '+(found.length?found.join(', '):'（一个都没有）'));
+  try{ L.push('CAT键: '+Object.keys(CAT).join(',')); }catch(e){}
+  try{ L.push('MODES键: '+Object.keys(MODES).join(',')); }catch(e){}
+  try{ L.push('S键: '+Object.keys(S).join(',')); }catch(e){}
+  var ks=['addXp','xpNeed','priceAt','freeHours'];
+  for(var j=0;j<ks.length;j++){
+    try{ if(eval('typeof '+ks[j])==='function'){ L.push('\n===== '+ks[j]+' =====\n'+eval(ks[j]).toString()); } }catch(e){}
   }
   var d=document.createElement('div');
-  d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#111;color:#0f0;font:11px monospace;line-height:1.4;padding:10px;white-space:pre-wrap;word-break:break-all;max-height:70%;overflow:auto';
-  d.textContent='OK 补丁已生效 TEST-v24\n'+out.join('  ')+src;
+  d.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;z-index:2147483647;background:#0b0b0b;color:#0f0;font:10px/1.45 monospace;padding:10px;white-space:pre-wrap;word-break:break-all;overflow:auto;-webkit-overflow-scrolling:touch';
+  d.textContent='v26诊断 —— 点任意处关闭\n\n'+L.join('\n');
+  d.addEventListener('click',function(){ d.style.display='none'; });
   (document.body||document.documentElement).appendChild(d);
-},800);  
+},800);
 </script>
 </body>
 </html>

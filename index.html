@@ -59,13 +59,13 @@ text-shadow:0 0 4px #000,0 0 10px #000}
 #peekBar{position:fixed;left:0;right:0;bottom:0;height:3px;z-index:7;background:#ffffff12;display:none}
 #peekBar i{display:block;height:100%;width:100%;transform-origin:left;
 background:linear-gradient(90deg,#e6c47f,#fff6dd)}
-#toast{position:fixed;left:50%;top:12%;transform:translate(-50%,0) scale(.96);z-index:9;
-padding:14px 22px;border-radius:16px;text-align:center;background:#0b0806f7;
+#toast{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%) scale(.94);z-index:9;
+padding:20px 26px;border-radius:20px;text-align:center;background:#0b0806f7;
 border:1px solid #ffffff1f;box-shadow:0 26px 80px #000d;opacity:0;transition:.26s;
 pointer-events:none;font-size:13px;line-height:1.65;color:#c0b4a0;white-space:nowrap;
-text-shadow:0 0 4px #000,0 0 10px #000;max-width:90vw;overflow:hidden;text-overflow:ellipsis}
-#toast.on{opacity:1;transform:translate(-50%,0) scale(1)}
-#toast b{color:var(--gold)}
+text-shadow:0 0 4px #000,0 0 10px #000}
+#toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#toast b{display:block;font-size:23px;font-weight:700;color:var(--gold);margin:4px 0}
 #stage{position:fixed;inset:0;z-index:7;display:none}
 #stage.on{display:block}
 #tapLayer{position:absolute;inset:0}
@@ -209,7 +209,6 @@ font-family:-apple-system,"PingFang SC";font-weight:600;box-shadow:0 8px 24px #0
 #freeBtn.hide{opacity:0;pointer-events:none;transform:translateY(8px)}
 #freeBtn.ready{background:linear-gradient(#9ee08a,#4f8f45);color:#0d2008;border-color:#c6f0b8}
 #freeBtn small{font-weight:400;font-size:10px;opacity:.75;margin-left:2px}
-#cxBody,#frBody{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;font-size:12.5px;color:#a89a86;line-height:1.8}
 </style>
 </head>
 <body>
@@ -220,10 +219,10 @@ font-family:-apple-system,"PingFang SC";font-weight:600;box-shadow:0 8px 24px #0
 
 <header id="hud">
   <div class="h1">
-    <div>金币<b id="hCoins">1800</b></div>
+    <div>金币<b id="hCoins">260</b></div>
     <div class="sp"></div>
     <button id="btnBag">背包 <span id="bagCount">0</span></button>
-    <button id="btnSet">设置</button>
+    <button id="btnSet">⚙</button>
   </div>
   <div class="h2">
     <span id="hOil"></span>
@@ -239,7 +238,7 @@ font-family:-apple-system,"PingFang SC";font-weight:600;box-shadow:0 8px 24px #0
     <button id="btnA" class="small">…</button>
     <button id="btnR" class="small">重看这把 · 60 金</button>
   </div>
-  <button id="btnB" class="gold">换一批</button>
+  <button id="btnB" class="gold">…</button>
   <button id="btnC" class="danger">暴力开</button>
 </section>
 
@@ -298,7 +297,7 @@ font-family:-apple-system,"PingFang SC";font-weight:600;box-shadow:0 8px 24px #0
     <div class="dd" id="dDesc"></div>
     <canvas id="dChart"></canvas>
     <div class="chartMeta"><span>最高 <b id="chHi">0</b></span><span id="chCur">拖动查看</span><span>最低 <b id="chLo">0</b></span></div>
-    <div class="chartTip">按住图表左右滑动，看每一个小时的成交价</div>
+    <div class="chartTip">← 按住图表左右滑动，看每一个小时的成交价 →</div>
     <div class="dprice" id="dPrice">0<small>当前市价</small></div>
     <div class="drow"><button id="dFav" class="small">收藏</button><button id="dSell" class="gold">出售</button></div>
   </div>
@@ -309,57 +308,19 @@ font-family:-apple-system,"PingFang SC";font-weight:600;box-shadow:0 8px 24px #0
   <div id="esBody"></div>
 </section>
 
-<section id="cxScreen" class="panel">
-  <div class="phead"><h2>图 鉴</h2><div class="sp"></div><button id="cxClose">关闭</button></div>
-  <div class="mrow" id="cxTabs" style="margin-bottom:10px">
-    <button data-tab="era" class="on">时代</button>
-    <button data-tab="item">物品</button>
-    <button data-tab="danger">危险</button>
-    <button data-tab="play">玩法</button>
-  </div>
-  <div id="cxBody"></div>
-</section>
-
-<section id="friendScreen" class="panel">
-  <div class="phead"><h2>好 友</h2><div class="sp"></div><button id="frClose">关闭</button></div>
-  <div id="frBody"></div>
-</section>
-
 <section id="setScreen" class="panel">
   <div class="phead"><h2>设 置</h2><div class="sp"></div><button id="stClose">关闭</button></div>
   <div id="setList">
-    <div class="lab">普 通 模 式（下局生效）</div>
+    <div class="lab">难 度（下局生效）</div>
     <div class="mrow" id="modeRow">
-      <button data-model="easy">简单</button>
-      <button data-model="hard">困难</button>
-      <button data-model="nightmare">噩梦</button>
-      <button data-model="hell">地狱</button>
+      <button data-mode="easy">简单</button><button data-mode="hard">困难</button><button data-mode="nightmare">噩梦</button>
     </div>
-
-    <div class="lab">推 理 模 式（下局生效）</div>
-    <div class="mrow" id="logicRow">
-      <button data-l="0">简单</button>
-      <button data-l="1">困难</button>
-      <button data-l="2">噩梦</button>
-      <button data-l="3">地狱</button>
-    </div>
-
-    <div class="lab">存 档</div>
+    <div class="lab" style="margin-top:16px">新 手 提 示</div>
+    <div class="mrow"><button id="btnTut">开</button></div>
+    <div class="lab" style="margin-top:16px">存 档</div>
     <button id="btnReset" class="danger" style="flex:0 0 auto">清空存档、重新开始</button>
-
-    <div class="lab">社 交</div>
-    <div class="mrow"><button id="btnFriend">好友 / 联机</button></div>
-
-    <div class="lab">收 藏</div>
-    <div class="mrow"><button id="btnCodex">图鉴</button></div>
-
-    <div class="lab">资 料</div>
-    <div class="mrow" style="align-items:center;gap:10px">
-      <div id="avImg" style="width:44px;height:44px;border-radius:50%;overflow:hidden;background:#2a2118;flex:0 0 auto"></div>
-      <div style="flex:1;min-width:0"><div id="setXp" style="font-size:11px;color:#a2957f;line-height:1.5"></div></div>
-      <button id="btnAv" style="flex:0 0 auto;padding:9px 12px;font-size:12px">换头像</button>
-      <input id="avFile" type="file" accept="image/*" style="display:none">
-    </div>
+    <div style="font-size:10.5px;color:#4f463c;line-height:1.9;margin-top:20px">
+      版本 v13 · 单机版<br>简单模式没有至尊／钻石／黑曜石箱，危险物也最少。</div>
   </div>
 </section>
 
@@ -378,27 +339,20 @@ function err(m){document.body.insertAdjacentHTML('beforeend',
 "three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
 "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}
 </script>
+
+<script type="module">
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 /* ===== 配置 ===== */
-const CFG={startCoins:1800,price:20,reviewCost:60,oilMax:5,oilStart:5,
- viewMs:2600,freeDay:24*3600*1000};
-
-/* 难度：teeth 齿数 / step 齿距 / peek 窥视毫秒 / keys 钥匙数 / obs 遮挡数
-   haz 危险率 / boxes 箱子数 / cols 列数 */
+const CFG={startCoins:260,price:20,reviewCost:60,oilMax:5,oilStart:5,
+ boxCount:5,viewMs:2600,freeDay:24*3600*1000};
 const MODES={
- easy:     {name:'简单',teeth:4,step:.050,peek:5000,keys:4,obs:0,haz:.020,boxes:4,cols:1},
- hard:     {name:'困难',teeth:5,step:.042,peek:3600,keys:5,obs:1,haz:.050,boxes:5,cols:1},
- nightmare:{name:'噩梦',teeth:6,step:.036,peek:2400,keys:6,obs:2,haz:.085,boxes:6,cols:2},
- hell:     {name:'地狱',teeth:9,step:.030,peek:1800,keys:8,obs:4,haz:.120,boxes:8,cols:2,hell:true},
- logic:    {name:'推理',teeth:4,step:.050,peek:0,keys:4,obs:0,haz:0,boxes:4,cols:1,logic:true}
+ easy:{name:'简单',teeth:4,step:.050,peek:5000,keys:5,obs:0,haz:.020},
+ hard:{name:'困难',teeth:5,step:.042,peek:3600,keys:6,obs:1,haz:.050},
+ nightmare:{name:'噩梦',teeth:6,step:.036,peek:2400,keys:7,obs:2,haz:.085}
 };
-/* 推理各档：齿数 / 钥匙 / 免费提示 */
-const LOGIC_TEETH=[4,5,6,6];
-const LOGIC_KEYS =[4,5,6,8];
-const LOGIC_CLUE =[2,1,1,2];
-let MODE=MODES.easy, LOGIC_LV=0;
+let MODE=MODES.easy;
 
 /* ===== 物品库 ===== */
 const ITEMS=[
@@ -695,9 +649,8 @@ function buildPins(n){
 
 /* ===== 遮挡物 ===== */
 const obRoot=new THREE.Group();sceneL.add(obRoot);
-const OB_NAME={bars:'铁栏杆',spring:'弹簧',web:'蛛网',grime:'油污',plate:'锈铁片',
- chain:'铁链',cloth:'破布条',hook:'铁钩',coin:'旧铜钱',bone:'兽骨',eye:'玻璃眼'};
-const OB_LIST=['bars','spring','web','grime','plate','chain','cloth','hook','coin','bone','eye'];
+const OB_NAME={bars:'铁栏杆',spring:'弹簧',web:'蛛网',grime:'油污',plate:'锈铁片',chain:'铁链',cloth:'破布条'};
+const OB_LIST=['bars','spring','web','grime','plate','chain','cloth'];
 function obClear(){
  while(obRoot.children.length){
   const c=obRoot.children[0];obRoot.remove(c);
@@ -751,9 +704,9 @@ function obAdd(kind){
   pl.position.set(0,.02,-.025);obRoot.add(pl);
  }else if(kind==='plate'){
   const b=new THREE.Mesh(new THREE.BoxGeometry(.2,.34,.012),MAT.rust);
-  b.position.set(-.048,-.03,0);b.rotation.z=.16;obRoot.add(b);
+  b.position.set(-.058,-.03,0);b.rotation.z=.16;obRoot.add(b);
   const b2=new THREE.Mesh(new THREE.BoxGeometry(.085,.17,.012),MAT.rust);
-  b2.position.set(.054,-.1,0);b2.rotation.z=-.32;obRoot.add(b2);
+  b2.position.set(.062,-.1,0);b2.rotation.z=-.32;obRoot.add(b2);
  }else if(kind==='chain'){
   for(let i=0;i<5;i++){
    const t=new THREE.Mesh(new THREE.TorusGeometry(.03,.0072,8,18),MAT.iron);
@@ -767,40 +720,14 @@ function obAdd(kind){
    const yy=pos.getY(i);pos.setZ(i,Math.sin(yy*22)*.009);
   }
   pos.needsUpdate=true;pl.geometry.computeVertexNormals();
-  pl.position.set(.012,.05,-.02);pl.rotation.z=.1;obRoot.add(pl);
- }else if(kind==='hook'){
-  const h=new THREE.Mesh(new THREE.TorusGeometry(.045,.0075,10,20,Math.PI*1.35),MAT.rust);
-  h.position.set(.03,-.09,-.02);h.rotation.z=-.5;obRoot.add(h);
-  const s=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,.13,8),MAT.iron);
-  s.position.set(.03,.045,-.02);obRoot.add(s);
- }else if(kind==='coin'){
-  for(let i=0;i<3;i++){
-   const c=new THREE.Mesh(new THREE.CylinderGeometry(.031,.031,.006,18),MAT.copper);
-   c.rotation.x=Math.PI/2;c.rotation.z=i*.7;
-   c.position.set(-.03+i*.03,-.08+i*.05,-.02);obRoot.add(c);
-  }
- }else if(kind==='bone'){
-  const b=new THREE.Mesh(new THREE.CylinderGeometry(.011,.013,.2,8),MAT.silver.clone());
-  b.material.color.set(0xd8cfbd);b.material.roughness=.9;
-  b.rotation.z=1.0;b.position.set(.01,-.02,-.03);obRoot.add(b);
-  [-.1,.1].forEach(function(y){
-   const k=new THREE.Mesh(new THREE.SphereGeometry(.017,8,8),b.material);
-   k.position.set(.01-Math.sin(1.0)*y,-.02+Math.cos(1.0)*y,-.03);obRoot.add(k);
-  });
- }else if(kind==='eye'){
-  const e=new THREE.Mesh(new THREE.SphereGeometry(.034,14,12),
-   new THREE.MeshStandardMaterial({color:0xe8e2d2,roughness:.2}));
-  e.position.set(.035,-.02,-.02);obRoot.add(e);
-  const p=new THREE.Mesh(new THREE.SphereGeometry(.016,10,10),
-   new THREE.MeshStandardMaterial({color:0x3a2a12,roughness:.15}));
-  p.position.set(.035,-.02,.012);obRoot.add(p);
+  pl.position.set(.015,.05,-.02);pl.rotation.z=.1;obRoot.add(pl);
  }
 }
 function buildObstructions(list){
  obClear();
  (list||[]).forEach(obAdd);
 }
-/* ===== 相机与场景（钥匙 / 展示） ===== */
+
 const camP=new THREE.PerspectiveCamera(40,1,.05,60);
 const CAM_P_NEAR=1.05,CAM_P_FAR=1.95;
 
@@ -837,6 +764,7 @@ const camR=new THREE.PerspectiveCamera(45,1,.05,40);
 /* ===== 模型：物品 ===== */
 function makeItemMesh(tier){
  const g=new THREE.Group();
+
  if(tier===1){
   const geo=new THREE.IcosahedronGeometry(.034,1);
   const p=geo.attributes.position;
@@ -845,9 +773,11 @@ function makeItemMesh(tier){
    p.setXYZ(i,p.getX(i)*k,p.getY(i)*k,p.getZ(i)*k);
   }
   geo.computeVertexNormals();
-  g.add(new THREE.Mesh(geo,MAT.paper));
+  const m=new THREE.Mesh(geo,MAT.paper);
+  m.position.y=.030;g.add(m);
   const m2=new THREE.Mesh(geo.clone(),MAT.paper);
   m2.scale.setScalar(.55);m2.position.set(.030,.014,.012);g.add(m2);
+
  }else if(tier===2){
   const d=new THREE.Mesh(new THREE.CylinderGeometry(.034,.034,.010,28),MAT.copper);
   d.position.y=.008;g.add(d);
@@ -858,6 +788,7 @@ function makeItemMesh(tier){
    const h=new THREE.Mesh(new THREE.CylinderGeometry(.0042,.0042,.013,8),MAT.dark);
    h.position.set(Math.cos(a)*.014,.008,Math.sin(a)*.014);g.add(h);
   }
+
  }else if(tier===3){
   const band=new THREE.Mesh(new THREE.TorusGeometry(.036,.0075,16,40),MAT.silver);
   band.rotation.x=Math.PI/2;band.position.y=.018;g.add(band);
@@ -869,8 +800,10 @@ function makeItemMesh(tier){
    const a=i/4*Math.PI*2;
    const pr=new THREE.Mesh(new THREE.BoxGeometry(.0045,.014,.0045),MAT.silver);
    pr.position.set(Math.cos(a)*.014,.043,Math.sin(a)*.014);
-   pr.rotation.z=Math.cos(a)*.45;pr.rotation.x=-Math.sin(a)*.45;g.add(pr);
+   pr.rotation.z=Math.cos(a)*.45;pr.rotation.x=-Math.sin(a)*.45;
+   g.add(pr);
   }
+
  }else if(tier===4){
   const band=new THREE.Mesh(new THREE.TorusGeometry(.031,.0065,12,32),MAT.gold);
   band.rotation.x=Math.PI/2;band.position.y=.013;g.add(band);
@@ -882,8 +815,10 @@ function makeItemMesh(tier){
    const a=i/4*Math.PI*2+.8;
    const pr=new THREE.Mesh(new THREE.BoxGeometry(.006,.03,.006),MAT.gold);
    pr.position.set(Math.cos(a)*.032,.048,Math.sin(a)*.032);
-   pr.rotation.z=Math.cos(a)*.5;pr.rotation.x=-Math.sin(a)*.5;g.add(pr);
+   pr.rotation.z=Math.cos(a)*.5;pr.rotation.x=-Math.sin(a)*.5;
+   g.add(pr);
   }
+
  }else{
   const table=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.004,8),MAT.diamond);
   table.position.y=.094;g.add(table);
@@ -947,7 +882,8 @@ function makeEventMesh(ev){
   b.position.y=.028;g.add(b);
   const band=new THREE.Mesh(new THREE.BoxGeometry(.08,.012,.08),MAT.brass);
   band.position.y=.045;g.add(band);
-  const band2=band.clone();band2.position.y=.012;g.add(band2);
+  const band2=new THREE.Mesh(new THREE.BoxGeometry(.08,.012,.08),MAT.brass);
+  band2.position.y=.012;g.add(band2);
  }
  return g;
 }
@@ -966,7 +902,7 @@ function makeCrack(sev){
  });
  g.userData.mat=mat;return g;
 }
-const segLen=q=>.06+q*Math.max(.028,MODE.step||.05);
+const segLen=q=>.06+q*MODE.step;
 
 /* ===== 模型：箱子 ===== */
 function makeBox(tier,shown){
@@ -1051,7 +987,7 @@ function makeKey(code){
   new THREE.MeshStandardMaterial({color:0x4a3612,metalness:.85,roughness:.45}));
  dl.position.set(.06,.030,.001);g.add(dl);
 
- const n=code.length,gap=.28/Math.max(1,n-1),w=Math.min(.062,gap*.64);
+ const n=code.length,gap=.28/(n-1),w=Math.min(.062,gap*.64);
  const teeth=new THREE.Group();
  for(let i=0;i<n;i++){
   const L=segLen(code[i]);
@@ -1075,8 +1011,7 @@ const S={nick:'守箱人',coins:CFG.startCoins,oil:CFG.oilStart,opened:0,bag:[],
  boxes:[],selBox:-1,lock:[],keys:[],selKey:-1,phase:'title',peeking:false,peeked:false,
  busy:false,peekUntil:0,loot:[],drawIdx:-1,collected:0,gotCount:0,bagStart:0,
  summary:false,insp:null,detailIdx:-1,bulk:false,picked:new Set(),obs:[],
- exploded:false,hasNest:false,avatar:'',
- lv:1,xp:0,freeAt:0,tutorial:false};
+ exploded:false,hasNest:false,tutorial:true};
 
 const rnd=n=>Math.floor(Math.random()*n);
 const same=(a,b)=>a.every((v,i)=>v===b[i]);
@@ -1105,9 +1040,8 @@ function flash(q){
 }
 function haptic(x){try{if(navigator.vibrate)navigator.vibrate(x);}catch(e){}}
 const bruteCost=b=>Math.round(b.tier.price*1.2)+90;
-const rerollCost=()=>Math.min(30,10+Math.floor((S.lv||1)/10));
 
-/* ===== 新手提示（默认关闭） ===== */
+/* ===== 新手提示 ===== */
 const TIPS={
  box:'点一只箱子 —— 玻璃下只露出最贵的两件，其余全靠赌',
  lock:'点「窥视锁孔」看一次，记住锁芯比基准线往下多长',
@@ -1119,8 +1053,10 @@ let tipsSeen={};
 try{tipsSeen=JSON.parse(localStorage.getItem(TIP_KEY)||'{}');}catch(e){}
 function showTip(k){
  if(!S.tutorial||tipsSeen[k])return;
- const el=$('tipBar');if(!el||!TIPS[k])return;
- el.textContent='💡  '+TIPS[k];el.classList.add('on');
+ const el=$('tipBar');
+ if(!el||!TIPS[k])return;
+ el.textContent='💡  '+TIPS[k];
+ el.classList.add('on');
  clearTimeout(window.__tipT);
  window.__tipT=setTimeout(()=>el.classList.remove('on'),4600);
  tipsSeen[k]=1;
@@ -1129,10 +1065,8 @@ function showTip(k){
 
 /* ===== 存档 ===== */
 function save(){
- try{localStorage.setItem(SAVE_KEY,JSON.stringify({
-  nick:S.nick,coins:S.coins,bag:S.bag,opened:S.opened,tutorial:S.tutorial,
-  lv:S.lv,xp:S.xp,avatar:S.avatar,freeAt:S.freeAt
- }));}catch(e){}
+ try{localStorage.setItem(SAVE_KEY,JSON.stringify(
+  {nick:S.nick,coins:S.coins,bag:S.bag,opened:S.opened,tutorial:S.tutorial}));}catch(e){}
 }
 function load(){
  try{
@@ -1142,16 +1076,12 @@ function load(){
    S.coins=typeof d.coins==='number'?d.coins:CFG.startCoins;
    S.bag=Array.isArray(d.bag)?d.bag:[];
    S.opened=d.opened||0;
-   S.tutorial=false;
-   S.lv=d.lv||1;S.xp=d.xp||0;
-   S.avatar=d.avatar||'';S.freeAt=d.freeAt||0;
+   S.tutorial=d.tutorial!==false;
    return true;
   }
  }catch(e){}
  return false;
 }
-/* 首次进入补满 1800 */
-if(!load()){ S.coins=CFG.startCoins; }
 
 /* ===== HUD ===== */
 function updateHud(){
@@ -1171,7 +1101,7 @@ function updateUI(){
   const b=S.boxes[S.selBox];
   btnA.disabled=(S.selBox<0)||(b?S.coins<b.tier.price:true);
   btnA.textContent=S.selBox<0?'先点一只箱子':'买下这只 · '+S.boxes[S.selBox].tier.price+' 金';
-  btnB.disabled=false;btnB.textContent='换一批 · '+rerollCost()+' 金';
+  btnB.disabled=false;btnB.textContent='换一批';
   if(S.coins<18&&S.bag.length===0)msg('金币不够了 —— 等免费木箱，或者去背包看看');
  }else if(S.phase==='lock'){
   btnA.disabled=S.peeked||S.oil<=0;
@@ -1185,7 +1115,7 @@ function updateUI(){
   btnR.disabled=S.selKey<0||S.busy||S.coins<CFG.reviewCost;
   btnR.textContent='重看这把 · '+CFG.reviewCost+' 金';
   btnB.disabled=S.selKey<0||S.busy;
-  btnB.textContent=(MODE.logic?'试开 · ':'买下并试开 · ')+CFG.price+' 金';
+  btnB.textContent='买下并试开 · '+CFG.price+' 金';
   if(b){
    const c=bruteCost(b);
    btnC.style.display='block';
@@ -1197,13 +1127,20 @@ function updateUI(){
 
 /* ===== 七种箱型 ===== */
 const TIERS=[
-{name:'木箱',metal:0x8a6a3a,price:18,n:[3,3],w:[.45,.32,.16,.07,0],swan:.03,wt:.35,hz:0},
-{name:'铜箱',metal:0xb87333,price:55,n:[4,4],w:[.34,.30,.22,.12,.02],swan:.05,wt:.26,hz:.006},
-{name:'银箱',metal:0xb9c3cc,price:130,n:[6,6],w:[.22,.30,.28,.15,.05],swan:.07,wt:.20,hz:.012},
-{name:'金箱',metal:0xd8b25c,price:280,n:[8,8],w:[.14,.26,.28,.22,.10],swan:.10,wt:.12,hz:.020},
-{name:'至尊箱',metal:0xf0d78a,price:650,n:[10,10],w:[.10,.20,.26,.24,.20],swan:.14,wt:.05,hz:.030},
-{name:'钻石箱',metal:0x9fd8ff,body:0x16202e,price:1400,n:[12,12],w:[0,.08,.22,.35,.35],swan:.18,wt:.004,hz:.05},
-{name:'黑曜石箱',metal:0x2f2f38,body:0x14141a,price:280,n:[5,5],w:[1,0,0,0,0],swan:.06,wt:.016,hz:.04,special:'obsidian'}
+{name:'木箱',metal:0x8a6a3a,price:18,n:[3,3],w:[.45,.32,.16,.07,0],
+ swan:.03,wt:.35,hz:0},
+{name:'铜箱',metal:0xb87333,price:55,n:[4,4],w:[.34,.30,.22,.12,.02],
+ swan:.05,wt:.26,hz:.006},
+{name:'银箱',metal:0xb9c3cc,price:130,n:[6,6],w:[.22,.30,.28,.15,.05],
+ swan:.07,wt:.20,hz:.012},
+{name:'金箱',metal:0xd8b25c,price:280,n:[8,8],w:[.14,.26,.28,.22,.10],
+ swan:.10,wt:.12,hz:.020},
+{name:'至尊箱',metal:0xf0d78a,price:650,n:[10,10],w:[.10,.20,.26,.24,.20],
+ swan:.14,wt:.05,hz:.030},
+{name:'钻石箱',metal:0x9fd8ff,body:0x16202e,price:1400,n:[12,12],w:[0,.08,.22,.35,.35],
+ swan:.18,wt:.004,hz:.05},
+{name:'黑曜石箱',metal:0x2f2f38,body:0x14141a,price:280,n:[5,5],w:[1,0,0,0,0],
+ swan:.06,wt:.016,hz:.04,special:'obsidian'}
 ];
 const FLAW_P=[0,0,.05,.14,.28,.40];
 const MED={scorpion:20,sulfur:12,bomb:60};
@@ -1228,33 +1165,31 @@ function insertEvt(out,ev){
  const i=out.length>2?1+rnd(out.length-1):out.length;
  out.splice(i,0,ev);
 }
-/* 地狱/推理地狱：品质整体上移 */
-function boostW(w){
- const n=[w[0]*.55,w[1]*.85,w[2]*1.35,w[3]*2.1,w[4]*3.2];
- const s=n[0]+n[1]+n[2]+n[3]+n[4]||1;
- return [n[0]/s,n[1]/s,n[2]/s,n[3]/s,n[4]/s];
-}
 function rollLoot(tier){
  if(tier.special==='obsidian'){
   const out=[];
   const pool=['scorpion','scorpion','sulfur','sulfur','bomb','junk','junk'];
   for(let i=0;i<4;i++){
    const k=pool[rnd(pool.length)];
-   if(k==='junk')out.push({kind:'item',item:POOL[1][rnd(POOL[1].length)],cond:1});
-   else out.push({kind:'evt',ev:k});
+   if(k==='junk'){
+    out.push({kind:'item',item:POOL[1][rnd(POOL[1].length)],cond:1});
+   }else{
+    out.push({kind:'evt',ev:k});
+   }
   }
-  if(Math.random()<.32)out.push({kind:'item',item:OBS_ITEMS[rnd(OBS_ITEMS.length)],cond:1});
-  else out.push({kind:'item',item:POOL[1][rnd(POOL[1].length)],cond:1});
+  if(Math.random()<.32){
+   out.push({kind:'item',item:OBS_ITEMS[rnd(OBS_ITEMS.length)],cond:1});
+  }else{
+   out.push({kind:'item',item:POOL[1][rnd(POOL[1].length)],cond:1});
+  }
   return out;
  }
- const isHard=MODE.hell||(MODE.logic&&LOGIC_LV===3);
- const w=isHard?boostW(tier.w):tier.w;
- const n0=tier.n[0]+(isHard?1:0),n1=tier.n[1]+(isHard?1:0);
- const n=n0+rnd(n1-n0+1);
+
+ const n=tier.n[0]+rnd(tier.n[1]-tier.n[0]+1);
  const out=[];
  for(let i=0;i<n;i++){
   const r=Math.random();let a=0,t=1;
-  for(let k=0;k<5;k++){a+=w[k];if(r<a){t=k+1;break;}}
+  for(let k=0;k<5;k++){a+=tier.w[k];if(r<a){t=k+1;break;}}
   const pool=POOL[t];
   out.push({kind:'item',item:pool[rnd(pool.length)],cond:rollCond(t)});
  }
@@ -1277,26 +1212,17 @@ function clearGroup(root){
  }
 }
 
-/* ===== 回合：箱子数量 & 双列排布 ===== */
+/* ===== 回合 ===== */
 function newRound(){
  clearGroup(boxRoot);
  S.boxes=[];
- const cnt=MODE.boxes||5, cols=MODE.cols||1;
- const perCol=cols===2?Math.ceil(cnt/2):cnt;
- const topY=1.22, span=2.0;
- const stepY=perCol>1?span/(perCol-1):0;
- for(let i=0;i<cnt;i++){
+ for(let i=0;i<CFG.boxCount;i++){
   const tier=pickTier();
   const loot=rollLoot(tier);
   const shown=loot.filter(x=>x.kind==='item')
    .sort((a,b)=>b.item.t-a.item.t).slice(0,2);
   const g=makeBox(tier,shown);
-  let col,row;
-  if(cols===2){col=i<perCol?0:1;row=i%perCol;}
-  else{col=0;row=i;}
-  const x=cols===2?(col===0?-.62:.62):0;
-  g.position.set(x,topY-row*stepY,0);
-  g.rotation.y=cols===2?(col===0?.22:-.22):0;
+  g.position.set(0,1.46-i*.73,0);
   boxRoot.add(g);
   g.traverse(o=>o.userData.boxIndex=i);
   S.boxes.push({tier,loot,shown,g,swan:Math.random()<tier.swan});
@@ -1313,11 +1239,10 @@ function newRound(){
  datum.visible=false;
  obClear();
  layout();
- msg(MODE.name+'模式 · '+(MODE.logic?LOGIC_TEETH[LOGIC_LV]:MODE.teeth)+' 齿 · 点一只箱子');
+ msg(MODE.name+'模式 · '+MODE.teeth+' 齿 · 点一只箱子');
  updateUI();
  showTip('box');
 }
-/* ===== 选箱 ===== */
 function chooseBox(i){
  if(S.phase!=='box'||S.busy)return;
  S.selBox=i;SFX.tap();haptic(8);
@@ -1332,85 +1257,52 @@ function chooseBox(i){
  }
  updateUI();
 }
-
-/* ===== 买下并进锁孔 ===== */
 function confirmBox(){
  if(S.phase!=='box'||S.selBox<0)return;
  const b=S.boxes[S.selBox];
  if(S.coins<b.tier.price){toast('金币不够买这只箱子');return;}
  S.coins-=b.tier.price;save();
-
- /* 齿数：地狱 8/9/10 随机；推理按等级；其余固定 */
- let n;
- if(MODE.logic) n=LOGIC_TEETH[LOGIC_LV];
- else if(MODE.hell) n=8+rnd(3);
- else n=MODE.teeth;
-
+ const n=MODE.teeth;
  buildPins(n);
-
- /* 遮挡物：数量按难度，最多 4，互不重复 */
  S.obs=[];
- const want=MODE.obs||0;
- let guard=0;
- while(S.obs.length<want && guard++<80){
-  const k=OB_LIST[rnd(OB_LIST.length)];
-  if(S.obs.indexOf(k)>=0)continue;
-  S.obs.push(k);
+ if(MODE.obs>0){
+  S.obs.push(OB_LIST[rnd(OB_LIST.length)]);
+  if(MODE.obs>1){
+   let k=OB_LIST[rnd(OB_LIST.length)],guard=0;
+   while(k===S.obs[0]&&guard++<8)k=OB_LIST[rnd(OB_LIST.length)];
+   S.obs.push(k);
+  }
  }
  buildObstructions(S.obs);
-
  S.lock=Array.from({length:n},()=>rnd(5));
  S.lock.forEach((c,i)=>{
   const L=segLen(c)*.95;
   pins[i].scale.y=L;pins[i].position.y=.16-L/2;
  });
-
- /* 推理线索 */
- if(MODE.logic){
-  const vi=rnd(n);
-  let a=rnd(n),bb=(a+1+rnd(n-1))%n;
-  S.clueInfo={vi,val:S.lock[vi],a,b:bb,sum:(S.lock[a]+S.lock[bb])%5,extra:0};
- }else S.clueInfo=null;
-
  buildKeys(b.swan,n);
  S.busy=true;updateUI();
  fadeTo(()=>{
   S.phase='lock';S.peeking=false;S.peeked=false;S.busy=false;
-  const ob=S.obs.length?(' · 锁孔里塞着 '+S.obs.map(x=>OB_NAME[x]||x).join(' + ')):'';
+  const ob=S.obs.length?(' · 锁孔里塞着 '+S.obs.map(x=>OB_NAME[x]).join(' + ')):'';
   msg('看清 '+n+' 根锁芯'+ob);
   updateUI();
   showTip('lock');
  });
 }
-
-/* ===== 生成钥匙 ===== */
 function buildKeys(blackSwan,n){
  clearGroup(keysRoot);
- const isLogic=MODE.logic;
- const want=isLogic?LOGIC_KEYS[LOGIC_LV]:MODE.keys;
  const codes=[];
  if(!blackSwan)codes.push(S.lock.slice());
-
- let guard=0;
- while(codes.length<want && guard++<6000){
-  let c;
-  if(isLogic){
-   c=S.lock.slice();
-   const vi=rnd(n);
-   c[vi]=(c[vi]+1+rnd(4))%5;
-  }else{
-   c=Array.from({length:n},()=>rnd(5));
-  }
+ while(codes.length<MODE.keys){
+  const c=Array.from({length:n},()=>rnd(5));
   if(codes.some(x=>same(x,c)))continue;
   codes.push(c);
  }
- while(codes.length<want)codes.push(Array.from({length:n},()=>rnd(5)));
-
  for(let i=codes.length-1;i>0;i--){
-  const j=rnd(i+1);const t=codes[i];codes[i]=codes[j];codes[j]=t;
+  const j=rnd(i+1);[codes[i],codes[j]]=[codes[j],codes[i]];
  }
  const cnt=codes.length;
- const sp=Math.min(.40,2.3/Math.max(1,cnt-1)),top=.62;
+ const sp=Math.min(.42,2.35/(cnt-1)),top=.66;
  S.keys=codes.map((code,i)=>{
   const g=makeKey(code);
   g.position.set(0,top-i*sp,0);
@@ -1431,15 +1323,14 @@ function peekStart(){
  if(S.peeked){toast('这只箱子已经看过了');return;}
  if(S.oil<=0){toast('灯油用完了<b>只能凭记忆</b>');return;}
  S.oil--;S.peeked=true;S.peeking=true;
- const dur=MODE.logic?5000:MODE.peek;
- S.peekUntil=performance.now()+dur;
+ S.peekUntil=performance.now()+MODE.peek;
  pins.forEach(p=>p.visible=true);
  datum.visible=true;
  vig.classList.add('on');
  peekBar.style.display='block';
  peekFill.style.transform='scaleX(1)';
  SFX.peek();haptic(12);
- msg('记住 '+S.lock.length+' 根锁芯比基准线往下多长');
+ msg('记住 '+MODE.teeth+' 根锁芯比基准线往下多长');
  updateUI();
 }
 function peekStop(){
@@ -1681,6 +1572,7 @@ function showSummary(exploded){
  updateUI();
  if(!exploded)SFX.open();
 }
+
 /* ===== 开箱 ===== */
 function afterOpen(b){
  S.opened++;
@@ -1691,24 +1583,6 @@ function afterOpen(b){
  S.boxes.forEach((x,i)=>{x.g.visible=(i===S.selBox);});
  setTimeout(()=>{fadeTo(()=>startStage(b));},900);
 }
-
-/* ===== 挑钥匙 ===== */
-function pickKey(i){
- if(S.phase!=='keys'||S.busy)return;
- const k=S.keys[i];
- if(!k||k.dead)return;
- S.selKey=i;
- S.keys.forEach((x,j)=>{ x.g.position.z = j===i ? .09 : 0; });
- if(!k.viewed){
-  k.viewed=true;
-  k.revealUntil=performance.now()+CFG.viewMs;
-  SFX.lift();haptic(10);
- }
- msg('第 '+(i+1)+' 把钥匙'+(MODE.logic?' · 齿口看过了':' · 已举起'));
- updateUI();
-}
-
-/* ===== 买下试开 ===== */
 function buyKey(){
  if(S.phase!=='keys'||S.busy||S.selKey<0)return;
  if(S.coins<CFG.price){toast('金币不够<b>本局结束</b>');return;}
@@ -1719,42 +1593,18 @@ function buyKey(){
  k.dead=true;
  setTimeout(()=>{
   if(ok){
-   if(MODE.logic){
-    const bonus=30+LOGIC_LV*25;
-    S.coins+=bonus;
-    toast('推理正确！<b>+'+bonus+' 金</b>',1900);
-    updateHud();
-   }
    SFX.open();haptic([10,20,40]);
    afterOpen(b);
-   return;
+  }else{
+   SFX.wrong();haptic([50,40,90]);
+   const alive=S.keys.filter(x=>!x.dead).length;
+   toast(alive===0?'五把钥匙都不对<b>锁被换过了</b>':'钥匙卡住了<b>齿口不对</b>这把废了',
+    alive===0?2600:1900);
+   S.busy=false;updateUI();
+   msg('再挑一把 —— 箱子还在');
   }
-  /* 错 */
-  let extra=0;
-  if(MODE.logic){
-   /* 推理：一次机会，错即整箱作废 */
-   if(LOGIC_LV===3)extra=Math.round(CFG.price*1.2);
-   S.coins=Math.max(0,S.coins-extra);
-   SFX.wrong();haptic([60,50,110]);flash(4);
-   toast('推理失误 —— <b>整箱作废</b>'+(extra?(' 额外罚款 −'+extra+' 金'):''),2600);
-   updateHud();save();
-   setTimeout(()=>{S.busy=false;newRound();},1400);
-   return;
-  }
-  if(MODE.hell){extra=Math.round(CFG.price*1.5)+20;S.coins=Math.max(0,S.coins-extra);}
-  SFX.wrong();haptic([50,40,90]);
-  if(extra)flash(3);
-  const alive=S.keys.filter(x=>!x.dead).length;
-  toast(alive===0?(MODE.hell?'齿口全错 <b>锁被换过</b>':'五把钥匙都不对<b>锁被换过了</b>')
-        :('齿口不对<b>这把废了</b>'+(extra?(' 罚款 −'+extra+' 金'):'')),
-        alive===0?2600:1900);
-  updateHud();save();
-  S.busy=false;updateUI();
-  msg('再挑一把 —— 箱子还在');
  },280);
 }
-
-/* ===== 暴力开 ===== */
 function bruteForce(){
  if(S.phase!=='keys'||S.busy)return;
  const b=S.boxes[S.selBox],c=bruteCost(b);
@@ -1770,8 +1620,6 @@ function bruteForce(){
  toast(best?('咔嚓 —— 锁断了<b>'+best.item.n+' 碎了</b>'):'咔嚓 —— 锁断了',2100);
  setTimeout(()=>afterOpen(b),1100);
 }
-
-/* ===== 重看这把 ===== */
 function reviewKey(){
  if(S.phase!=='keys'||S.busy||S.selKey<0)return;
  if(S.coins<CFG.reviewCost){toast('金币不够重看');return;}
@@ -1785,25 +1633,15 @@ function reviewKey(){
  toast('盯着看 —— 这次看清楚了',1400);
 }
 
-/* ===== 推理线索文案 ===== */
-function logicText(){
- const c=S.clueInfo;if(!c)return '';
- const lines=[];
- lines.push('锁孔里看清：第 '+(c.vi+1)+' 根 = '+c.val+' 格');
- lines.push('线索：第 '+(c.a+1)+' 根 + 第 '+(c.b+1)+' 根 = '+(c.sum%5)+' 格');
- if(c.extra){
-  const free=S.lock.slice().sort((x,y)=>x-y);
-  lines.push('追加线索：所有齿口里有一个 '+free[free.length-1]+' 格');
- }
- return lines.join('\n');
-}
-function showLogicCard(){
- if(!MODE.logic)return;
- const t=logicText();
- if(!t)return;
- toast(t.replace(/\n/g,'<br>'),4200);
-}
 /* ===== 背包 ===== */
+function openBag(){
+ S.bulk=false;S.picked.clear();
+ $('bulkBar').classList.remove('on');
+ $('bsBulk').textContent='批量';
+ renderBag();
+ $('bagScreen').classList.add('on');
+ showTip('bag');
+}
 function renderBag(){
  const list=$('bagList');
  list.innerHTML='';
@@ -1876,7 +1714,6 @@ $('bulkSell').onclick=()=>{
  S.coins+=s;
  S.bag=keep;
  S.picked.clear();
- gainXp(Math.round(s*.6));
  SFX.coin();haptic([10,20,30]);
  save();
  toast('卖出 '+n+' 件<b>+'+s+' 金</b>',1800);
@@ -2015,7 +1852,6 @@ $('dSell').onclick=()=>{
  if(p<=0)return;
  S.coins+=p;
  S.bag.splice(i,1);
- gainXp(Math.round(p*.6));
  SFX.coin();haptic([10,25,40]);save();
  $('detail').classList.remove('on');
  renderBag();updateHud();
@@ -2054,14 +1890,13 @@ function openEra(){
  $('eraScreen').classList.add('on');
 }
 
-/* ===== 免费木箱（等级越高冷却越短，最低 4 小时） ===== */
+/* ===== 每日免费木箱 ===== */
 const FK='keyhole_free_v13';
-const freeHours=()=>Math.max(4,24-(S.lv||1)*.12);
 const freeBtn=document.createElement('div');
 freeBtn.id='freeBtn';
 document.body.appendChild(freeBtn);
 function freeLast(){return +(localStorage.getItem(FK)||0);}
-function freeRemain(){return freeHours()*3600000-(Date.now()-freeLast());}
+function freeRemain(){return CFG.freeDay-(Date.now()-freeLast());}
 function paintFree(){
  const rm=freeRemain();
  if(rm<=0){
@@ -2076,7 +1911,7 @@ function paintFree(){
   S.phase==='reveal'||S.phase==='title'||S.phase==='opening');
 }
 freeBtn.onclick=()=>{
- if(freeRemain()>0){toast('已经领过了 —— 等冷却好再来',1600);return;}
+ if(freeRemain()>0){toast('已经领过了 —— 明天再来',1600);return;}
  localStorage.setItem(FK,String(Date.now()));
  const tier=TIERS[0];
  const loot=rollLoot(tier);
@@ -2086,150 +1921,242 @@ freeBtn.onclick=()=>{
  toast('🎁 <b>免费木箱</b>已送到',1600);
  fadeTo(()=>startStage({tier,loot}));
  paintFree();
-};  
-/* ===== 尺寸与镜头 ===== */
-var camL=new THREE.PerspectiveCamera(45,1,.05,20);   
-function layout(){
- const w=innerWidth,h=innerHeight,dpr=Math.min(devicePixelRatio,1.9);
- renderer.setPixelRatio(dpr);
- renderer.setSize(w,h,false);
- const ar=w/h;
- [camB,camL,camP,camK,camR].forEach(c=>{c.aspect=ar;c.updateProjectionMatrix();});
+};
 
- camB.fov=ar<.8?52:45;
- camB.position.set(0,.02,ar<.8?4.9:4.3);
- camB.lookAt(0,0,0);
-
- camL.position.set(0,.02,ar<.8?1.72:1.5);
- camL.lookAt(0,.02,0);
-
- camP.fov=ar<.8?46:40;
- camP.position.set(0,.02,CAM_P_FAR);
- camP.userData.lookY=.128;
- camP.lookAt(0,.128,0);
-
- const kn=S.keys?S.keys.length:4;
- const dist=(ar<.8?2.35:2.05)+kn*.045;
- camK.position.set(0,(S.keysCenter||0),dist);
- camK.lookAt(0,S.keysCenter||0,0);
-
- camR.position.set(0,.16,ar<.8?2.75:2.4);
- camR.lookAt(0,.02,0);
+/* ===== 输入 ===== */
+const ray=new THREE.Raycaster(),pv=new THREE.Vector2();
+function pickObj(ev,cam,root){
+ pv.x=(ev.clientX/innerWidth)*2-1;
+ pv.y=-(ev.clientY/innerHeight)*2+1;
+ ray.setFromCamera(pv,cam);
+ return ray.intersectObjects(root.children,true)[0];
 }
-addEventListener('resize',layout);
-addEventListener('orientationchange',()=>setTimeout(layout,220));
-
-/* ===== 射线拾取 ===== */
-const ray=new THREE.Raycaster();
-function toNDC(x,y){
- return {x:(x/innerWidth)*2-1,y:-(y/innerHeight)*2+1};
-}
-function pickBox(x,y){
- const p=toNDC(x,y);
- ray.setFromCamera(p,camB);
- const hit=ray.intersectObjects(boxRoot.children,true)[0];
- if(!hit)return -1;
- let o=hit.object;
- while(o&&o.userData.boxIndex===undefined)o=o.parent;
- return o?o.userData.boxIndex:-1;
-}
-function pickKey(x,y){
- const p=toNDC(x,y);
- ray.setFromCamera(p,camK);
- const hit=ray.intersectObjects(keysRoot.children,true)[0];
- if(!hit)return -1;
- let o=hit.object;
- while(o&&!o.userData.keyRef)o=o.parent;
- return o?o.userData.keyRef.id:-1;
-}
-
-/* ===== 指针：点 / 拖 ===== */
-let px=0,py=0,pdown=0,pmoved=0;
-function onDown(e){
- px=e.clientX;py=e.clientY;pdown=performance.now();pmoved=0;
- if(S.phase==='reveal'&&S.insp&&!S.insp.isEvt)chartDrag=false;
-}
-function onMove(e){
- const dx=e.clientX-px,dy=e.clientY-py;
- pmoved+=Math.abs(dx)+Math.abs(dy);
- px=e.clientX;py=e.clientY;
- if(S.phase==='reveal'&&S.insp&&!S.insp.isEvt&&!S.insp.crumbled&&pmoved>6){
-  S.insp.rotTarget+=dx*.012;
- }
-}
-function onUp(e){
- const quick=performance.now()-pdown<520&&pmoved<12;
- if(!quick)return;
- const x=e.clientX,y=e.clientY;
+renderer.domElement.addEventListener('pointerdown',ev=>{
+ if(S.busy)return;
  if(S.phase==='box'){
-  const i=pickBox(x,y);if(i>=0)chooseBox(i);
+  const hit=pickObj(ev,camB,boxRoot);
+  if(hit&&hit.object.userData.boxIndex>=0)chooseBox(hit.object.userData.boxIndex);
  }else if(S.phase==='keys'){
-  const i=pickKey(x,y);if(i>=0)pickKey(i);
- }else if(S.phase==='lock'){
-  if(S.peeking)peekStop();else peekStart();
- }else if(S.phase==='reveal'){
-  tapStage();
- }
-}
-canvas.addEventListener('pointerdown',onDown);
-canvas.addEventListener('pointermove',onMove);
-canvas.addEventListener('pointerup',onUp);
-$('tapLayer').addEventListener('pointerdown',onDown);
-$('tapLayer').addEventListener('pointermove',onMove);
-$('tapLayer').addEventListener('pointerup',onUp);
-
-/* ===== 渲染循环 ===== */
-let lastT=performance.now();
-function tick(){
- const now=performance.now();
- const dt=Math.min(.05,(now-lastT)/1000);lastT=now;
-
- /* 窥视倒计时 */
- if(S.peeking&&S.peekUntil){
-  const dur=MODE.logic?5000:MODE.peek;
-  const left=Math.max(0,S.peekUntil-now);
-  peekFill.style.transform='scaleX('+(left/dur)+')';
-  if(left<=0)peekStop();
- }
-
- /* 箱子列轻微呼吸 */
- if(S.phase==='box'){
-  boxRoot.children.forEach((g,i)=>{
-   g.position.y+=Math.sin(now*.0011+i*1.7)*.0005;
-   g.rotation.z=Math.sin(now*.0008+i)*.012;
-  });
- }
-
- /* 钥匙：展示齿口 / 报废缩小 */
- if(S.phase==='keys'||S.keys.length){
-  for(const k of S.keys){
-   if(k.revealUntil&&now>=k.revealUntil){
-    k.revealUntil=0;
-    k.mat.color.setHex(0x7d6440);k.mat.roughness=.5;
+  const hit=pickObj(ev,camK,keysRoot);
+  if(hit&&hit.object.userData.keyRef){
+   const k=hit.object.userData.keyRef;
+   if(k.dead)return;
+   S.selKey=k.id;
+   S.keys.forEach(x=>x.mat.emissive.setHex(0));
+   k.mat.emissive.setHex(0x261a06);
+   if(!k.viewed&&k.revealUntil===0){
+    k.revealUntil=performance.now()+CFG.viewMs;
+    SFX.lift();haptic(12);
+    msg('记住每个齿比脊线往下多长 —— 只能看这一次');
+   }else{
+    SFX.tap();
+    msg('这把看过了 —— 想重看得花钱');
    }
-   const showing=k.revealUntil>0;
-   if(k.teeth)k.teeth.visible=showing;
-   const target=k.dead?0:(showing?1.14:1);
-   const s=k.g.scale.x+(target-k.g.scale.x)*.18;
-   k.g.scale.setScalar(s);
-   if(k.dead&&s<.03)k.g.visible=false;
+   updateUI();
   }
  }
+});
+const tapLayer=$('tapLayer');
+let dragging=false,lastX=0,moved=0;
+tapLayer.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;moved=0;});
+tapLayer.addEventListener('pointermove',e=>{
+ if(!dragging||!S.insp)return;
+ const dx=e.clientX-lastX;
+ lastX=e.clientX;
+ moved+=Math.abs(dx);
+ S.insp.rotTarget+=dx*.018;
+});
+tapLayer.addEventListener('pointerup',()=>{dragging=false;if(moved<14)tapStage();});
+tapLayer.addEventListener('pointercancel',()=>{dragging=false;});
 
- /* 展台：物品旋转 + 裂纹露出 */
- if(S.phase==='reveal'&&S.insp){
-  const insp=S.insp;
-  if(!insp.isEvt&&!insp.crumbled){
-   const prev=insp.rot;
-   insp.rot+=(insp.rotTarget-insp.rot)*.11;
-   insp.turn+=Math.abs(insp.rot-prev);
-   itemHolder.rotation.y=insp.rot;
-   insp.obj.rotation.y=Math.sin(now*.0007)*.06;
-   insp.obj.position.y=Math.sin(now*.0013)*.006;
-   if(insp.turn>=Math.PI*.52&&!insp.unlocked){
+/* ===== 按钮 ===== */
+btnA.onclick=()=>{
+ if(S.phase==='box')confirmBox();
+ else if(S.phase==='lock'){S.peeking?peekStop():peekStart();}
+ else if(S.phase==='keys'){
+  toast('弃箱 —— 钱不退',1400);
+  S.busy=true;
+  setTimeout(()=>{S.busy=false;fadeTo(newRound);},700);
+ }
+};
+btnB.onclick=()=>{
+ if(S.phase==='box')fadeTo(newRound);
+ else if(S.phase==='lock'){
+  S.busy=true;
+  fadeTo(()=>{
+   S.phase='keys';S.busy=false;
+   msg('每把钥匙只能看一次 —— 共 '+MODE.keys+' 把');
+   updateUI();showTip('keys');
+  });
+ }else if(S.phase==='keys')buyKey();
+};
+btnR.onclick=()=>reviewKey();
+btnC.onclick=()=>bruteForce();
+$('btnTake').onclick=()=>{
+ stageEl.classList.remove('on');
+ S.busy=false;
+ fadeTo(newRound);
+};
+$('btnNest').onclick=()=>{
+ stSumEl.classList.remove('on');
+ S.hasNest=false;
+ const tier=pickTier();
+ const loot=rollLoot(tier);
+ SFX.open();
+ fadeTo(()=>startStage({tier,loot}));
+};
+$('btnBag').onclick=()=>{SFX.tap();openBag();};
+$('bsClose').onclick=()=>{$('bagScreen').classList.remove('on');updateHud();};
+$('btnEra').onclick=()=>{SFX.tap();openEra();};
+$('esClose').onclick=()=>$('eraScreen').classList.remove('on');
+$('btnSet').onclick=()=>{SFX.tap();$('setScreen').classList.add('on');paintModes();};
+$('stClose').onclick=()=>$('setScreen').classList.remove('on');
+$('btnReset').onclick=()=>{
+ if(!confirm('清空所有存档？'))return;
+ localStorage.removeItem(SAVE_KEY);
+ localStorage.removeItem(TIP_KEY);
+ localStorage.removeItem(FK);
+ location.reload();
+};
+$('btnLogin').onclick=()=>{
+ const v=($('nick').value||'').trim()||'守箱人';
+ S.nick=v;save();ac();
+ $('login').classList.remove('on');
+ fadeTo(newRound,420);
+};
+$('btnTut').textContent=S.tutorial?'开':'关';
+$('btnTut').classList.toggle('on',S.tutorial);
+$('btnTut').onclick=()=>{
+ S.tutorial=!S.tutorial;save();
+ $('btnTut').textContent=S.tutorial?'开':'关';
+ $('btnTut').classList.toggle('on',S.tutorial);
+ toast(S.tutorial?'新手提示已开启':'新手提示已关闭',1400);
+};
+function paintModes(){
+ const cur=MODE===MODES.easy?'easy':MODE===MODES.hard?'hard':'nightmare';
+ [].slice.call(document.querySelectorAll('#modeRow button')).forEach(b=>
+  b.classList.toggle('on',b.dataset.mode===cur));
+}
+[].slice.call(document.querySelectorAll('#modeRow button')).forEach(b=>{
+ b.onclick=()=>{
+  MODE=MODES[b.dataset.mode];
+  SFX.tap();haptic(10);paintModes();
+  toast('难度已切换为 <b>'+MODE.name+'</b><br>下一局生效',1600);
+ };
+});
+
+/* ===== 取景 ===== */
+const hudEl=document.getElementById('hud');
+function frameCam(cam,centerY,needH,needW,tIn,bIn){
+ const W=innerWidth,H=innerHeight;
+ const top=tIn!==undefined?tIn:Math.max(0,hudEl.getBoundingClientRect().bottom-6);
+ const bottom=bIn!==undefined?bIn:Math.max(0,H-uiEl.getBoundingClientRect().top+6);
+ const availH=Math.max(160,H-top-bottom);
+ const tv=Math.tan(cam.fov*Math.PI/360);
+ const dV=(needH/2)/(tv*availH/H);
+ const dH=(needW/2)/(tv*cam.aspect);
+ const d=Math.max(dV,dH);
+ const visibleH=2*tv*d;
+ const targetPx=top+availH/2;
+ const shift=(H/2-targetPx)*visibleH/H;
+ const ty=centerY-shift;
+ cam.position.set(0,ty,d);
+ cam.lookAt(0,ty,0);
+}
+function layout(){
+ const W=innerWidth,H=innerHeight;
+ renderer.setSize(W,H,false);
+ if(composer)composer.setSize(W,H);
+ camB.aspect=camK.aspect=camP.aspect=camR.aspect=W/H;
+ camB.updateProjectionMatrix();
+ camK.updateProjectionMatrix();
+ camP.updateProjectionMatrix();
+ camR.updateProjectionMatrix();
+ frameCam(camB,0,3.6,1.55);
+ frameCam(camK,S.keysCenter||-0.26,S.keysNeedH||2.36,1.02);
+ frameCam(camR,0.02,0.92,0.92,150,250);
+ const tv=Math.tan(camP.fov*Math.PI/360);
+ const top=Math.max(0,hudEl.getBoundingClientRect().bottom-6);
+ const bottom=Math.max(0,H-uiEl.getBoundingClientRect().top+6);
+ const availH=Math.max(160,H-top-bottom);
+ const visPeek=2*tv*CAM_P_NEAR;
+ const shiftPx=H/2-(top+availH/2);
+ const lookY=.128-shiftPx*visPeek/H;
+ camP.position.set(0,lookY,CAM_P_FAR);
+ camP.lookAt(0,lookY,0);
+ camP.userData.lookY=lookY;
+}
+addEventListener('resize',()=>{
+ clearTimeout(window.__rz);
+ window.__rz=setTimeout(layout,120);
+});
+
+/* ===== 后处理 ===== */
+let composer=null,rp=null;
+try{
+ const mods=await Promise.all([
+  import('three/addons/postprocessing/EffectComposer.js'),
+  import('three/addons/postprocessing/RenderPass.js'),
+  import('three/addons/postprocessing/UnrealBloomPass.js'),
+  import('three/addons/postprocessing/OutputPass.js')
+ ]);
+ const EffectComposer=mods[0].EffectComposer;
+ const RenderPass=mods[1].RenderPass;
+ const UnrealBloomPass=mods[2].UnrealBloomPass;
+ const OutputPass=mods[3].OutputPass;
+ composer=new EffectComposer(renderer);
+ rp=new RenderPass(sceneB,camB);
+ composer.addPass(rp);
+ composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.42,.72,.86));
+ composer.addPass(new OutputPass());
+ composer.setPixelRatio(renderer.getPixelRatio());
+ composer.setSize(innerWidth,innerHeight);
+}catch(e){
+ composer=null;
+ console.warn('bloom off',e);
+}
+
+layout();
+
+/* ===== 主循环 ===== */
+function tick(){
+ const now=performance.now();
+
+ S.boxes.forEach((b,i)=>{
+  const sel=(S.phase==='box'&&i===S.selBox);
+  b.g.position.z+=((sel?.55:0)-b.g.position.z)*.14;
+  const s=b.g.scale.x+((sel?1.22:1)-b.g.scale.x)*.14;
+  b.g.scale.setScalar(s);
+ });
+
+ if(S.phase==='opening'&&S.boxes[S.selBox]){
+  const lid=S.boxes[S.selBox].g.userData.lid;
+  lid.rotation.x+=(-1.15-lid.rotation.x)*.1;
+ }
+
+ const insp=S.insp;
+ if(insp&&S.phase==='reveal'&&insp.obj){
+  const t=Math.min(1,(now-insp.t0)/420);
+  const e=1-Math.pow(1-t,3);
+  if(!insp.crumbled)
+   insp.obj.scale.setScalar(Math.max(.001,e*(1+.14*Math.sin(t*Math.PI))));
+  insp.obj.position.y=.004+Math.sin(now*.0018)*.008;
+  if(insp.spin>.001){
+   insp.rot+=insp.spin;
+   insp.spin*=.94;
+   insp.rotTarget=insp.rot;
+  }
+  const prev=insp.rot;
+  insp.rot+=(insp.rotTarget-insp.rot)*.17;
+  insp.turn+=Math.abs(insp.rot-prev);
+  insp.obj.rotation.y=insp.rot;
+
+  if(!insp.isEvt){
+   if(insp.turn>1.6&&!insp.unlocked){
     insp.unlocked=true;
     stHint.textContent='轻 点 收 下';
    }
+   if(!insp.unlocked)stHint.textContent='转 动 查 看';
    for(const m of insp.marks){
     if(m.found)continue;
     let a=(m.angle+insp.rot)%(Math.PI*2);
@@ -2237,306 +2164,2285 @@ function tick(){
     const d=Math.min(a,Math.PI*2-a);
     if(d<.5){m.found=true;revealCond();}
    }
-  }else{
-   insp.obj.rotation.y+=dt*.2;
-   insp.obj.position.y=Math.sin(now*.0016)*.008;
-  }
-  /* 入场缩放 */
-  if(insp.obj.scale.x<3.39){
-   const s=Math.min(3.4,insp.obj.scale.x*1.22+.02);
-   insp.obj.scale.setScalar(s);
   }
  }
 
- /* 相机位置（窥视时贴近锁孔） */
- const tz=S.peeking?CAM_P_NEAR:CAM_P_FAR;
- camP.position.z+=(tz-camP.position.z)*.12;
+ for(const k of S.keys){
+  if(k.revealUntil&&now>=k.revealUntil){
+   k.revealUntil=0;k.viewed=true;
+   k.mat.color.setHex(0x7d6440);
+   k.mat.roughness=.5;
+  }
+  const showing=k.revealUntil>0;
+  k.teeth.visible=showing;
+  const target=k.dead?0:(showing?1.2:1);
+  const s=k.g.scale.x+(target-k.g.scale.x)*.2;
+  k.g.scale.setScalar(s);
+  k.g.position.z+=((showing?.18:0)-k.g.position.z)*.18;
+  if(k.dead&&s<.03)k.g.visible=false;
+ }
 
- let sc,cam;
- if(S.phase==='lock'){sc=sceneL;cam=camP;}
- else if(S.phase==='keys'){sc=sceneK;cam=camK;}
- else if(S.phase==='reveal'||S.phase==='opening'){sc=sceneR;cam=camR;}
- else {sc=sceneB;cam=camB;}
- renderer.render(sc,cam);
+ const tz2=S.peeking?CAM_P_NEAR:CAM_P_FAR;
+ camP.position.z+=(tz2-camP.position.z)*.12;
+ camP.lookAt(0,camP.userData.lookY||.128,0);
+
+ if(S.peeking&&S.peekUntil){
+  const left=Math.max(0,S.peekUntil-now);
+  peekFill.style.transform='scaleX('+(left/MODE.peek)+')';
+  if(left<=0)peekStop();
+ }
+
+ let sc,cm;
+ if(S.phase==='lock'){sc=sceneL;cm=camP;}
+ else if(S.phase==='keys'){sc=sceneK;cm=camK;}
+ else if(S.phase==='reveal'){sc=sceneR;cm=camR;}
+ else {sc=sceneB;cm=camB;}
+
+ if(composer){rp.scene=sc;rp.camera=cm;composer.render();}
+ else renderer.render(sc,cm);
+
  requestAnimationFrame(tick);
 }
-/* ===== 等级 ===== */
-const LV_MAX=180;
-const xpNeed=lv=>Math.round(18*Math.pow(lv,1.4));
-const lvBonus=()=>Math.min(.6,Math.floor((S.lv||1)/5)*.02);
-function addXp(n){
- if(!n||n<=0||S.lv>=LV_MAX)return;
- S.xp+=n;
- let up=false;
- while(S.lv<LV_MAX&&S.xp>=xpNeed(S.lv)){
-  S.xp-=xpNeed(S.lv);S.lv++;up=true;
- }
- if(up){
-  SFX.cheer();haptic([20,30,60]);
-  toast('升 级 了 ！<b>Lv.'+S.lv+'</b><br>箱子价格 +'+Math.round(lvBonus()*100)+'%',1900);
-  updateHud();
- }
- save();paintProf();paintFree();
-}
-function gainXp(n){addXp(n);}
-
-function paintProf(){
- const el=$('setXp');if(!el)return;
- el.style.fontSize='11px';el.style.color='#a2957f';el.style.lineHeight='1.6';
- el.innerHTML='等级 <b style="color:#e6c47f">'+S.lv+' / '+LV_MAX+'</b><br>'+
-  '经验 '+S.xp+' · 价格 +'+Math.round(lvBonus()*100)+'% · 免费箱 '+
-  freeHours().toFixed(1)+' 小时';
-}
-function paintAvatar(){
- const el=$('avImg');if(!el)return;
- el.innerHTML=S.avatar?'<img src="'+S.avatar+'" style="width:100%;height:100%;object-fit:cover">':'';
- el.textContent=el.innerHTML?'':''; 
-}
-
-/* ===== 图鉴 ===== */
-const CXK='keyhole_codex_v1';
-let CX={era:{},item:{},danger:{},play:{}};
-try{CX=Object.assign(CX,JSON.parse(localStorage.getItem(CXK)||'{}'));}catch(e){}
-function markSeen(kind,id){
- if(CX[kind][id])return;
- CX[kind][id]=1;
- try{localStorage.setItem(CXK,JSON.stringify(CX));}catch(e){}
-}
-let cxTab='era';
-function openCodex(){
- renderCodex();
- $('cxScreen').classList.add('on');
-}
-function renderCodex(){
- document.querySelectorAll('#cxTabs button').forEach(b=>{
-  b.classList.toggle('on',b.dataset.tab===cxTab);
- });
- const body=$('cxBody');let html='';
- if(cxTab==='era'){
-  html='<div style="font-size:11px;color:#6f6558;margin-bottom:8px">见过才解锁</div>';
-  ERAS.forEach(e=>{
-   const ok=CX.era[e.n];
-   html+='<div class="catrow"><span class="cn" style="width:auto;flex:1;color:'+
-    (ok?'#ddd2c0':'#544b40')+'">'+(ok?e.n:'？？？')+'</span>'+
-    '<span class="cv">'+(ok?'':'未解锁')+'</span></div>';
-   if(ok)html+='<div style="font-size:11px;color:#7d7266;margin:-4px 0 9px 4px;line-height:1.7">'+e.d+'</div>';
-  });
- }else if(cxTab==='item'){
-  html='<div style="font-size:11px;color:#6f6558;margin-bottom:8px">见过才解锁</div>';
-  ITEMS.slice().sort((a,b)=>a.t-b.t).forEach(it=>{
-   const ok=CX.item[it.id];
-   html+='<div class="catrow"><span class="dot" style="background:'+CAT[it.c].css+'"></span>'+
-    '<span class="bn" style="font-size:13px">'+(ok?(it.uniq?'◆ ':'')+it.n:'？？？')+'</span>'+
-    '<span class="cv" style="color:'+(ok?'#8c9686':'#544b40')+'">'+
-    (ok?CAT[it.c].name:'未解锁')+'</span></div>';
-  });
- }else if(cxTab==='danger'){
-  html='<div style="font-size:11px;color:#6f6558;margin-bottom:8px">遇过才解锁</div>';
-  const dl=[['scorpion','毒蝎子','−20 金'],['sulfur','硫磺瓶','−12 金'],
-   ['bomb','炸弹','−60 金，本箱全废'],['oil','灯油','+2 灯油'],
-   ['nest','箱中箱','再开一只']];
-  dl.forEach(x=>{
-   const ok=CX.danger[x[0]];
-   html+='<div class="catrow"><span class="bn" style="font-size:13px">'+
-    (ok?x[1]:'？？？')+'</span><span class="cv" style="width:auto">'+
-    (ok?x[2]:'未解锁')+'</span></div>';
-  });
- }else{
-  const pl=[['box','买箱子：玻璃下只露出最贵的两件，其余靠运气'],
-   ['lock','窥视锁孔：只能看一次，记住每根锁芯的长短'],
-   ['keys','挑钥匙：每把只看一次，凭记忆选'],
-   ['reveal','验货：转半圈才能收，瑕疵会掉价'],
-   ['bag','背包：可以看 24 小时走势，批量出售']];
-  pl.forEach(x=>{
-   html+='<div class="catrow"><span class="bn" style="font-size:13px">'+
-    (CX.play[x[0]]?x[1]:'？？？')+'</span></div>';
-  });
- }
- body.innerHTML=html;
-}
-document.querySelectorAll('#cxTabs button').forEach(b=>{
- b.onclick=()=>{cxTab=b.dataset.tab;renderCodex();};
-});
-
-/* ===== 掉落时记录图鉴 ===== */
-(function(){
- const _d=drawItem;
- drawItem=function(entry){
-  try{
-   if(entry){
-    if(entry.kind==='item'&&entry.item)markSeen('item',entry.item.id);
-    if(entry.kind==='evt')markSeen('danger',entry.ev);
-   }
-   markSeen('play','box');markSeen('play','reveal');
-  }catch(e){}
-  return _d.apply(this,arguments);
- };
- const _nr=newRound;
- newRound=function(){
-  try{markSeen('era',curEra().n);}catch(e){}
-  return _nr.apply(this,arguments);
- };
-})();
-
-/* ===== 模式切换 ===== */
-function modeKey(){
- return MODE===MODES.easy?'easy':MODE===MODES.hard?'hard':
-  MODE===MODES.hell?'hell':'nightmare';
-}
-function paintModes(){
- document.querySelectorAll('#modeRow button').forEach(b=>{
-  b.classList.toggle('on',!MODE.logic&&b.dataset.model===modeKey());
- });
- document.querySelectorAll('#logicRow button').forEach(b=>{
-  b.classList.toggle('on',!!MODE.logic&&(+b.dataset.l===LOGIC_LV));
- });
-}
-document.querySelectorAll('#modeRow button').forEach(b=>{
- b.onclick=()=>{
-  const m=b.dataset.model;
-  if(!MODES[m])return;
-  MODE=MODES[m];
-  SFX.tap();haptic(8);paintModes();
-  toast('难度已切换为 <b>'+MODE.name+'</b><br>下一局生效',1500);
- };
-});
-document.querySelectorAll('#logicRow button').forEach(b=>{
- b.onclick=()=>{
-  LOGIC_LV=+b.dataset.l;
-  MODE=MODES.logic;
-  SFX.tap();haptic(8);paintModes();
-  toast('推理模式 · <b>'+['简单','困难','噩梦','地狱'][LOGIC_LV]+
-   '</b><br>下一局生效',1500);
- };
-});
-
-/* ===== 面板开关 ===== */
-const openP=id=>$(id).classList.add('on');
-const closeP=id=>$(id).classList.remove('on');
-$('btnSet').onclick=()=>{openP('setScreen');paintModes();paintProf();paintAvatar();};
-$('stClose').onclick=()=>closeP('setScreen');
-$('btnBag').onclick=()=>{S.bulk=false;S.picked.clear();$('bulkBar').classList.remove('on');
- $('bsBulk').textContent='批量';renderBag();openP('bagScreen');};
-$('bsClose').onclick=()=>closeP('bagScreen');
-$('btnEra').onclick=openEra;
-$('esClose').onclick=()=>closeP('eraScreen');
-$('btnCodex').onclick=openCodex;
-$('cxClose').onclick=()=>closeP('cxScreen');
-$('btnFriend').onclick=()=>{
- $('frBody').innerHTML='<div style="padding:20px 4px;color:#7d7266;line-height:2">'+
-  '联机 / 拍卖功能开发中。<br>现在是对照本机存档的单机版。<br>'+
-  '<span style="color:#544b40">上线后会开放好友互访和真实拍卖。</span></div>';
- openP('friendScreen');
-};
-$('frClose').onclick=()=>closeP('friendScreen');
-
-/* ===== 头像 ===== */
-$('btnAv').onclick=()=>$('avFile').click();
-$('avFile').onchange=e=>{
- const f=e.target.files&&e.target.files[0];if(!f)return;
- const rd=new FileReader();
- rd.onload=()=>{
-  const img=new Image();
-  img.onload=()=>{
-   const cv=document.createElement('canvas');cv.width=cv.height=128;
-   const x=cv.getContext('2d');
-   const s=Math.min(img.width,img.height);
-   x.drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,128,128);
-   S.avatar=cv.toDataURL('image/jpeg',.82);
-   save();paintAvatar();
-   toast('头像已更新',1200);
-  };
-  img.src=rd.result;
- };
- rd.readAsDataURL(f);
-};
-paintAvatar();
-
-/* ===== 清空存档 ===== */
-let wiping=false;
-const _save=save;
-save=function(){ if(wiping)return; return _save.apply(this,arguments); };
-$('btnReset').onclick=()=>{
- if(!confirm('确定清空全部存档？\n等级、头像、金币、物品全部清零。'))return;
- wiping=true;
- Object.keys(localStorage).forEach(k=>{
-  if(k.indexOf('keyhole')===0)localStorage.removeItem(k);
- });
- setTimeout(()=>location.reload(),60);
-};
-
-/* ===== 主按钮 ===== */
-btnA.onclick=()=>{
- if(S.phase==='box')confirmBox();
- else if(S.phase==='lock'){S.peeking?peekStop():peekStart();}
- else if(S.phase==='keys'){ if(S.busy)return; newRound(); }
-};
-btnB.onclick=()=>{
- if(S.phase==='box'){
-  const c=rerollCost();
-  if(S.coins<c){toast('换一批需要 <b>'+c+'</b> 金，金币不够');return;}
-  S.coins-=c;SFX.tap();haptic(6);save();newRound();return;
- }
- if(S.phase==='lock')goKeys();
- else if(S.phase==='keys')buyKey();
-};
-btnC.onclick=bruteForce;
-btnR.onclick=reviewKey;
-$('btnTake').onclick=()=>{ stSumEl.classList.remove('on'); newRound(); };
-$('btnNest').onclick=()=>{
- stSumEl.classList.remove('on');
- const t=TIERS[Math.min(6,rnd(4)+3)];
- startStage({tier:t,loot:rollLoot(t)});
-};
-
-function goKeys(){
- if(S.peeking)peekStop();
- S.phase='keys';S.selKey=-1;
- pins.forEach(p=>p.visible=false);
- datum.visible=false;
- vig.classList.remove('on');
- peekBar.style.display='none';
- updateUI();
- layout();
- msg(MODE.logic?('推理 · 只有一次机会 · '+LOGIC_CLUE[LOGIC_LV]+' 条免费提示')
-  :'点一把钥匙 —— 只能看一次');
- if(MODE.logic)showLogicCard();
- showTip('keys');
-}
-
-/* ===== 登录 ===== */
-$('btnLogin').onclick=()=>{
- SFX.tap();
- S.nick=(($('nick').value||'').trim()||'守箱人').slice(0,12);
- $('login').classList.remove('on');
- uiEl.style.display='flex';
- newRound();
- layout();
- save();
-};
 
 /* ===== 启动 ===== */
 buildPins(4);
 obClear();
-layout();
+const hasSave=load();
 newRound();
 S.phase='title';
 uiEl.style.display='none';
-if(S.nick){
+if(hasSave){
  $('nick').value=S.nick;
  $('btnLogin').textContent='继 续';
 }
 $('login').classList.add('on');
-paintModes();paintProf();paintAvatar();paintFree();
 setInterval(paintFree,20000);
-setInterval(updateHud,30000);
-setInterval(paintProf,5000);
+paintFree();
 tick();
+setInterval(updateHud,30000);
 setTimeout(()=>{
  const b=document.getElementById('boot');
  if(b)b.classList.add('off');
 },400);
-window.addEventListener('error',e=>{document.title='ERR:'+e.message;});
+/* ===== 补丁 v14：灯油显示 / 免费箱挪位 / 初始1800 / 推理模式 ===== */
+
+/* ---------- ① 初始金币 1800 ---------- */
+CFG.startCoins=1800;
+(function(){
+ const K='keyhole_v14_money';
+ if(!localStorage.getItem(K)){
+  localStorage.setItem(K,'1');
+  S.coins=Math.max(S.coins,1800);
+  save();
+ }
+})();
+
+/* ---------- ② 灯油明确显示 ---------- */
+updateHud=function(){
+ hCoins.textContent=S.coins;
+ bagCount.textContent=S.bag.length;
+ var d='';
+ for(var i=0;i<CFG.oilMax;i++) d+= (i<S.oil?'●':'○');
+ hOil.innerHTML='灯油 <span style="color:#e6c47f;letter-spacing:1.5px">'+d+
+  '</span> <span style="color:#6f6558">'+S.oil+'/'+CFG.oilMax+'</span>';
+ btnEra.textContent='时代 · '+curEra().n+' ›';
+ hLeft.textContent='行情 '+Math.floor((HOUR-(Date.now()%HOUR))/60000)+' 分后变';
+};
+
+/* ---------- ③ 免费木箱挪进顶栏 ---------- */
+paintFree=function(){
+ var rm=freeRemain();
+ if(rm<=0){
+  freeBtn.innerHTML='🎁 领取';
+  freeBtn.classList.add('ready');
+ }else{
+  var h=Math.floor(rm/3600000),m=Math.floor(rm%3600000/60000);
+  freeBtn.innerHTML='🎁 '+(h>0?h+'时':'')+m+'分';
+  freeBtn.classList.remove('ready');
+ }
+};
+(function(){
+ var h2=document.querySelector('#hud .h2');
+ var era=document.getElementById('btnEra');
+ if(h2&&era){
+  h2.insertBefore(freeBtn,era.nextSibling);
+  freeBtn.style.position='static';
+  freeBtn.style.padding='4px 9px';
+  freeBtn.style.fontSize='10.5px';
+  freeBtn.style.borderRadius='8px';
+  freeBtn.style.boxShadow='none';
+  freeBtn.style.background='#ffffff10';
+  freeBtn.style.color='#9fd7a0';
+  freeBtn.classList.remove('hide');
+ }
+ paintFree();
+})();
+
+/* ---------- ④ 推理模式 ---------- */
+MODES.easy.key='easy';
+MODES.hard.key='hard';
+MODES.nightmare.key='nightmare';
+MODES.logic={name:'推理',teeth:4,step:.050,peek:0,keys:6,obs:0,haz:0,key:'logic',logic:true};
+
+paintModes=function(){
+ [].slice.call(document.querySelectorAll('#modeRow button')).forEach(function(b){
+  b.classList.toggle('on',b.dataset.mode===(MODE.key||'easy'));
+ });
+};
+(function(){
+ var mr=document.getElementById('modeRow');
+ if(!mr)return;
+ var b=document.createElement('button');
+ b.dataset.mode='logic';
+ b.textContent='推理';
+ mr.appendChild(b);
+ b.onclick=function(){
+  MODE=MODES.logic;
+  SFX.tap();haptic(10);paintModes();
+  toast('难度已切换为 <b>推理</b><br>下一局生效',1600);
+ };
+})();
+
+/* ---------- ⑤ 推理：线索生成 ---------- */
+function buildClue(lock,vis){
+ var hidden=[0,1,2,3].filter(function(i){return vis.indexOf(i)<0;});
+ var sum=lock.reduce(function(a,b){return a+b;},0);
+ var opts=[];
+ opts.push({t:'sum',v:sum,txt:'四根锁芯的格数加起来 = '+sum});
+ for(var i=0;i<hidden.length;i++){
+  for(var j=0;j<hidden.length;j++){
+   if(i===j)continue;
+   var a=hidden[i],b=hidden[j];
+   var d=lock[a]-lock[b];
+   if(d>0)opts.push({t:'diff',a:a,b:b,d:d,
+    txt:'第 '+(a+1)+' 根比第 '+(b+1)+' 根长 '+d+' 格'});
+  }
+ }
+ var mx=Math.max.apply(null,lock);
+ if(lock.filter(function(x){return x===mx;}).length===1){
+  var k=lock.indexOf(mx);
+  opts.push({t:'max',k:k,txt:'四根里最长的是第 '+(k+1)+' 根'});
+ }
+ return opts[rnd(opts.length)];
+}
+function clueTest(cl,c){
+ if(!cl)return true;
+ if(cl.t==='sum')return c.reduce(function(a,b){return a+b;},0)===cl.v;
+ if(cl.t==='diff')return (c[cl.a]-c[cl.b])===cl.d;
+ if(cl.t==='max'){
+  var mx=Math.max.apply(null,c);
+  if(c.filter(function(x){return x===mx;}).length!==1)return false;
+  return c.indexOf(mx)===cl.k;
+ }
+ return true;
+}
+function logicCodes(){
+ var lock=S.lock,vis=S.logicVis;
+ var codes=[lock.slice()];
+ var hidden=[0,1,2,3].filter(function(i){return vis.indexOf(i)<0;});
+ var guard=0;
+ // 两个「看得见的都对、但违反线索」的干扰项
+ while(codes.length<3&&guard++<600){
+  var c=lock.slice();
+  for(var i=0;i<hidden.length;i++) c[hidden[i]]=rnd(5);
+  if(same(c,lock))continue;
+  if(codes.some(function(x){return same(x,c);}))continue;
+  if(clueTest(S.logicClue,c))continue;
+  codes.push(c);
+ }
+ // 三个「看得见的就不对」的干扰项
+ guard=0;
+ while(codes.length<6&&guard++<600){
+  var c2=lock.slice();
+  var vi=vis[rnd(vis.length)];
+  c2[vi]=rnd(5);
+  if(c2[vi]===lock[vi])continue;
+  if(codes.some(function(x){return same(x,c2);}))continue;
+  codes.push(c2);
+ }
+ while(codes.length<6){
+  var c3=lock.map(function(){return rnd(5);});
+  if(codes.some(function(x){return same(x,c3);}))continue;
+  codes.push(c3);
+ }
+ for(var i=codes.length-1;i>0;i--){
+  var j=rnd(i+1);var t=codes[i];codes[i]=codes[j];codes[j]=t;
+ }
+ return codes;
+}
+
+/* ---------- ⑥ 推理：钥匙乱堆 ---------- */
+var _buildKeys=buildKeys;
+buildKeys=function(swan,n){
+ if(!MODE.logic){ _buildKeys(swan,n); return; }
+
+ clearGroup(keysRoot);
+ var idx=[0,1,2,3].sort(function(){return Math.random()-.5;}).slice(0,2).sort();
+ S.logicVis=idx;
+ S.logicClue=buildClue(S.lock,idx);
+
+ var codes=logicCodes();
+ S.keys=codes.map(function(code,i){
+  var g=makeKey(code);
+  g.position.set((Math.random()-.5)*.62,
+                 .52-i*.30+(Math.random()-.5)*.14,
+                 -.04+i*.015);
+  g.rotation.z=(Math.random()-.5)*.85;
+  g.rotation.x=(Math.random()-.5)*.20;
+  keysRoot.add(g);
+  var obj={g:g,id:i,code:code,teeth:g.userData.teeth,mat:g.userData.mat,
+   viewed:true,revealUntil:Infinity,dead:false};
+  g.traverse(function(o){o.userData.keyRef=obj;});
+  return obj;
+ });
+ S.keysCenter=0.02;
+ S.keysNeedH=2.95;
+ layout();
+};
+
+/* ---------- ⑦ 推理：锁孔只看两根 ---------- */
+var _peekStart=peekStart;
+peekStart=function(){
+ if(!MODE.logic){ _peekStart(); return; }
+ if(S.phase!=='lock'||S.peeking)return;
+ if(!S.logicVis)return;
+ S.peeked=false;
+ S.peeking=true;
+ S.peekUntil=0;
+ pins.forEach(function(p,i){ p.visible=(S.logicVis.indexOf(i)>=0); });
+ datum.visible=true;
+ vig.classList.add('on');
+ peekBar.style.display='none';
+ SFX.peek();
+ msg('看锁孔 · 没有时间限制 · 看清楚能看的那两根');
+ updateUI();
+};
+
+/* ---------- ⑧ 推理：线索卡片 ---------- */
+var clueCard=document.createElement('div');
+clueCard.id='clueCard';
+clueCard.style.cssText='position:fixed;left:16px;right:16px;'+
+ 'top:calc(96px + env(safe-area-inset-top));z-index:10;padding:12px 14px;'+
+ 'border-radius:13px;background:#0b0806f0;border:1px solid #e6c47f44;'+
+ 'font-size:12.5px;line-height:1.75;color:#d8cdb9;display:none;'+
+ 'text-shadow:0 0 4px #000;box-shadow:0 12px 40px #000a';
+document.body.appendChild(clueCard);
+
+function paintClue(){
+ var show=MODE.logic&&(S.phase==='lock'||S.phase==='keys');
+ clueCard.style.display=show?'block':'none';
+ if(!show)return;
+ if(!S.logicClue||!S.logicVis)return;
+ var vis=S.logicVis.map(function(i){
+  return '第'+(i+1)+'根 '+S.lock[i]+'格';
+ }).join('　');
+ var html='<div style="font-size:10px;letter-spacing:.2em;color:#8f8270;'+
+  'margin-bottom:6px">推理模式 · 没有时间限制</div>'+
+  '<div style="color:#a2957f">能看清：<b style="color:#e6c47f">'+vis+'</b></div>'+
+  '<div style="color:#a2957f;margin-top:4px">线索：<b style="color:#9fd7a0">'+
+  S.logicClue.txt+'</b></div>';
+ if(S.phase==='keys'&&S.selKey>=0&&S.keys[S.selKey]){
+  var k=S.keys[S.selKey];
+  html+='<div style="margin-top:6px;color:#e6c47f">已选 第 '+(k.id+1)+
+   ' 把 → '+k.code.join(' - ')+'</div>';
+ }
+ clueCard.innerHTML=html;
+}
+
+/* ---------- ⑨ 推理：按钮文字修正 ---------- */
+setInterval(function(){
+ paintClue();
+ if(!MODE.logic)return;
+ if(S.phase==='lock'){
+  btnA.disabled=false;
+  btnA.textContent=S.peeking?'移开视线':'看锁孔 · 无限制';
+  btnB.textContent='去挑钥匙 →';
+ }else if(S.phase==='keys'){
+  btnR.style.display='none';
+  if(S.selKey>=0&&S.keys[S.selKey]){
+   msgEl.textContent='第 '+(S.keys[S.selKey].id+1)+' 把 → '+
+    S.keys[S.selKey].code.join(' - ')+'　点「买下并试开」验证';
+  }
+ }else if(S.phase==='box'){
+  btnA.textContent=(S.selBox<0)?'先点一只箱子'
+   :('买下这只 · '+S.boxes[S.selBox].tier.price+' 金');
+ }
+},400);
+
+updateHud();  
+/* ===== 补丁 v15：推理模式 v2 ===== */
+
+/* ---------- 候选条件库 ---------- */
+function buildCands(lock){
+ var out=[];
+ var sum=lock.reduce(function(a,b){return a+b;},0);
+ out.push({txt:'四根格数加起来 = '+sum,
+  test:function(c){return c.reduce(function(a,b){return a+b;},0)===sum;}});
+
+ var mx=Math.max.apply(null,lock);
+ if(lock.filter(function(x){return x===mx;}).length===1){
+  var k=lock.indexOf(mx);
+  out.push({txt:'最高的一根是第 '+(k+1)+' 根',
+   test:function(c){
+    var m=Math.max.apply(null,c);
+    return c.filter(function(x){return x===m;}).length===1 && c.indexOf(m)===k;
+   }});
+ }
+ for(var i=0;i<4;i++){
+  for(var j=0;j<4;j++){
+   if(i===j)continue;
+   var d=lock[i]-lock[j];
+   if(d>0){
+    (function(a,b,dd){
+     out.push({txt:'第 '+(a+1)+' 根比第 '+(b+1)+' 根高 '+dd+' 格',
+      test:function(c){return (c[a]-c[b])===dd;}});
+    })(i,j,d);
+   }
+   if(i<j){
+    (function(a,b){
+     var s2=lock[a]+lock[b];
+     out.push({txt:'第 '+(a+1)+' 根和第 '+(b+1)+' 根加起来 = '+s2+' 格',
+      test:function(c){return (c[a]+c[b])===s2;}});
+    })(i,j);
+   }
+  }
+ }
+ var z=lock.filter(function(x){return x===0;}).length;
+ out.push({txt:(z?'四根里有一根是平的（0 格）':'四根里没有一根是平的'),
+  test:function(c){return c.filter(function(x){return x===0;}).length===z;}});
+ return out;
+}
+
+function pickClueSet(pool,lock){
+ var cands=buildCands(lock);
+ for(var i=cands.length-1;i>0;i--){var j=rnd(i+1);var t=cands[i];cands[i]=cands[j];cands[j]=t;}
+ var a,b,r;
+ for(a=0;a<cands.length;a++){
+  r=pool.filter(cands[a].test);
+  if(r.length>=2&&r.length<=3)return [cands[a]];
+ }
+ for(a=0;a<cands.length;a++){
+  for(b=a+1;b<cands.length;b++){
+   (function(s1,s2){
+    var rr=pool.filter(function(k){return s1.test(k)&&s2.test(k);});
+    if(rr.length>=2&&rr.length<=3)r=[s1,s2];
+   })(cands[a],cands[b]);
+   if(r&&r.length===2)return r;
+  }
+ }
+ return [cands[0]];
+}
+function findSolo(surv,lock){
+ var cands=buildCands(lock);
+ for(var i=0;i<cands.length;i++){
+  var r=surv.filter(cands[i].test);
+  if(r.length===1&&same(r[0],lock))return cands[i];
+ }
+ return null;
+}
+
+/* ---------- 重写：生成 6 把钥匙 ---------- */
+var _bk2=buildKeys;
+buildKeys=function(swan,n){
+ if(!MODE.logic){ _bk2(swan,n); return; }
+
+ clearGroup(keysRoot);
+ var lock=S.lock;
+ var vi=rnd(4);
+ var codes=[lock.slice()];
+ var guard=0,c,i;
+
+ while(codes.length<4&&guard++<900){
+  c=lock.slice();
+  for(i=0;i<4;i++) if(i!==vi) c[i]=rnd(5);
+  if(same(c,lock))continue;
+  if(codes.some(function(x){return same(x,c);}))continue;
+  codes.push(c);
+ }
+ guard=0;
+ while(codes.length<6&&guard++<900){
+  c=lock.slice();
+  var v=rnd(5);
+  if(v===lock[vi])v=(v+1+rnd(4))%5;
+  c[vi]=v;
+  if(codes.some(function(x){return same(x,c);}))continue;
+  codes.push(c);
+ }
+
+ var pool=codes.filter(function(x){return x[vi]===lock[vi];});
+ var set=pickClueSet(pool,lock);
+
+ S.logicVi=vi;
+ S.logicClues=set;
+ S.logicSolo=null;
+ S.logicSurv=codes.filter(function(x){
+  if(x[vi]!==lock[vi])return false;
+  return set.every(function(s){return s.test(x);});
+ });
+
+ for(var q=codes.length-1;q>0;q--){
+  var j2=rnd(q+1),tt=codes[q];codes[q]=codes[j2];codes[j2]=tt;
+ }
+
+ S.keys=codes.map(function(code,k){
+  var g=makeKey(code);
+  g.position.set((Math.random()-.5)*.62,
+                 .52-k*.30+(Math.random()-.5)*.14,
+                 -.04+k*.015);
+  g.rotation.z=(Math.random()-.5)*.85;
+  g.rotation.x=(Math.random()-.5)*.20;
+  keysRoot.add(g);
+  var obj={g:g,id:k,code:code,teeth:g.userData.teeth,mat:g.userData.mat,
+   viewed:true,revealUntil:Infinity,dead:false};
+  g.traverse(function(o){o.userData.keyRef=obj;});
+  return obj;
+ });
+ S.keysCenter=0.02;
+ S.keysNeedH=2.95;
+ layout();
+};
+
+/* ---------- 锁孔只看一根 ---------- */
+var _ps2=peekStart;
+peekStart=function(){
+ if(!MODE.logic){ _ps2(); return; }
+ if(S.phase!=='lock'||S.peeking)return;
+ if(S.logicVi===undefined)return;
+ S.peeked=false;
+ S.peeking=true;
+ S.peekUntil=0;
+ pins.forEach(function(p,i){ p.visible=(i===S.logicVi); });
+ datum.visible=true;
+ vig.classList.add('on');
+ peekBar.style.display='none';
+ SFX.peek();
+ msg('锁孔里只看得清第 '+(S.logicVi+1)+' 根 —— 想清楚再开');
+ updateUI();
+};
+
+/* ---------- 线索卡 ---------- */
+paintClue=function(){
+ var show=MODE.logic&&(S.phase==='lock'||S.phase==='keys');
+ clueCard.style.display=show?'block':'none';
+ if(!show)return;
+ if(!S.logicClues||S.logicVi===undefined)return;
+
+ var h='<div style="font-size:10px;letter-spacing:.2em;color:#8f8270;'+
+  'margin-bottom:6px">推理模式 · 没有时间限制 · 只有一次机会</div>';
+ h+='<div style="color:#a2957f">锁孔里看清：<b style="color:#e6c47f">第 '+
+  (S.logicVi+1)+' 根 = '+S.lock[S.logicVi]+' 格</b></div>';
+ S.logicClues.forEach(function(c){
+  h+='<div style="color:#a2957f;margin-top:3px">线索：<b style="color:#9fd7a0">'+
+   c.txt+'</b></div>';
+ });
+ if(S.logicSolo){
+  h+='<div style="color:#a2957f;margin-top:3px">追加：<b style="color:#9fd7a0">'+
+   S.logicSolo.txt+'</b></div>';
+ }
+ var cnt=S.logicSurv?S.logicSurv.length:0;
+ h+='<div style="margin-top:7px;font-size:11.5px;color:#e6c47f">符合条件的还有 '+
+  cnt+' 把'+(cnt<=1?'　✅ 能确定了':'　—— 买线索，还是赌？')+'</div>';
+ if(S.phase==='keys'&&S.selKey>=0&&S.keys[S.selKey]){
+  var k2=S.keys[S.selKey];
+  h+='<div style="margin-top:6px;color:#e6c47f">已选第 '+(k2.id+1)+
+   ' 把 → '+k2.code.join(' - ')+'</div>';
+ }
+ clueCard.innerHTML=h;
+};
+
+/* ---------- 加线索（花 40 金） ---------- */
+var CLUE_COST=40;
+document.getElementById('btnR').onclick=function(){
+ if(!MODE.logic){ reviewKey(); return; }
+ if(S.phase!=='keys'||S.busy)return;
+ if(S.logicSurv&&S.logicSurv.length<=1){toast('已经能确定了',1200);return;}
+ if(S.coins<CLUE_COST){toast('金币不够',1200);return;}
+ var solo=findSolo(S.logicSurv,S.lock);
+ if(!solo){toast('没有更多线索了',1200);return;}
+ S.coins-=CLUE_COST;
+ S.logicSolo=solo;
+ S.logicSurv=S.logicSurv.filter(function(x){return solo.test(x);});
+ SFX.coin();haptic(15);
+ save();updateUI();updateHud();
+ toast('买了一条线索 <b>−'+CLUE_COST+' 金</b>',1600);
+ paintClue();
+};
+
+/* ---------- 一次性定生死 ---------- */
+var _bkey2=buyKey;
+buyKey=function(){
+ if(!MODE.logic){ _bkey2(); return; }
+ if(S.phase!=='keys'||S.busy||S.selKey<0)return;
+ if(S.coins<CFG.price){toast('金币不够');return;}
+ var k=S.keys[S.selKey],b=S.boxes[S.selBox];
+ S.busy=true;
+ S.coins-=CFG.price;
+ updateUI();save();
+ var ok=same(k.code,S.lock);
+ setTimeout(function(){
+  if(ok){
+   SFX.open();haptic([10,20,40]);
+   afterOpen(b);
+  }else{
+   SFX.wrong();haptic([60,40,120]);
+   k.dead=true;
+   toast('猜错了 —— <b>这只箱子没了</b>',2600);
+   S.busy=true;
+   setTimeout(function(){ S.busy=false; fadeTo(newRound); },1600);
+  }
+ },280);
+};
+
+/* ---------- 按钮文字刷新（覆盖 v14 的规则） ---------- */
+setInterval(function(){
+ if(!MODE.logic)return;
+ if(S.phase==='lock'){
+  btnA.disabled=false;
+  btnA.textContent=S.peeking?'移开视线':'看锁孔 · 无限制';
+  btnB.textContent='去挑钥匙 →';
+ }else if(S.phase==='keys'){
+  btnR.style.display='block';
+  btnR.textContent='加线索 · '+CLUE_COST+' 金';
+  btnR.disabled=S.busy||S.coins<CLUE_COST||(S.logicSurv&&S.logicSurv.length<=1);
+  if(S.selKey>=0&&S.keys[S.selKey]){
+   msgEl.textContent='第 '+(S.keys[S.selKey].id+1)+' 把 → '+
+    S.keys[S.selKey].code.join(' - ')+'　·　一次机会，猜错作废';
+  }
+ }
+},380);
+
+/* ---------- 进入推理模式时清空旧线索 ---------- */
+var _cb2=confirmBox;
+confirmBox=function(){
+ S.logicClues=null;S.logicSolo=null;S.logicSurv=null;S.logicVi=undefined;
+ _cb2();
+}; 
+/* ===== 补丁 v16：钥匙选中光环 + 好友列表（联机预备） ===== */
+
+/* ---------- ① 选中钥匙：双圈呼吸光环 ---------- */
+(function(){
+ const inner=new THREE.Mesh(
+  new THREE.RingGeometry(.24,.275,60,1),
+  new THREE.MeshBasicMaterial({color:0xffe0a8,transparent:true,opacity:.9,
+   side:THREE.DoubleSide,blending:THREE.AdditiveBlending,depthWrite:false}));
+ inner.visible=false;
+ inner.scale.set(1.75,1.0,1);
+ sceneK.add(inner);
+
+ const outer=new THREE.Mesh(
+  new THREE.RingGeometry(.34,.36,60,1),
+  new THREE.MeshBasicMaterial({color:0xffd07a,transparent:true,opacity:.45,
+   side:THREE.DoubleSide,blending:THREE.AdditiveBlending,depthWrite:false}));
+ outer.visible=false;
+ outer.scale.set(1.75,1.0,1);
+ sceneK.add(outer);
+
+ function loop(t){
+  const on=(S.phase==='keys'&&S.selKey>=0&&S.keys[S.selKey]);
+  if(on){
+   const k=S.keys[S.selKey];
+   const p=k.g.position;
+   const pulse=1+.045*Math.sin(t*.005);
+   inner.visible=outer.visible=true;
+   inner.position.set(p.x-.05,p.y,p.z+.05);
+   outer.position.copy(inner.position);
+   inner.scale.set(1.75*pulse,1.0*pulse,1);
+   outer.scale.set(1.75*(1+.08*Math.sin(t*.0032)),
+                    1.0*(1+.08*Math.sin(t*.0032)),1);
+   inner.material.opacity=.55+.40*Math.abs(Math.sin(t*.004));
+   outer.material.opacity=.20+.22*Math.abs(Math.sin(t*.003));
+   k.mat.emissive.setHex(0x6a4a10);
+   k.mat.emissiveIntensity=1;
+  }else{
+   inner.visible=outer.visible=false;
+  }
+  requestAnimationFrame(loop);
+ }
+ requestAnimationFrame(loop);
+})();
+
+/* ---------- ② 好友 / 联机预备面板 ---------- */
+(function(){
+ const CODE_KEY='keyhole_mycode_v1', FR_KEY='keyhole_friends_v1';
+ function myCode(){
+  let c=null;
+  try{c=localStorage.getItem(CODE_KEY);}catch(e){}
+  if(!c){
+   const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+   c='';
+   for(let i=0;i<6;i++)c+=A[Math.floor(Math.random()*A.length)];
+   try{localStorage.setItem(CODE_KEY,c);}catch(e){}
+  }
+  return c;
+ }
+ function getFriends(){
+  try{return JSON.parse(localStorage.getItem(FR_KEY)||'[]');}catch(e){return [];}
+ }
+ function setFriends(a){
+  try{localStorage.setItem(FR_KEY,JSON.stringify(a));}catch(e){}
+ }
+
+ const p=document.createElement('section');
+ p.id='friendScreen';
+ p.className='panel';
+ p.innerHTML='<div class="phead"><h2 style="letter-spacing:.3em">好 友</h2>'+
+  '<div class="sp"></div><button id="frClose">关闭</button></div>'+
+  '<div id="frBody" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>';
+ document.body.appendChild(p);
+
+ const setList=document.getElementById('setList');
+ const lab=document.createElement('div');
+ lab.className='lab';
+ lab.style.marginTop='16px';
+ lab.textContent='社 交';
+ const row=document.createElement('div');
+ row.className='mrow';
+ row.innerHTML='<button id="btnFriend">好友 / 联机</button>';
+ setList.insertBefore(row,setList.lastElementChild);
+ setList.insertBefore(lab,row);
+
+ function render(){
+  const fr=getFriends();
+  let h='<div style="font-size:10px;letter-spacing:.24em;color:#7d7266;'+
+   'margin-bottom:8px">我 的 好 友 码</div>'+
+   '<div id="frCode" style="font-size:30px;letter-spacing:.28em;color:#e6c47f;'+
+   'font-weight:200;padding:16px;border-radius:14px;background:#16121099;'+
+   'border:1px solid #e6c47f33;text-align:center">'+myCode()+'</div>'+
+   '<div style="font-size:10.5px;color:#5f5548;text-align:center;margin-top:8px">'+
+   '点一下复制，发给朋友</div>'+
+   '<div style="font-size:10px;letter-spacing:.24em;color:#7d7266;'+
+   'margin:20px 0 8px">添 加 好 友</div>'+
+   '<div style="display:flex;gap:8px">'+
+   '<input id="frInput" maxlength="6" placeholder="6 位好友码" '+
+   'style="flex:1;padding:14px;border-radius:12px;border:1px solid #ffffff1f;'+
+   'background:#ffffff0a;color:#efe6d6;font-size:15px;text-align:center;'+
+   'letter-spacing:.24em;font-family:inherit;outline:none">'+
+   '<button id="frAdd" style="flex:0 0 auto;padding:14px 18px;font-size:13.5px;'+
+   'border-radius:12px">添加</button></div>'+
+   '<div style="font-size:10px;letter-spacing:.24em;color:#7d7266;'+
+   'margin:20px 0 8px">好 友（'+fr.length+'）</div>';
+
+  if(fr.length===0){
+   h+='<div style="font-size:12px;color:#5f5548;padding:18px 0;text-align:center">'+
+    '还没有好友</div>';
+  }else{
+   fr.forEach(function(f,i){
+    h+='<div class="brow" style="margin-bottom:7px">'+
+     '<span class="dot" style="background:#4f9dff"></span>'+
+     '<span class="bn">'+f.name+'</span>'+
+     '<span class="bc">'+f.code+'</span>'+
+     '<span class="bp" data-del="'+i+'" style="color:#e98a76;width:38px">删除</span></div>';
+   });
+  }
+
+  h+='<div style="margin-top:18px;padding:13px 15px;border-radius:12px;'+
+   'background:#1a1510;border:1px solid #e6c47f33;font-size:11px;'+
+   'line-height:1.95;color:#b8a684">'+
+   '<b style="color:#e6c47f">现在是单机预览</b><br>'+
+   '好友码只存在这台手机上，加别人也看不到对方的东西。<br>'+
+   '真正的联机需要一个后端（推荐 Firebase，免费），'+
+   '接上之后这里就能显示好友藏品、做拍卖行。</div>';
+
+  document.getElementById('frBody').innerHTML=h;
+
+  document.getElementById('frCode').onclick=function(){
+   try{navigator.clipboard.writeText(myCode());}catch(e){}
+   toast('好友码已复制',1200);
+  };
+  document.getElementById('frAdd').onclick=function(){
+   const v=(document.getElementById('frInput').value||'').trim().toUpperCase();
+   if(v.length!==6){toast('好友码是 6 位',1300);return;}
+   if(v===myCode()){toast('这是你自己的码',1300);return;}
+   const arr=getFriends();
+   if(arr.some(function(x){return x.code===v;})){toast('已经加过了',1300);return;}
+   arr.push({code:v,name:'好友 '+v,ts:Date.now()});
+   setFriends(arr);
+   toast('已添加（仅本机）',1300);
+   render();
+  };
+  document.getElementById('frBody').onclick=function(e){
+   const d=e.target.getAttribute&&e.target.getAttribute('data-del');
+   if(d!==null&&d!==undefined&&d!==''){
+    const arr=getFriends();
+    arr.splice(+d,1);
+    setFriends(arr);
+    render();
+   }
+  };
+ }
+
+ document.getElementById('btnFriend').onclick=function(){
+  SFX.tap();
+  render();
+  p.classList.add('on');
+ };
+ document.getElementById('frClose').onclick=function(){
+  p.classList.remove('on');
+ };
+})();  
+/* ===== 补丁 v17：修推理模式按钮闪烁 ===== */
+(function(){
+
+ // ① 清掉页面上所有轮询定时器（闪烁就是它们在打架）
+ for(var i=1;i<20000;i++){ try{clearInterval(i);}catch(e){} }
+ // 清的时候可能连带清掉"关闭启动页"的延时，手动补一下
+ var boot=document.getElementById('boot');
+ if(boot)boot.classList.add('off');
+
+ // ② updateUI 变成按钮文字的唯一来源
+ var _u=updateUI;
+ updateUI=function(){
+  _u();
+  if(!MODE.logic) return;
+
+  if(S.phase==='lock'){
+   btnA.disabled=false;
+   btnA.textContent=S.peeking?'移开视线':'看锁孔 · 无限制';
+   btnB.textContent='去挑钥匙 →';
+   btnR.style.display='none';
+  }else if(S.phase==='keys'){
+   btnA.disabled=false;
+   btnA.textContent='弃箱';
+   btnR.style.display='block';
+   btnR.textContent='加线索 · '+CLUE_COST+' 金';
+   btnR.disabled=S.busy||S.coins<CLUE_COST||
+    (S.logicSurv&&S.logicSurv.length<=1);
+   btnB.disabled=S.selKey<0||S.busy;
+   btnB.textContent='用这把开锁 · 一次机会';
+   if(S.selKey>=0&&S.keys[S.selKey]){
+    var k=S.keys[S.selKey];
+    msgEl.textContent='第 '+(k.id+1)+' 把 → '+k.code.join(' - ')+
+     '　·　一次机会，猜错作废';
+   }
+  }
+  paintClue();
+ };
+
+ // ③ 只重新挂必要的那几个定时器
+ setInterval(updateHud,30000);      // 金币/灯油/行情倒计时
+ setInterval(paintFree,20000);      // 免费木箱倒计时
+ setInterval(function(){ if(MODE.logic) paintClue(); },2000);  // 线索卡刷新
+
+ updateUI();
+ updateHud();
+})();  
+/* ===== 补丁 v18：十大时代 / 暗市 / 黑暗物件 / 新危险物 / 推理难度 ===== */
+
+/* ---------- ① 十大时代 + 30 分钟轮换 ---------- */
+const SLOT=1800000;
+const slotNow=function(){return Math.floor(Date.now()/SLOT);};
+
+ERAS.length=0;
+ERAS.push(
+{n:'收藏热',m:{junk:.6,curio:1,antique:1.6,gem:1.3,relic:1.4},
+ d:'全城都在收老物件，街角全是鉴宝摊。'},
+{n:'大萧条',m:{junk:1.8,curio:.7,antique:.6,gem:.45,relic:.7},
+ d:'面包比宝石好使，旧铁器反而有人抢。'},
+{n:'镀金年代',m:{junk:.8,curio:1,antique:1.1,gem:1.9,relic:1.2},
+ d:'人人都想在领口别点什么，珠宝翻着倍涨。'},
+{n:'战乱',m:{junk:2.2,curio:.9,antique:.5,gem:.35,relic:.6},
+ d:'一只空罐头也能换一天粮。值钱的东西全成了累赘。'},
+{n:'考古热',m:{junk:.5,curio:1.1,antique:2.2,gem:1,relic:1.6},
+ d:'博物馆到处收东西，越旧越贵。'},
+{n:'复古潮',m:{junk:1.4,curio:1.8,antique:1.2,gem:.9,relic:1},
+ d:'年轻人开始收集旧东西，纽扣弹珠都成宝贝。'},
+{n:'平淡日子',m:{junk:1,curio:1,antique:1,gem:1,relic:1},
+ d:'没什么可炒的，一切按常理出价。'},
+{n:'拍卖狂热',m:{junk:1.6,curio:1.8,antique:2.0,gem:2.4,relic:2.6},
+ d:'槌声不停，什么都能拍出天价。'},
+{n:'熔炉时代',m:{junk:.5,curio:.45,antique:.4,gem:.35,relic:.3},
+ d:'东西都被扔进炉子，没人再要艺术品。'},
+{n:'暗市',m:{junk:.7,curio:.8,antique:.9,gem:1.1,relic:1.2},
+ d:'灯下不看的交易。只有这里收那些不该存在的东西。',dark:true}
+);
+
+eraAt=function(x){
+ const cur=slotNow();
+ const slot=(Math.abs(x-epoch())<1)?cur:Math.floor(x*2);
+ if(slot%6===0)return ERAS[9];          // 每 3 小时必开暗市
+ const i=Math.floor(hash('era'+slot)*9);
+ return ERAS[Math.min(i,8)];
+};
+
+/* ---------- ② 黑暗物件：只在暗市能卖，价格随机 ---------- */
+CAT.dark={name:'黑暗',css:'#8b5cf6'};
+
+const _priceAt=priceAt;
+priceAt=function(item,cond,ep){
+ if(item&&item.dark){
+  const era=eraAt(ep);
+  if(!era.dark)return 0;
+  const r=hash(item.id+'|dk|'+ep);
+  return Math.max(80,Math.round(item.b*(0.5+r*2.8)));
+ }
+ return _priceAt(item,cond,ep);
+};
+
+function giveDark(){
+ const A=['锈蚀的','无声的','失名的','潮湿的','低语的','无面的','逆光的','缄默的','残缺的','沉睡的'];
+ const N=['铜铃','指骨','镜片','沙漏','锁芯','怀表','齿轮','瞳孔','钥匙','铃舌'];
+ const F=['边缘有一道被反复摩挲出的凹槽','表面浮着一层擦不掉的白霜',
+  '内部偶尔传来极轻的一声响','名字被人用刀刮掉了',
+  '在暗处会微微发热','缺了一角，缺口是圆的',
+  '摸上去比周围凉几度','有一道裂纹，但从不变大'];
+ const id='dark_'+Date.now()+'_'+rnd(99999);
+ const item={id:id,n:A[rnd(A.length)]+N[rnd(N.length)],t:5,c:'dark',
+  b:120+rnd(420),dark:true,d:F[rnd(F.length)]+'。来历不明。'};
+ ITEMS.push(item);
+ ITEM_BY_ID[id]=item;
+ S.bag.push({id:id,cond:1,fav:true,t:Date.now()});
+ save();
+ toast('推理奖励：<b>'+item.n+'</b><br>只能在「暗市」出手',2600);
+}
+
+/* ---------- ③ 新危险物：放射性 / 图钉 ---------- */
+MED.radiation=45;
+MED.tack=5;
+EVT_NAME.radiation='放射性物质';
+EVT_NAME.tack='小图钉';
+
+const _mem=makeEventMesh;
+makeEventMesh=function(ev){
+ if(ev==='radiation'){
+  const g=new THREE.Group();
+  const c=new THREE.Mesh(new THREE.CylinderGeometry(.042,.042,.078,20),
+   new THREE.MeshStandardMaterial({color:0x2f3a22,metalness:.5,roughness:.5}));
+  c.position.y=.039;g.add(c);
+  const cap=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.016,12),MAT.brass);
+  cap.position.y=.086;g.add(cap);
+  const gl=new THREE.Mesh(new THREE.PlaneGeometry(.055,.055),
+   new THREE.MeshBasicMaterial({color:0x7dff4a,transparent:true,opacity:.75,
+    blending:THREE.AdditiveBlending,depthWrite:false}));
+  gl.position.set(0,.045,.044);g.add(gl);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(.02,.003,8,16),MAT.brass);
+  ring.position.set(0,.045,.043);g.add(ring);
+  return g;
+ }
+ if(ev==='tack'){
+  const g=new THREE.Group();
+  const head=new THREE.Mesh(new THREE.CylinderGeometry(.024,.026,.008,18),MAT.silver);
+  head.position.y=.028;g.add(head);
+  const pin=new THREE.Mesh(new THREE.ConeGeometry(.005,.026,8),MAT.silver);
+  pin.rotation.x=Math.PI;pin.position.y=.012;g.add(pin);
+  return g;
+ }
+ return _mem(ev);
+};
+
+const _re=resolveEvent;
+resolveEvent=function(insp){
+ if(!insp||insp.resolved||insp!==S.insp)return;
+ const ev=insp.entry.ev;
+ if(ev==='radiation'){
+  insp.resolved=true;
+  S.coins=Math.max(0,S.coins-MED.radiation);
+  SFX.sting();haptic([90,60,160,60,200]);flash(6);
+  addMk('辐射灼伤 −'+MED.radiation);
+  toast('放射性物质泄漏<b>医药费 −'+MED.radiation+'</b>',2400);
+  updateHud();save();
+  return;
+ }
+ if(ev==='tack'){
+  insp.resolved=true;
+  S.coins=Math.max(0,S.coins-MED.tack);
+  SFX.sting();haptic(20);
+  addMk('扎了一下 −'+MED.tack);
+  toast('盒底有枚小图钉<b>−'+MED.tack+' 金</b>',1600);
+  updateHud();save();
+  return;
+ }
+ _re(insp);
+};
+
+const _rl=rollLoot;
+rollLoot=function(tier){
+ const out=_rl(tier);
+ for(var i=0;i<out.length;i++){
+  if(out[i].kind==='evt'&&out[i].ev!=='oil'&&out[i].ev!=='nest'){
+   var r=Math.random();
+   if(r<.14)out[i].ev='radiation';
+   else if(r<.34)out[i].ev='tack';
+  }
+ }
+ return out;
+};
+
+/* ---------- ④ 噩梦遮挡减弱 ---------- */
+const _obAdd=obAdd;
+obAdd=function(kind){
+ if(kind==='plate'){
+  const b=new THREE.Mesh(new THREE.BoxGeometry(.11,.20,.010),MAT.rust);
+  b.position.set(-.085,-.06,0);b.rotation.z=.22;obRoot.add(b);
+  return;
+ }
+ if(kind==='cloth'){
+  const pl=new THREE.Mesh(new THREE.PlaneGeometry(.12,.20,3,4),MAT.cloth);
+  const pos=pl.geometry.attributes.position;
+  for(var i=0;i<pos.count;i++){
+   pos.setZ(i,Math.sin(pos.getY(i)*22)*.006);
+  }
+  pos.needsUpdate=true;pl.geometry.computeVertexNormals();
+  pl.position.set(-.055,.02,-.02);pl.rotation.z=.45;obRoot.add(pl);
+  return;
+ }
+ if(kind==='grime'){
+  const cv=document.createElement('canvas');cv.width=cv.height=128;
+  const x=cv.getContext('2d');
+  for(var k=0;k<34;k++){
+   var gx=Math.random()*128,gy=Math.random()*128,rr2=8+Math.random()*22;
+   var g2=x.createRadialGradient(gx,gy,0,gx,gy,rr2);
+   g2.addColorStop(0,'rgba(28,16,6,.28)');g2.addColorStop(1,'rgba(28,16,6,0)');
+   x.fillStyle=g2;x.beginPath();x.arc(gx,gy,rr2,0,Math.PI*2);x.fill();
+  }
+  const pl2=new THREE.Mesh(new THREE.PlaneGeometry(.36,.42),
+   new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,
+    opacity:.5,depthWrite:false}));
+  pl2.position.set(0,.02,-.025);obRoot.add(pl2);
+  return;
+ }
+ _obAdd(kind);
+};
+
+/* ---------- ⑤ 推理模式独立难度 ---------- */
+let LOGIC_LV=0;
+(function(){
+ const setList=document.getElementById('setList');
+ const lab=document.createElement('div');
+ lab.className='lab';lab.style.marginTop='14px';lab.textContent='推 理 难 度';
+ const row=document.createElement('div');
+ row.className='mrow';row.id='logicRow';
+ row.innerHTML='<button data-l="0" class="on">简单</button>'+
+  '<button data-l="1">困难</button><button data-l="2">噩梦</button>';
+ setList.insertBefore(row,setList.lastElementChild);
+ setList.insertBefore(lab,row);
+ [].slice.call(row.querySelectorAll('button')).forEach(function(b){
+  b.onclick=function(){
+   LOGIC_LV=+b.dataset.l;
+   [].slice.call(row.querySelectorAll('button')).forEach(function(x){
+    x.classList.remove('on');
+   });
+   b.classList.add('on');
+   toast('推理难度：'+b.textContent+'<br>下一局生效',1500);
+  };
+ });
+})();
+
+const _bk4=buildKeys;
+buildKeys=function(swan,n){
+ if(!MODE.logic){ _bk4(swan,n); return; }
+
+ clearGroup(keysRoot);
+ const lock=S.lock;
+ const K=[6,7,8][LOGIC_LV];
+ const nClue=[2,1,1][LOGIC_LV];
+ const vi=rnd(4);
+ const codes=[lock.slice()];
+ var guard=0,c,i;
+
+ const sameWant=Math.min(3,K-3);
+ while(codes.length-1<sameWant&&guard++<900){
+  c=lock.slice();
+  for(i=0;i<4;i++) if(i!==vi) c[i]=rnd(5);
+  if(same(c,lock))continue;
+  if(codes.some(function(x){return same(x,c);}))continue;
+  codes.push(c);
+ }
+ guard=0;
+ while(codes.length<K&&guard++<1400){
+  c=lock.slice();
+  var v=rnd(5);
+  if(v===lock[vi])v=(v+1+rnd(4))%5;
+  c[vi]=v;
+  if(codes.some(function(x){return same(x,c);}))continue;
+  codes.push(c);
+ }
+
+ const pool=codes.filter(function(x){return x[vi]===lock[vi];});
+ var set=pickClueSet(pool,lock);
+ if(nClue===1)set=[set[0]];
+
+ S.logicVi=vi;
+ S.logicClues=set;
+ S.logicSolo=null;
+ S.logicSurv=codes.filter(function(x){
+  if(x[vi]!==lock[vi])return false;
+  return set.every(function(s){return s.test(x);});
+ });
+
+ for(var q=codes.length-1;q>0;q--){
+  var j2=rnd(q+1),tt=codes[q];codes[q]=codes[j2];codes[j2]=tt;
+ }
+ S.keys=codes.map(function(code,k){
+  var g=makeKey(code);
+  g.position.set((Math.random()-.5)*.62,
+                 .52-k*.28+(Math.random()-.5)*.14,
+                 -.04+k*.015);
+  g.rotation.z=(Math.random()-.5)*.85;
+  g.rotation.x=(Math.random()-.5)*.20;
+  keysRoot.add(g);
+  var obj={g:g,id:k,code:code,teeth:g.userData.teeth,mat:g.userData.mat,
+   viewed:true,revealUntil:Infinity,dead:false};
+  g.traverse(function(o){o.userData.keyRef=obj;});
+  return obj;
+ });
+ S.keysCenter=0.02;
+ S.keysNeedH=3.1;
+ layout();
+};
+
+/* ---------- ⑥ 推理开完箱：掉黑暗物件 ---------- */
+const _ss=showSummary;
+showSummary=function(exploded){
+ if(MODE.logic&&!exploded&&!S.darkGiven&&Math.random()<0.6){
+  S.darkGiven=true;
+  giveDark();
+ }
+ _ss(exploded);
+};
+
+/* ---------- ⑦ 详情页：黑暗物件的说明 ---------- */
+const _od=openDetail;
+openDetail=function(i){
+ _od(i);
+ const it=S.bag[i];
+ const def=it&&ITEM_BY_ID[it.id];
+ if(!def||!def.dark)return;
+ const card=document.querySelector('#detail .card');
+ const old=document.getElementById('darkNote');
+ if(old)old.remove();
+ const p=priceOf(def,it.cond);
+ const d=document.createElement('div');
+ d.id='darkNote';
+ d.style.cssText='margin-top:12px;padding:11px 13px;border-radius:11px;'+
+  'background:#1c1420;border:1px solid #8b5cf655;font-size:11px;'+
+  'color:#b8a6c8;line-height:1.85';
+ d.innerHTML='◆ <b style="color:#b98cff">黑暗物件</b> · 独一无二<br>'+
+  '<span style="color:#7a6a86">'+(p>0
+   ?'暗市正开着，现在能卖 '+p+' 金。'
+   :'现在没人收这个。等「暗市」开市才能出手。')+'</span>';
+ card.insertBefore(d,card.querySelector('.drow'));
+ if(p<=0){
+  const sb=document.getElementById('dSell');
+  sb.textContent='暗市未开 · 无法出手';
+  sb.disabled=true;
+ }
+};
+
+/* ---------- ⑧ HUD：30 分钟倒计时 ---------- */
+updateHud=function(){
+ hCoins.textContent=S.coins;
+ bagCount.textContent=S.bag.length;
+ var d='';
+ for(var i=0;i<CFG.oilMax;i++)d+=(i<S.oil?'●':'○');
+ hOil.innerHTML='灯油 <span style="color:#e6c47f;letter-spacing:1.5px">'+d+
+  '</span> <span style="color:#6f6558">'+S.oil+'/'+CFG.oilMax+'</span>';
+ var era=curEra();
+ btnEra.textContent='时代 · '+era.n+(era.dark?' ★':'')+' ›';
+ hLeft.textContent='时代 '+Math.ceil((SLOT-(Date.now()%SLOT))/60000)+' 分后变';
+};
+
+/* ---------- ⑨ 时代面板补充说明 ---------- */
+const _oe=openEra;
+openEra=function(){
+ _oe();
+ const b=document.getElementById('esBody');
+ if(!b)return;
+ b.innerHTML=b.innerHTML
+  .replace('时代每 4 小时换一次','时代每 30 分钟换一次（每 3 小时必开一次暗市）')
+  .replace('偶尔会出现暴涨或暴跌（极低概率的十倍天价）。',
+   '偶尔会出现暴涨或暴跌（极低概率的十倍天价）。<br>'+
+   '黑暗物件只有在「暗市」才能出手，价格每次不同。');
+};
+
+/* ---------- ⑩ 清场 ---------- */
+S.darkGiven=false;
+updateHud();
+/* ===== 补丁 v19：图鉴（见过才显示） ===== */
+
+const CXK='keyhole_codex_v1';
+let CX={era:{},item:{},evt:{},mode:{}};
+try{const d=JSON.parse(localStorage.getItem(CXK)||'null');if(d)CX=Object.assign(CX,d);}catch(e){}
+function cxSave(){try{localStorage.setItem(CXK,JSON.stringify(CX));}catch(e){}}
+function cxMark(kind,key){
+ if(!key)return;
+ if(!CX[kind])CX[kind]={};
+ if(CX[kind][key])return;
+ CX[kind][key]=1;
+ cxSave();
+}
+
+/* ---------- 图鉴用到的说明表 ---------- */
+const EVT_DESC={
+ scorpion:'箱底藏着毒蝎子。被蜇后要付医药费。',
+ sulfur:'一瓶不稳定的硫磺，开盖就炸。',
+ bomb:'炸弹。出现即全废，还要赔钱。',
+ radiation:'放射性物质。所有危险物里最痛的一种。',
+ tack:'盒底一枚小图钉。只疼一下。',
+ oil:'箱底的备用灯油，可以多看几次锁孔。',
+ nest:'箱中箱。开完这一箱还能再开一只。'
+};
+const EVT_COST_TXT={
+ scorpion:'−'+MED.scorpion+' 金',
+ sulfur:'−'+MED.sulfur+' 金',
+ bomb:'−'+MED.bomb+' 金 · 本箱全废',
+ radiation:'−'+MED.radiation+' 金',
+ tack:'−'+MED.tack+' 金',
+ oil:'灯油 +2',
+ nest:'再开一只箱子'
+};
+const MODE_DESC={
+ easy:'4 根锁芯，窥视 5 秒，锁孔无遮挡，5 把钥匙。',
+ hard:'5 根锁芯，窥视 3.6 秒，锁孔 1 种遮挡，6 把钥匙。',
+ nightmare:'6 根锁芯，窥视 2.4 秒，锁孔 2 种遮挡，7 把钥匙。',
+ logic:'没有时间限制。只看得清 1 根锁芯，其余靠线索推理。只有一次机会，猜错作废。'
+};
+const LV_DESC={
+ 'L0':'推理 · 简单：6 把钥匙，2 条线索。',
+ 'L1':'推理 · 困难：7 把钥匙，只有 1 条线索。',
+ 'L2':'推理 · 噩梦：8 把钥匙，1 条线索，候选更多。'
+};
+
+/* ---------- 自动记录 ---------- */
+const _di2=drawItem;
+drawItem=function(entry){
+ if(entry){
+  if(entry.kind==='item'&&entry.item)cxMark('item',entry.item.id);
+  if(entry.kind==='evt'&&entry.ev)cxMark('evt',entry.ev);
+ }
+ _di2(entry);
+};
+const _nr2=newRound;
+newRound=function(){
+ cxMark('mode',(MODE&&MODE.key)||'easy');
+ if(MODE&&MODE.logic)cxMark('mode','L'+LOGIC_LV);
+ _nr2();
+};
+setInterval(function(){
+ try{cxMark('era',curEra().n);}catch(e){}
+},8000);
+
+/* ---------- 面板 ---------- */
+(function(){
+ const p=document.createElement('section');
+ p.id='cxScreen';
+ p.className='panel';
+ p.innerHTML='<div class="phead"><h2 style="letter-spacing:.3em">图 鉴</h2>'+
+  '<div class="sp"></div><button id="cxClose">关闭</button></div>'+
+  '<div class="mrow" id="cxTabs" style="margin-bottom:12px">'+
+  '<button data-t="era" class="on">时代</button>'+
+  '<button data-t="item">物品</button>'+
+  '<button data-t="evt">危险</button>'+
+  '<button data-t="mode">玩法</button></div>'+
+  '<div id="cxBody" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>';
+ document.body.appendChild(p);
+
+ const setList=document.getElementById('setList');
+ const lab=document.createElement('div');
+ lab.className='lab';lab.style.marginTop='16px';lab.textContent='收 藏';
+ const row=document.createElement('div');
+ row.className='mrow';
+ row.innerHTML='<button id="btnCodex">图鉴</button>';
+ setList.insertBefore(row,setList.lastElementChild);
+ setList.insertBefore(lab,row);
+
+ let tab='era';
+
+ function head(title,txt){
+  return '<div style="display:flex;justify-content:space-between;align-items:baseline;'+
+   'margin:4px 0 10px"><span style="font-size:10px;letter-spacing:.22em;color:#7d7266">'+
+   title+'</span><span style="font-size:10.5px;color:#5f5548">'+txt+'</span></div>';
+ }
+ function locked(label){
+  return '<div class="brow" style="margin-bottom:7px;opacity:.55">'+
+   '<span class="dot" style="background:#2a241c"></span>'+
+   '<span class="bn" style="color:#5f5548">？？？</span>'+
+   '<span class="bc">'+label+'</span></div>';
+ }
+ function open1(dotColor,title,tag,desc){
+  return '<div style="margin-bottom:10px;padding:11px 13px;border-radius:12px;'+
+   'background:#16121099;border:1px solid #ffffff10">'+
+   '<div style="display:flex;align-items:center;gap:9px">'+
+   '<span class="dot" style="background:'+dotColor+'"></span>'+
+   '<span style="flex:1;font-size:14px;color:#ddd2c0">'+title+'</span>'+
+   '<span style="font-size:10.5px;color:#8f8270">'+tag+'</span></div>'+
+   '<div style="font-size:11.5px;color:#8c7e69;line-height:1.8;margin-top:6px">'+
+   desc+'</div></div>';
+ }
+
+ function render(){
+  const body=document.getElementById('cxBody');
+  let h='';
+
+  if(tab==='era'){
+   let n=0;
+   ERAS.forEach(function(e){ if(CX.era[e.n])n++; });
+   h+=head('时 代',n+' / '+ERAS.length);
+   ERAS.forEach(function(e){
+    if(CX.era[e.n]){
+     h+=open1(e.dark?'#8b5cf6':'#e6c47f',e.n,e.dark?'暗市':'已见过',e.d);
+    }else{
+     h+=locked('尚未经历');
+    }
+   });
+  }else if(tab==='item'){
+   const list=ITEMS.filter(function(x){return !x.dark;});
+   let n=0;
+   list.forEach(function(x){ if(CX.item[x.id])n++; });
+   h+=head('物 品',n+' / '+list.length);
+   ['junk','curio','antique','gem','relic'].forEach(function(c){
+    h+='<div style="font-size:10px;letter-spacing:.2em;color:#7d7266;'+
+     'margin:14px 0 8px">'+CAT[c].name+'</div>';
+    list.filter(function(x){return x.c===c;}).forEach(function(x){
+     if(CX.item[x.id]){
+      h+=open1(CAT[c].css,x.n,'基础价 '+x.b,x.d);
+     }else{
+      h+=locked(CAT[c].name);
+     }
+    });
+   });
+   h+='<div style="font-size:10px;letter-spacing:.2em;color:#7d7266;'+
+    'margin:14px 0 8px">黑 暗 物 件</div>';
+   const anyDark=Object.keys(CX.item).some(function(k){return k.indexOf('dark_')===0;});
+   h+= anyDark
+    ? open1('#8b5cf6','黑暗物件','推理专属',
+      '只在推理模式掉落，每一件都有独一无二的名字和瑕疵。'+
+      '普通时代卖不掉，只能在「暗市」出手，价格每次不同。')
+    : locked('推理模式');
+  }else if(tab==='evt'){
+   const keys=Object.keys(EVT_NAME);
+   let n=0;
+   keys.forEach(function(k){ if(CX.evt[k])n++; });
+   h+=head('危 险 物',n+' / '+keys.length);
+   keys.forEach(function(k){
+    if(CX.evt[k]){
+     const bad=(k!=='oil'&&k!=='nest');
+     h+=open1(bad?'#c0453a':'#4faf7a',EVT_NAME[k],EVT_COST_TXT[k],EVT_DESC[k]);
+    }else{
+     h+=locked('尚未遇到');
+    }
+   });
+  }else{
+   const rows=[
+    ['mode','easy','开箱 · 简单'],
+    ['mode','hard','开箱 · 困难'],
+    ['mode','nightmare','开箱 · 噩梦'],
+    ['mode','logic','推理模式'],
+    ['mode','L0','推理 · 简单'],
+    ['mode','L1','推理 · 困难'],
+    ['mode','L2','推理 · 噩梦']
+   ];
+   let n=0;
+   rows.forEach(function(r){ if(CX.mode[r[1]])n++; });
+   h+=head('玩 法',n+' / '+rows.length);
+   rows.forEach(function(r){
+    if(CX.mode[r[1]]){
+     const desc=(r[1][0]==='L')?LV_DESC[r[1]]:MODE_DESC[r[1]];
+     h+=open1('#4f9dff',r[2],r[1].indexOf('logic')>=0||r[1][0]==='L'?'推理':'开箱',desc);
+    }else{
+     h+=locked('尚未玩过');
+    }
+   });
+  }
+
+  body.innerHTML=h;
+ }
+
+ [].slice.call(document.querySelectorAll('#cxTabs button')).forEach(function(b){
+  b.onclick=function(){
+   [].slice.call(document.querySelectorAll('#cxTabs button')).forEach(function(x){
+    x.classList.remove('on');
+   });
+   b.classList.add('on');
+   tab=b.dataset.t;
+   render();
+  };
+ });
+ document.getElementById('btnCodex').onclick=function(){
+  SFX.tap();
+  p.classList.add('on');
+  render();
+ };
+ document.getElementById('cxClose').onclick=function(){
+  p.classList.remove('on');
+ };
+})();
+
+/* 现在就把当前时代记一笔 */
+cxMark('era',curEra().n);
+cxMark('mode',(MODE&&MODE.key)||'easy'); 
+/* ===== 补丁 v20：金币修正 / 等级 / 头像 / 推理齿数 / 免费箱成长 ===== */
+
+/* ---------- ① 初始金币永久 1800 ---------- */
+(function(){
+ const SAVE='keyhole_v13';
+ if(!localStorage.getItem(SAVE)){
+  S.coins=1800;save();
+ }else if(!localStorage.getItem('keyhole_v20_bump')){
+  localStorage.setItem('keyhole_v20_bump','1');
+  S.coins=Math.max(S.coins,1800);save();
+ }
+ updateHud();
+})();
+
+/* ---------- ② 等级 / 经验 / 头像 ---------- */
+S.xp=0;S.lv=1;S.avatar='';
+try{
+ const p=JSON.parse(localStorage.getItem('keyhole_v20_prof')||'null');
+ if(p){S.xp=p.xp||0;S.lv=p.lv||1;S.avatar=p.av||'';}
+}catch(e){}
+
+const _save0=save;
+save=function(){
+ _save0();
+ try{
+  localStorage.setItem('keyhole_v20_prof',
+   JSON.stringify({xp:S.xp,lv:S.lv,av:S.avatar}));
+ }catch(e){}
+};
+
+function xpNeed(lv){return Math.round(12*Math.pow(lv,1.5));}
+function xpTotal(){
+ let t=S.xp;
+ for(let i=1;i<S.lv;i++)t+=xpNeed(i);
+ return t;
+}
+function lvBonus(){
+ const l=Math.min(6,Math.floor(S.lv/5));
+ return 0.10*l;
+}
+function applyLvPrice(){
+ const m=1+lvBonus();
+ TIERS.forEach(function(t){
+  if(t.base===undefined)t.base=t.price;
+  t.price=Math.round(t.base*m);
+ });
+}
+TIERS.forEach(function(t){if(t.base===undefined)t.base=t.price;});
+
+function addXp(n){
+ if(!n||n<=0||S.lv>=30)return;
+ S.xp+=n;
+ let up=false;
+ while(S.lv<30&&S.xp>=xpNeed(S.lv)){
+  S.xp-=xpNeed(S.lv);
+  S.lv++;
+  up=true;
+ }
+ if(up){
+  applyLvPrice();
+  SFX.cheer();haptic([20,30,60]);
+  toast('升 级 了 ！<b>Lv.'+S.lv+'</b><br>'+
+   (S.lv%5===0?'箱子价格上涨 '+Math.round(lvBonus()*100)+'%':'免费箱更快了'),2600);
+  updateHud();
+ }
+ save();
+ paintProf();
+}
+
+/* ---------- 顶栏头像 + 等级 ---------- */
+const profBox=document.createElement('div');
+profBox.id='profBox';
+profBox.style.cssText='display:flex;align-items:center;gap:7px;pointer-events:auto';
+profBox.innerHTML=
+ '<div id="avImg" style="width:30px;height:30px;border-radius:50%;'+
+ 'background:#2a2114 center/cover no-repeat;border:1px solid #e6c47f55"></div>'+
+ '<div style="display:flex;flex-direction:column;gap:3px">'+
+ '<span style="font-size:9px;letter-spacing:.08em;color:#8f8270">Lv.'+
+ '<b id="lvNum" style="color:#e6c47f;font-size:11px">1</b></span>'+
+ '<span style="width:36px;height:3px;background:#ffffff14;border-radius:2px;overflow:hidden">'+
+ '<i id="lvBar" style="display:block;height:100%;width:0;background:#e6c47f"></i></span>'+
+ '</div>';
+(function(){
+ const h1=document.querySelector('#hud .h1');
+ if(h1)h1.insertBefore(profBox,h1.firstChild);
+})();
+
+function paintProf(){
+ const n=document.getElementById('lvNum');
+ const b=document.getElementById('lvBar');
+ const a=document.getElementById('avImg');
+ if(n)n.textContent=S.lv;
+ if(b){
+  const need=xpNeed(S.lv);
+  b.style.width=Math.min(100,Math.round(S.xp/need*100))+'%';
+ }
+ if(a)a.style.backgroundImage=S.avatar?('url('+S.avatar+')'):'';
+}
+
+/* ---------- 设置里的头像区 ---------- */
+(function(){
+ const setList=document.getElementById('setList');
+ const lab=document.createElement('div');
+ lab.className='lab';lab.style.marginTop='16px';lab.textContent='资 料';
+ const row=document.createElement('div');
+ row.className='mrow';
+ row.style.alignItems='center';
+ row.innerHTML=
+  '<div id="avBig" style="width:52px;height:52px;border-radius:50%;'+
+  'background:#2a2114 center/cover no-repeat;border:1px solid #e6c47f55;flex:0 0 auto"></div>'+
+  '<div style="flex:1;font-size:11.5px;color:#9c8f7b;line-height:1.7">'+
+  '<div>等级 <b id="setLv" style="color:#e6c47f">1</b> / 30</div>'+
+  '<div id="setXp" style="color:#6f6558;font-size:10.5px"></div></div>'+
+  '<button id="btnAv" style="flex:0 0 auto;padding:11px 14px;font-size:12.5px;'+
+  'border-radius:11px">换头像</button>'+
+  '<input id="avFile" type="file" accept="image/*" style="display:none">';
+ setList.insertBefore(row,setList.lastElementChild);
+ setList.insertBefore(lab,row);
+
+ function paintSet(){
+  const s=document.getElementById('setLv');
+  const x=document.getElementById('setXp');
+  const a=document.getElementById('avBig');
+  if(s)s.textContent=S.lv;
+  if(x){
+   const te=xpTotal();
+   x.textContent='经验 '+te+' · 箱子价格 +'+Math.round(lvBonus()*100)+'%'+
+    ' · 免费箱 '+freeHours()+' 小时';
+  }
+  if(a)a.style.backgroundImage=S.avatar?('url('+S.avatar+')'):'';
+ }
+ window.__paintSet=paintSet;
+
+ document.getElementById('btnAv').onclick=function(){
+  document.getElementById('avFile').click();
+ };
+ document.getElementById('avFile').onchange=function(e){
+  const f=e.target.files&&e.target.files[0];
+  if(!f)return;
+  const url=URL.createObjectURL(f);
+  const img=new Image();
+  img.onload=function(){
+   const cv=document.createElement('canvas');
+   cv.width=cv.height=128;
+   const x=cv.getContext('2d');
+   const s=Math.min(img.width,img.height);
+   x.drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,128,128);
+   S.avatar=cv.toDataURL('image/jpeg',0.82);
+   URL.revokeObjectURL(url);
+   save();paintProf();paintSet();
+   toast('头像已更新',1400);
+  };
+  img.src=url;
+ };
+ paintSet();
+})();
+
+/* ---------- ③ 免费箱：等级越高冷却越短、品级越好 ---------- */
+function freeHours(){return Math.max(6,24-S.lv*0.6);}
+freeRemain=function(){
+ return freeHours()*3600000-(Date.now()-freeLast());
+};
+paintFree=function(){
+ const rm=freeRemain();
+ if(rm<=0){
+  freeBtn.innerHTML='🎁 领取';
+  freeBtn.classList.add('ready');
+ }else{
+  const h=Math.floor(rm/3600000),m=Math.floor(rm%3600000/60000);
+  freeBtn.innerHTML='🎁 '+(h>0?h+'时':'')+m+'分';
+  freeBtn.classList.remove('ready');
+ }
+};
+freeBtn.onclick=function(){
+ if(freeRemain()>0){toast('已经领过了 —— 等待刷新',1600);return;}
+ localStorage.setItem(FK,String(Date.now()));
+ let idx=0;
+ while(Math.random()<S.lv*0.012&&idx<2)idx++;
+ const tier=TIERS[idx];
+ const loot=rollLoot(tier);
+ S.selBox=-1;S.hasNest=false;
+ SFX.open();haptic([10,20,30]);
+ toast('🎁 <b>免费'+tier.name+'</b>已送到',1700);
+ fadeTo(function(){startStage({tier:tier,loot:loot});});
+ paintFree();
+};
+
+/* ---------- ④ 卖出获得经验 ---------- */
+const _dSell=document.getElementById('dSell').onclick;
+document.getElementById('dSell').onclick=function(e){
+ const it=S.bag[S.detailIdx];
+ const p=it?priceOf(ITEM_BY_ID[it.id],it.cond):0;
+ const n0=S.bag.length;
+ _dSell.call(this,e);
+ if(S.bag.length<n0&&p>0)addXp(Math.round(p*0.6));
+};
+const _bSell=document.getElementById('bulkSell').onclick;
+document.getElementById('bulkSell').onclick=function(e){
+ let sum=0;
+ S.picked.forEach(function(i){
+  const it=S.bag[i];
+  if(it)sum+=priceOf(ITEM_BY_ID[it.id],it.cond);
+ });
+ const n0=S.bag.length;
+ _bSell.call(this,e);
+ if(S.bag.length<n0&&sum>0)addXp(Math.round(sum*0.6));
+};
+
+/* ---------- ⑤ 推理困难/噩梦：齿数增加 ---------- */
+buildCands=function(lock){
+ const N=lock.length;
+ const out=[];
+ const sum=lock.reduce(function(a,b){return a+b;},0);
+ out.push({txt:'所有格数加起来 = '+sum,
+  test:function(c){return c.reduce(function(a,b){return a+b;},0)===sum;}});
+ const mx=Math.max.apply(null,lock);
+ if(lock.filter(function(x){return x===mx;}).length===1){
+  const k=lock.indexOf(mx);
+  out.push({txt:'最高的一根是第 '+(k+1)+' 根',
+   test:function(c){
+    const m=Math.max.apply(null,c);
+    return c.filter(function(x){return x===m;}).length===1&&c.indexOf(m)===k;
+   }});
+ }
+ for(let i=0;i<N;i++){
+  for(let j=0;j<N;j++){
+   if(i===j)continue;
+   const d=lock[i]-lock[j];
+   if(d>0){
+    out.push({txt:'第 '+(i+1)+' 根比第 '+(j+1)+' 根高 '+d+' 格',
+     test:(function(a,b,dd){return function(c){return c[a]-c[b]===dd;};})(i,j,d)});
+   }
+   if(i<j){
+    const s2=lock[i]+lock[j];
+    out.push({txt:'第 '+(i+1)+' 根和第 '+(j+1)+' 根加起来 = '+s2+' 格',
+     test:(function(a,b,ss){return function(c){return c[a]+c[b]===ss;};})(i,j,s2)});
+   }
+  }
+ }
+ const z=lock.filter(function(x){return x===0;}).length;
+ out.push({txt:(z?'有一根是平的（0 格）':'没有一根是平的'),
+  test:function(c){return c.filter(function(x){return x===0;}).length===z;}});
+ return out;
+};
+
+const _cf5=confirmBox;
+confirmBox=function(){
+ if(MODE.logic){
+  MODE.teeth=[4,5,6][LOGIC_LV];
+  MODE.step=[.050,.042,.036][LOGIC_LV];
+ }
+ _cf5();
+};
+
+const _bk5=buildKeys;
+buildKeys=function(swan,n){
+ if(!MODE.logic){ _bk5(swan,n); return; }
+
+ clearGroup(keysRoot);
+ const lock=S.lock,N=lock.length;
+ const K=[6,7,8][LOGIC_LV];
+ const nClue=[2,1,1][LOGIC_LV];
+ const vi=rnd(N);
+ const codes=[lock.slice()];
+ var guard=0,c,i;
+
+ const sameWant=Math.min(3,K-3);
+ while(codes.length-1<sameWant&&guard++<1500){
+  c=lock.slice();
+  for(i=0;i<N;i++) if(i!==vi) c[i]=rnd(5);
+  if(same(c,lock))continue;
+  if(codes.some(function(x){return same(x,c);}))continue;
+  codes.push(c);
+ }
+ guard=0;
+ while(codes.length<K&&guard++<3000){
+  c=lock.slice();
+  var v=rnd(5);
+  if(v===lock[vi])v=(v+1+rnd(4))%5;
+  c[vi]=v;
+  if(codes.some(function(x){return same(x,c);}))continue;
+  codes.push(c);
+ }
+
+ const pool=codes.filter(function(x){return x[vi]===lock[vi];});
+ var set=pickClueSet(pool,lock);
+ if(nClue===1)set=[set[0]];
+
+ S.logicVi=vi;
+ S.logicClues=set;
+ S.logicSolo=null;
+ S.logicSurv=codes.filter(function(x){
+  if(x[vi]!==lock[vi])return false;
+  return set.every(function(s){return s.test(x);});
+ });
+
+ for(var q=codes.length-1;q>0;q--){
+  var j2=rnd(q+1),tt=codes[q];codes[q]=codes[j2];codes[j2]=tt;
+ }
+ S.keys=codes.map(function(code,k){
+  var g=makeKey(code);
+  g.position.set((Math.random()-.5)*.62,
+                 .52-k*.28+(Math.random()-.5)*.14,
+                 -.04+k*.015);
+  g.rotation.z=(Math.random()-.5)*.85;
+  g.rotation.x=(Math.random()-.5)*.20;
+  keysRoot.add(g);
+  var obj={g:g,id:k,code:code,teeth:g.userData.teeth,mat:g.userData.mat,
+   viewed:true,revealUntil:Infinity,dead:false};
+  g.traverse(function(o){o.userData.keyRef=obj;});
+  return obj;
+ });
+ S.keysCenter=0.02;
+ S.keysNeedH=3.1;
+ layout();
+};
+
+/* ---------- 初始化 ---------- */
+applyLvPrice();
+paintProf();
+if(window.__paintSet)window.__paintSet();
+updateHud();  
+/* ===== 补丁 v21：修免费箱点不动 ===== */
+(function(){
+
+ /* ① 让按钮能被点 */
+ freeBtn.style.pointerEvents='auto';
+ freeBtn.style.cursor='pointer';
+ freeBtn.style.zIndex='12';
+ freeBtn.style.position='static';
+ freeBtn.style.padding='4px 9px';
+ freeBtn.style.fontSize='10.5px';
+ freeBtn.style.borderRadius='8px';
+
+ /* ② 确保它还在顶栏第二行 */
+ var h2=document.querySelector('#hud .h2');
+ if(h2&&freeBtn.parentNode!==h2){
+  var era=document.getElementById('btnEra');
+  if(era&&era.parentNode===h2)h2.insertBefore(freeBtn,era.nextSibling);
+  else h2.appendChild(freeBtn);
+ }
+
+ /* ③ 线索卡也是 div，同样可能挡住按钮 → 一律不吃触摸 */
+ if(typeof clueCard!=='undefined'&&clueCard)clueCard.style.pointerEvents='none';
+
+ /* ④ 重新绑定点击（原来的绑定可能被覆盖） */
+ freeBtn.onclick=function(ev){
+  ev&&ev.stopPropagation();
+  var rm=freeRemain();
+  if(rm>0){
+   var m=Math.ceil(rm/60000);
+   toast('还没到时间 · 还要等 <b>'+
+    (m>=60?Math.ceil(m/60)+' 小时':m+' 分钟')+'</b>',1800);
+   return;
+  }
+  localStorage.setItem(FK,String(Date.now()));
+  var idx=0;
+  while(Math.random()<S.lv*0.012&&idx<2)idx++;
+  var tier=TIERS[idx];
+  var loot=rollLoot(tier);
+  S.selBox=-1;
+  S.hasNest=false;
+  SFX.open();haptic([10,20,30]);
+  toast('🎁 <b>免费'+tier.name+'</b>已送到',1700);
+  fadeTo(function(){startStage({tier:tier,loot:loot});});
+  paintFree();
+ };
+
+ /* ⑤ 画一遍最新状态 */
+ paintFree();
+})();  
+/* ===== v29：资料卡显示修正 + 真正清空存档 ===== */
+(function(){
+
+  /* 1) 清空时禁止自动回写 */
+  var _save0 = save;
+  save = function(){ if(window.__wiping) return; return _save0.apply(this, arguments); };
+
+  /* 2) 接管「清空存档、重新开始」按钮 */
+  document.addEventListener('click', function(e){
+    var el = e.target;
+    for(var d=0; d<6 && el && el!==document.body; d++){
+      if(el.textContent && el.textContent.trim()==='清空存档、重新开始'){
+        e.preventDefault(); e.stopPropagation();
+        if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+        if(!confirm('确定清空全部存档？\n等级、头像、金币、物品全部清零。')) return;
+        window.__wiping = true;
+        var ks = Object.keys(localStorage);
+        for(var m=0;m<ks.length;m++){
+          if(ks[m].indexOf('keyhole')===0) localStorage.removeItem(ks[m]);
+        }
+        setTimeout(function(){ location.reload(); }, 60);
+        return;
+      }
+      el = el.parentNode;
+    }
+  }, true);
+
+  /* 3) 资料卡：/30 → /180，免费箱小时按新公式 */
+  function fixProf(){
+    try{
+      var all = document.querySelectorAll('div,span,p,b,em'), lvEl=null, hrEl=null;
+      for(var i=0;i<all.length;i++){
+        var t = all[i].textContent || '';
+        if(t.indexOf('等级')>=0 && (t.indexOf('/ 30')>=0 || t.indexOf('/30')>=0)){
+          if(!lvEl || t.length < lvEl.textContent.length) lvEl = all[i];
+        }
+        if(t.indexOf('箱子价格')>=0 && t.indexOf('免费箱')>=0){
+          if(!hrEl || t.length < hrEl.textContent.length) hrEl = all[i];
+        }
+      }
+      if(lvEl) lvEl.innerHTML = lvEl.innerHTML.replace(/\/\s*30/, '/ 180');
+      if(hrEl) hrEl.innerHTML = hrEl.innerHTML.replace(
+        /免费箱[\s\d.]+小时/,
+        '免费箱 ' + (Math.max(4, 24 - S.lv*0.12)).toFixed(1) + ' 小时'
+      );
+    }catch(e){}
+  }
+
+  var _paintProf = paintProf;
+  paintProf = function(){
+    var r = _paintProf.apply(this, arguments);
+    fixProf();
+    return r;
+  };
+
+  setTimeout(fixProf, 1500);
+})();
+/* ===== v30：分步新手引导（点击消失） ===== */
+(function(){
+  var st=document.createElement('style');
+  st.textContent='#tipBar{display:none!important}';
+  document.head.appendChild(st);
+
+  var box=document.createElement('div');
+  box.id='guideCard';
+  box.style.cssText='position:fixed;left:10px;right:10px;bottom:88px;z-index:60;background:rgba(18,16,12,.96);border:1px solid #e6c47f66;border-radius:14px;padding:14px;color:#efe6d6;font-size:13px;line-height:1.65;box-shadow:0 8px 30px #000a;display:none;max-width:520px;margin:0 auto';
+  box.innerHTML='<div id="gcTitle" style="color:#e6c47f;font-weight:700;margin-bottom:6px;font-size:14px"></div>'
+    +'<div id="gcBody"></div>'
+    +'<div style="display:flex;gap:8px;margin-top:10px">'
+    +'<button id="gcOk" style="flex:1;background:#e6c47f;color:#231a0c;border:0;border-radius:10px;padding:9px;font-weight:700;font-size:13px">知道了</button>'
+    +'<button id="gcOff" style="background:transparent;color:#9d9384;border:1px solid #ffffff22;border-radius:10px;padding:9px;font-size:12px">不再提示</button>'
+    +'</div>';
+  document.body.appendChild(box);
+
+  var STEPS={
+    intro:['欢迎来到「齿口」','你是一名寻宝经纪人，全程只有 5 步：<br>① 买一只箱子　② 窥视锁孔、记住齿口　③ 挑一把钥匙<br>④ 花 20 金试开　⑤ 开箱：好货卖钱，危险物会扣钱。<br>开局有 <b>1800 金币</b>；<b>灯油</b>是"窥视"的次数，用光要等回复。'],
+    choose:['第 1 步 · 选箱子','下面 5 只箱子价钱不同，越贵出好货的概率越高。<br>先点一只（建议先买最便宜的<b>木箱</b>），再点金色按钮<b>「买下这只」</b>。'],
+    peek:['第 2 步 · 窥视锁孔','点<b>「窥视锁孔」</b>，会看到箱里锁芯的形状，<b>只有几秒</b>！<br>记住每根齿的高矮，看完扣 1 点灯油。'],
+    pickKey:['第 3 步 · 挑钥匙','下面是一排钥匙，每把<b>只能偷看一次</b>形状（约 2.6 秒）。<br>看完和你记住的齿口比对，挑一样的那把。'],
+    tryKey:['第 4 步 · 试开','点<b>「买下试开」</b>（20 金）。<br>对 → 开箱；错 → 这把钥匙报废，可以再挑一把。'],
+    opened:['第 5 步 · 开箱','箱里可能是古物珠宝，也可能是蝎子、炸弹。<br>好东西去<b>「背包」</b>卖掉换钱，再用钱买更贵的箱子。']
+  };
+
+  function curStep(){
+    try{
+      var sb=S.selBox;
+      if(sb==null||sb===-1||sb===false) return 'choose';
+      if(!S.peeked) return 'peek';
+      if(!S.selKey) return 'pickKey';
+      return 'tryKey';
+    }catch(e){ return 'choose'; }
+  }
+
+  function render(step){
+    var t=STEPS[step]; if(!t) return;
+    document.getElementById('gcTitle').innerHTML=t[0];
+    document.getElementById('gcBody').innerHTML=t[1];
+    box.style.display='block';
+  }
+
+  var lastStep=null, dismissed=null, introShown=false;
+  var introDone=localStorage.getItem('keyhole_guide_intro')==='1';
+
+  document.getElementById('gcOk').onclick=function(){
+    dismissed=lastStep;
+    if(lastStep==='intro') localStorage.setItem('keyhole_guide_intro','1');
+    box.style.display='none';
+  };
+  document.getElementById('gcOff').onclick=function(){
+    localStorage.setItem('keyhole_guide_v1','0');
+    box.style.display='none';
+  };
+
+  setInterval(function(){
+    if(localStorage.getItem('keyhole_guide_v1')==='0'){ if(box.style.display!=='none') box.style.display='none'; return; }
+    if(!introShown && !introDone){ introShown=true; lastStep='intro'; render('intro'); return; }
+    introShown=true;
+    var s=curStep();
+    if(s!==lastStep){
+      lastStep=s;
+      if(dismissed!==s) render(s);
+    }
+  },600);
+})();
+/* ===== v31：暂停全部新手教程 / 提示条（后续重做） ===== */
+(function(){
+  /* 引导开关：1 = 关闭（默认关） */
+  var MUTE_TOAST = false;   // 若连"金币不足/升级"这类弹窗也想停，把 false 改成 true
+
+  try{
+    localStorage.setItem('keyhole_guide_v1','0');
+    localStorage.setItem('keyhole_guide_intro','1');
+  }catch(e){}
+
+  var st=document.createElement('style');
+  st.textContent='#tipBar{display:none!important}#guideCard{display:none!important}';
+  document.head.appendChild(st);
+
+  function killGuide(){
+    var g=document.getElementById('guideCard');
+    if(g && g.parentNode) g.parentNode.removeChild(g);
+    var b=document.getElementById('tipBar');
+    if(b) b.style.display='none';
+  }
+  killGuide();
+
+  /* 关掉设置里的"新手提示" */
+  try{ if(typeof S!=='undefined' && S) S.tutorial=false; }catch(e){}
+
+  /* 可选：连 toast 也静默 */
+  if(MUTE_TOAST){ try{ toast=function(){}; }catch(e){} }
+
+  setInterval(killGuide, 800);
+})();   
+/* ===== v38：设置页拆成「普通模式 / 推理模式」两块 + 提示框挪到底部 ===== */
+(function(){
+
+  /* 提示黑框：移到底部、点击穿透，不再挡物件 */
+  var st=document.createElement('style');
+  st.textContent='#toast{position:fixed!important;left:50%!important;right:auto!important;top:auto!important;bottom:12px!important;transform:translateX(-50%)!important;pointer-events:none!important;max-width:92vw!important}';
+  document.head.appendChild(st);
+
+  function run(){
+    var setList  = document.getElementById('setList');
+    var modeRow  = document.getElementById('modeRow');
+    var logicRow = document.getElementById('logicRow');
+    if(!setList || !modeRow || !logicRow) return;
+
+    /* 找两个小标题 */
+    var ch=setList.children, labDiff=null, labLogic=null;
+    for(var i=0;i<ch.length;i++){
+      var el=ch[i];
+      if(!el.classList || !el.classList.contains('lab')) continue;
+      var t=(el.textContent||'').replace(/\s+/g,'');
+      if(t.indexOf('下局生效')>=0) labDiff=el;
+      else if(t.indexOf('推理')>=0) labLogic=el;
+    }
+
+    if(labDiff && (labDiff.textContent||'').indexOf('普通模式')<0) labDiff.textContent='普通模式（下局生效）';
+    if(labLogic && (labLogic.textContent||'').replace(/\s+/g,'')!=='推理模式') labLogic.textContent='推理模式';
+
+    /* 把第一排里的「推理」按钮藏起来（保留它，用来切换模式） */
+    var bs=modeRow.querySelectorAll('button'), reason=null;
+    for(var k=0;k<bs.length;k++){
+      if((bs[k].textContent||'').replace(/\s+/g,'')==='推理'){ reason=bs[k]; break; }
+    }
+    if(reason){
+      reason.setAttribute('data-reason','1');
+      if(reason.style.display!=='none') reason.style.display='none';
+    }
+
+    /* 推理模式整块移到普通模式正下方 */
+    if(labLogic && modeRow.nextElementSibling!==labLogic){
+      setList.insertBefore(labLogic, modeRow.nextElementSibling);
+      setList.insertBefore(logicRow, labLogic.nextElementSibling);
+    }
+
+    /* 点推理模式的难度时，先触发隐藏的「推理」按钮 → 真正进入推理模式 */
+    if(!logicRow.getAttribute('data-proxy')){
+      logicRow.setAttribute('data-proxy','1');
+      logicRow.addEventListener('click', function(){
+        var rb=modeRow.querySelector('button[data-reason="1"]');
+        if(rb) rb.click();
+      }, true);
+    }
+  }
+  
+  setInterval(run, 700);
+})();
+/* ===== v39：提示文字上移，不遮挡物件 ===== */
+(function(){
+  var st=document.createElement('style');
+  st.textContent =
+    '#toast{position:fixed!important;left:50%!important;right:auto!important;' +
+      'top:13%!important;bottom:auto!important;transform:translateX(-50%)!important;' +
+      'pointer-events:none!important;max-width:90vw!important;z-index:55!important}' +
+    '#stHint{top:15%!important;bottom:auto!important;pointer-events:none!important}';
+  document.head.appendChild(st);
+})();  
+/* ===== v42-A ===== */
+(function(){
+
+  /* 1. 新模式：地狱 */
+  MODES.hell = { name:'地狱', teeth:9, step:0.03, peek:1800, keys:10, obs:4, haz:0.12, key:'hell' };
+
+  /* 2. 新增遮挡物 */
+  var NEWOBS=['hook','coin','bone','eye'];
+  for(var i=0;i<NEWOBS.length;i++){ if(OB_LIST.indexOf(NEWOBS[i])<0) OB_LIST.push(NEWOBS[i]); }
+  try{
+    var _obA=obAdd;
+    obAdd=function(kind){
+      try{
+        if(kind==='hook'){
+          var m=new THREE.Mesh(new THREE.TorusGeometry(.045,.008,6,14,Math.PI*1.3), MAT.rust);
+          m.position.set(.02,-.05,-.02); m.rotation.z=.6; obRoot.add(m); return;
+        }
+        if(kind==='coin'){
+          var c=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.006,16), MAT.rust);
+          c.rotation.x=Math.PI/2; c.position.set(-.04,.02,-.02); obRoot.add(c); return;
+        }
+        if(kind==='bone'){
+          var b2=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.16,8), MAT.cloth);
+          b2.rotation.z=.9; b2.position.set(0,-.02,-.03); obRoot.add(b2); return;
+        }
+        if(kind==='eye'){
+          var e2=new THREE.Mesh(new THREE.SphereGeometry(.035,10,10), MAT.rust);
+          e2.position.set(.03,.04,-.02); obRoot.add(e2); return;
+        }
+      }catch(e){}
+      return _obA(kind);
+    };
+  }catch(e){}
+
+  /* 3. 覆盖 confirmBox：遮挡数量不再限 2；地狱齿口 8/9/10 随机 */
+  try{
+    var _cb=confirmBox;
+    confirmBox=function(){
+      if(S.phase!=='box'||S.selBox<0)return;
+      var b=S.boxes[S.selBox];
+      if(S.coins<b.tier.price){toast('金币不够买这只箱子');return;}
+      S.coins-=b.tier.price;save();
+
+      if(MODE===MODES.hell) MODE.teeth = 8 + Math.floor(Math.random()*3);
+
+      var n=MODE.teeth;
+      buildPins(n);
+      S.obs=[];
+      var want=MODE.obs||0, guard=0;
+      while(S.obs.length<want && guard++<60){
+        var k=OB_LIST[rnd(OB_LIST.length)];
+        if(S.obs.indexOf(k)>=0) continue;
+        S.obs.push(k);
+      }
+      buildObstructions(S.obs);
+      S.lock=Array.from({length:n},function(){return rnd(5);});
+      S.lock.forEach(function(c,idx){
+        var L=segLen(c)*.95;
+        pins[idx].scale.y=L; pins[idx].position.y=.16-L/2;
+      });
+      buildKeys(b.swan,n);
+      S.busy=true;updateUI();
+      fadeTo(function(){
+        S.phase='lock';S.peeking=false;S.peeked=false;S.busy=false;
+        var ob=S.obs.length?' · 锁孔里塞着 '+S.obs.map(function(x){return OB_NAME[x]||x;}).join(' + '):'';
+        msgl('看清 '+n+' 根锁芯'+ob);
+        updateUI();
+        showTip('lock');
+      });
+    };
+  }catch(e){}
+
+  /* 4. 地狱掉落更好 */
+  try{
+    var _rlA=rollLoot;
+    rollLoot=function(tier){
+      if(MODE===MODES.hell && tier && tier.w){
+        var t2={}, kk;
+        for(kk in tier) t2[kk]=tier[kk];
+        var w=tier.w, nw=[w[0]*.55,w[1]*.85,w[2]*1.35,w[3]*2.1,w[4]*3.2];
+        var s=nw[0]+nw[1]+nw[2]+nw[3]+nw[4];
+        for(kk=0;kk<5;kk++) nw[kk]=nw[kk]/s;
+        t2.w=nw;
+        if(t2.n) t2.n=[t2.n[0]+1,t2.n[1]+1];
+        return _rlA(t2);
+      }
+      return _rlA(tier);
+    };
+  }catch(e){}
+
+  /* 5. 换一批要花钱 */
+  function rerollCost(){ return Math.min(30, 10+Math.floor(S.lv/10)); }
+  document.addEventListener('click',function(e){
+    var t=e.target, btn=null;
+    for(var d=0;d<3&&t;d++){ if(t.id==='btnB'){btn=t;break;} t=t.parentNode; }
+    if(!btn) return;
+    var c=rerollCost();
+    if(S.coins<c){
+      e.preventDefault(); e.stopPropagation();
+      if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+      toast('换一批需要 <b>'+c+'</b> 金，金币不够'); return;
+    }
+    S.coins-=c;
+    try{ updateHud(); save(); }catch(err){}
+  },true);
+  setInterval(function(){
+    var btn=document.getElementById('btnB');
+    if(!btn) return;
+    var w='换一批（'+rerollCost()+'金）';
+    if(btn.textContent!==w) btn.textContent=w;
+  },1200);
+
+  /* 6. 钥匙整体上移 + 收紧 */
+  try{
+    var _bkA=buildKeys;
+    buildKeys=function(){
+      var r=_bkA.apply(this,arguments);
+      try{
+        if(typeof keysRoot!=='undefined'&&keysRoot){
+          if(keysRoot.__by===undefined) keysRoot.__by=keysRoot.position.y;
+          keysRoot.position.y=keysRoot.__by+0.18;
+          keysRoot.scale.set(0.86,0.86,0.86);
+        }
+      }catch(e){}
+      return r;
+    };
+  }catch(e){}
+
+  /* 7. 设置里加「地狱」按钮 + 高亮修正 */
+  try{
+    var _pm=paintModes;
+    paintModes=function(){
+      try{
+        var cur = MODE===MODES.easy?'easy':MODE===MODES.hard?'hard':MODE===MODES.logic?'logic':MODE===MODES.hell?'hell':'nightmare';
+        var bs=document.querySelectorAll('#modeRow button');
+        [].slice.call(bs).forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-model')===cur); });
+        [].slice.call(bs).forEach(function(b){
+          b.onclick=function(){
+            MODE=MODES[b.getAttribute('data-model')];
+            SFX.tap();haptic(10);paintModes();
+            toast('难度已切换为 <b>'+MODE.name+'</b><br>下一局生效',1600);
+          };
+        });
+      }catch(e){ _pm&&_pm(); }
+    };
+    setInterval(function(){
+      var row=document.getElementById('modeRow');
+      if(row && !row.querySelector('button[data-model="hell"]')){
+        var b=document.createElement('button');
+        b.textContent='地狱'; b.setAttribute('data-model','hell');
+        row.appendChild(b);
+        paintModes();
+      }
+    },800);
+  }catch(e){}
+
+})();
+/* ===== v42-B：推理·地狱 ===== */
+(function(){
+
+  /* 推理地狱：齿口 4 → 6（+2）、2 条免费提示、错一次整箱作废 */
+  MODES.logicHell = { name:'推理·地狱', teeth:6, step:0.03, peek:0, keys:6, obs:2, haz:0, key:'logicHell', logic:true };
+
+  /* 掉落同样比噩梦好 */
+  try{
+    var _rlB=rollLoot;
+    rollLoot=function(tier){
+      if(MODE===MODES.logicHell && tier && tier.w){
+        var t2={},kk;
+        for(kk in tier) t2[kk]=tier[kk];
+        var w=tier.w, nw=[w[0]*.5,w[1]*.85,w[2]*1.4,w[3]*2.2,w[4]*3.4];
+        var s=nw[0]+nw[1]+nw[2]+nw[3]+nw[4];
+        for(kk=0;kk<5;kk++) nw[kk]=nw[kk]/s;
+        t2.w=nw;
+        return _rlB(t2);
+      }
+      return _rlB(tier);
+    };
+  }catch(e){}
+
+  /* 模式高亮（含地狱/推理地狱） */
+  paintModes=function(){
+    try{
+      var cur = MODE===MODES.easy?'easy':MODE===MODES.hard?'hard':MODE===MODES.hell?'hell':(MODE===MODES.logic||MODE===MODES.logicHell)?'logic':'nightmare';
+      var bs=document.querySelectorAll('#modeRow button');
+      [].slice.call(bs).forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-model')===cur); });
+      [].slice.call(bs).forEach(function(b){
+        b.onclick=function(){
+          MODE=MODES[b.getAttribute('data-model')];
+          SFX.tap();haptic(10);paintModes();
+          toast('难度已切换为 <b>'+MODE.name+'</b><br>下一局生效',1600);
+        };
+      });
+    }catch(e){}
+  };
+
+  /* 在「推理模式」那一排加「地狱」按钮 */
+  setInterval(function(){
+    var row=document.getElementById('logicRow');
+    if(!row) return;
+    if(!row.getAttribute('data-mb')){
+      row.setAttribute('data-mb','1');
+      row.addEventListener('click',function(e){
+        var t=e.target;
+        while(t && t!==row && t.tagName!=='BUTTON') t=t.parentNode;
+        if(!t||t.tagName!=='BUTTON') return;
+        var l=t.getAttribute('data-l');
+        if(l==='0'||l==='1'||l==='2'){ MODE=MODES.logic; paintModes(); }  /* 点普通逻辑难度 → 退回普通推理 */
+      },true);
+    }
+    if(row.querySelector('button[data-l="3"]')) return;
+    var b=document.createElement('button');
+    b.textContent='地狱';
+    b.setAttribute('data-l','3');
+    b.onclick=function(){
+      MODE=MODES.logicHell;
+      LOGIC_LV=0;               /* 0 = 6 把钥匙 + 2 条免费提示 */
+      [].slice.call(row.querySelectorAll('button')).forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      try{ SFX.tap(); haptic(10); paintModes(); }catch(e){}
+      toast('推理·地狱：<b>6 根锁芯</b> · <b>2 条免费提示</b> · 错一次整箱作废',1900);
+    };
+    row.appendChild(b);
+  },800);
+
+})();  
+/* v42-A 修正：msgl 应为 msg */
+try{ window.msgl = msg; }catch(e){ try{ window.msgl = function(t){ var n=document.getElementById('toast'); if(n){ n.textContent=t; n.style.display='block'; setTimeout(function(){ n.style.display='none'; },1600);} }; }catch(e2){} }  
+/* v46 修正：难度切换不再依赖 data-model，按按钮文字兜底 */
+paintModes = function(){
+  try{
+    var bs=[].slice.call(document.querySelectorAll('#modeRow button'));
+
+    /* 给每个按钮补齐 data-model（推理按钮原来没有） */
+    bs.forEach(function(b){
+      var m=b.getAttribute('data-model');
+      var label=(b.textContent||'').replace(/\s+/g,'');
+      if(!m){
+        if(label==='推理') m='logic';
+        else if(label==='地狱') m='hell';
+        else if(label==='简单') m='easy';
+        else if(label==='困难') m='hard';
+        else if(label==='噩梦') m='nightmare';
+      }
+      if(m) b.setAttribute('data-model', m);
+    });
+
+    var cur = MODE===MODES.easy?'easy'
+            : MODE===MODES.hard?'hard'
+            : MODE===MODES.hell?'hell'
+            : (MODE===MODES.logic||MODE===MODES.logicHell)?'logic'
+            : 'nightmare';
+
+    bs.forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-model')===cur); });
+
+    bs.forEach(function(b){
+      b.onclick=function(){
+        var key=b.getAttribute('data-model');
+        var target=MODES[key];
+        if(!target){ try{ toast('切换失败：'+key); }catch(e){} return; }
+        MODE=target;
+        try{ SFX.tap(); haptic(10); paintModes(); }catch(e){}
+        try{ toast('难度已切换为 <b>'+MODE.name+'</b><br>下一局生效',1600); }catch(e){}
+      };
+    });
+  }catch(e){}
+};
+setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
+/* ===== v48：保留钥匙新位置 · 去掉大圆光标 · 钥匙描边发光 ===== */
+(function(){
+
+  function applyKeyTransform(){
+    try{
+      if(typeof keysRoot!=='undefined' && keysRoot){
+        if(keysRoot.__by===undefined) keysRoot.__by=keysRoot.position.y;
+        keysRoot.position.y = keysRoot.__by + 0.18;
+        keysRoot.scale.set(0.86,0.86,0.86);
+      }
+    }catch(e){}
+  }
+
+  /* 隐藏不在钥匙组里的圆环/圆盘（那个大圆光标） */
+  function hideRing(){
+    try{
+      scene.traverse(function(o){
+        if(!o.isMesh || !o.geometry) return;
+        var g=o.geometry.type;
+        if(g!=='RingGeometry' && g!=='CircleGeometry') return;
+        var p=o, inKeys=false;
+        for(var d=0; d<6 && p; d++){ if(p===keysRoot){ inKeys=true; break; } p=p.parent; }
+        if(!inKeys) o.visible=false;
+      });
+    }catch(e){}
+  }
+
+  /* 给每把钥匙套一层金色描边 */
+  function addOutlines(){
+    try{
+      var ks=keysRoot.children;
+      for(var i=0;i<ks.length;i++){
+        var key=ks[i];
+        if(!key || key.__outlined) continue;
+        key.__outlined=true;
+        var meshes=[];
+        key.traverse(function(m){ if(m.isMesh && m.geometry) meshes.push(m); });
+        for(var j=0;j<meshes.length;j++){
+          try{
+            var m=meshes[j];
+            var ol=new THREE.Mesh(
+              m.geometry,
+              new THREE.MeshBasicMaterial({ color:0xffd27a, side:THREE.BackSide })
+            );
+            ol.scale.set(1.14,1.14,1.14);
+            m.add(ol);
+          }catch(e){}
+        }
+      }
+    }catch(e){}
+  }
+
+  /* 每次重建钥匙后自动应用 */
+  try{
+    var _bk=buildKeys;
+    buildKeys=function(){
+      var r=_bk.apply(this,arguments);
+      try{ applyKeyTransform(); hideRing(); addOutlines(); }catch(e){}
+      return r;
+    };
+  }catch(e){}
+
+  setTimeout(function(){ try{ applyKeyTransform(); hideRing(); addOutlines(); }catch(e){} },1200);
+})();
+/* ===== v50：推理模式不上移 · 精确隐藏光标环 ===== */
+(function(){
+
+  function isLogic(){
+    try{ return MODE===MODES.logic || MODE===MODES.logicHell; }catch(e){ return false; }
+  }
+
+  /* 普通模式上移 0.18，推理模式不动（保持原位置） */
+  function applyKeyTransform(){
+    try{
+      if(typeof keysRoot==='undefined' || !keysRoot) return;
+      if(keysRoot.__by===undefined) keysRoot.__by=keysRoot.position.y;
+      keysRoot.position.y = keysRoot.__by + (isLogic() ? 0 : 0.18);
+      keysRoot.scale.set(0.86,0.86,0.86);
+    }catch(e){}
+  }
+
+  /* 从 keysRoot 往根节点走，再遍历，找大圆环并隐藏 */
+  function hideCursor(){
+    try{
+      if(typeof keysRoot==='undefined' || !keysRoot) return;
+      var root=keysRoot, g=0;
+      while(root.parent && g++<12) root=root.parent;
+      var found=0;
+      root.traverse(function(o){
+        if(!o.isMesh || !o.geometry) return;
+        var t=o.geometry.type;
+        if(t!=='TorusGeometry' && t!=='RingGeometry' && t!=='CircleGeometry') return;
+        var p=o, inKeys=false;
+        for(var d=0; d<8 && p; d++){ if(p===keysRoot){ inKeys=true; break; } p=p.parent; }
+        if(inKeys) return;
+        var par=o.geometry.parameters || {};
+        if(par.radius!==undefined && par.radius<0.15) return;   /* 太小的环（钥匙齿圈）不动 */
+        if(o.visible){ o.visible=false; found++; }
+      });
+      if(found) try{ toast('已隐藏光标环 '+found+' 个'); }catch(e){}
+    }catch(e){}
+  }
+
+  try{
+    var _bk=buildKeys;
+    buildKeys=function(){
+      var r=_bk.apply(this,arguments);
+      try{ applyKeyTransform(); hideCursor(); }catch(e){}
+      return r;
+    };
+  }catch(e){}
+
+  setTimeout(function(){ try{ applyKeyTransform(); hideCursor(); }catch(e){} },1200);
+})();
+
 </script>
 </body>
-</html>    
+</html>

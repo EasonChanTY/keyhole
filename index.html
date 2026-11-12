@@ -2470,6 +2470,416 @@ setInterval(function(){
 },400);
 
 updateHud();  
+/* ===== 补丁 v15：推理模式 v2 ===== */
+
+/* ---------- 候选条件库 ---------- */
+function buildCands(lock){
+ var out=[];
+ var sum=lock.reduce(function(a,b){return a+b;},0);
+ out.push({txt:'四根格数加起来 = '+sum,
+  test:function(c){return c.reduce(function(a,b){return a+b;},0)===sum;}});
+
+ var mx=Math.max.apply(null,lock);
+ if(lock.filter(function(x){return x===mx;}).length===1){
+  var k=lock.indexOf(mx);
+  out.push({txt:'最高的一根是第 '+(k+1)+' 根',
+   test:function(c){
+    var m=Math.max.apply(null,c);
+    return c.filter(function(x){return x===m;}).length===1 && c.indexOf(m)===k;
+   }});
+ }
+ for(var i=0;i<4;i++){
+  for(var j=0;j<4;j++){
+   if(i===j)continue;
+   var d=lock[i]-lock[j];
+   if(d>0){
+    (function(a,b,dd){
+     out.push({txt:'第 '+(a+1)+' 根比第 '+(b+1)+' 根高 '+dd+' 格',
+      test:function(c){return (c[a]-c[b])===dd;}});
+    })(i,j,d);
+   }
+   if(i<j){
+    (function(a,b){
+     var s2=lock[a]+lock[b];
+     out.push({txt:'第 '+(a+1)+' 根和第 '+(b+1)+' 根加起来 = '+s2+' 格',
+      test:function(c){return (c[a]+c[b])===s2;}});
+    })(i,j);
+   }
+  }
+ }
+ var z=lock.filter(function(x){return x===0;}).length;
+ out.push({txt:(z?'四根里有一根是平的（0 格）':'四根里没有一根是平的'),
+  test:function(c){return c.filter(function(x){return x===0;}).length===z;}});
+ return out;
+}
+
+function pickClueSet(pool,lock){
+ var cands=buildCands(lock);
+ for(var i=cands.length-1;i>0;i--){var j=rnd(i+1);var t=cands[i];cands[i]=cands[j];cands[j]=t;}
+ var a,b,r;
+ for(a=0;a<cands.length;a++){
+  r=pool.filter(cands[a].test);
+  if(r.length>=2&&r.length<=3)return [cands[a]];
+ }
+ for(a=0;a<cands.length;a++){
+  for(b=a+1;b<cands.length;b++){
+   (function(s1,s2){
+    var rr=pool.filter(function(k){return s1.test(k)&&s2.test(k);});
+    if(rr.length>=2&&rr.length<=3)r=[s1,s2];
+   })(cands[a],cands[b]);
+   if(r&&r.length===2)return r;
+  }
+ }
+ return [cands[0]];
+}
+function findSolo(surv,lock){
+ var cands=buildCands(lock);
+ for(var i=0;i<cands.length;i++){
+  var r=surv.filter(cands[i].test);
+  if(r.length===1&&same(r[0],lock))return cands[i];
+ }
+ return null;
+}
+
+/* ---------- 重写：生成 6 把钥匙 ---------- */
+var _bk2=buildKeys;
+buildKeys=function(swan,n){
+ if(!MODE.logic){ _bk2(swan,n); return; }
+
+ clearGroup(keysRoot);
+ var lock=S.lock;
+ var vi=rnd(4);
+ var codes=[lock.slice()];
+ var guard=0,c,i;
+
+ while(codes.length<4&&guard++<900){
+  c=lock.slice();
+  for(i=0;i<4;i++) if(i!==vi) c[i]=rnd(5);
+  if(same(c,lock))continue;
+  if(codes.some(function(x){return same(x,c);}))continue;
+  codes.push(c);
+ }
+ guard=0;
+ while(codes.length<6&&guard++<900){
+  c=lock.slice();
+  var v=rnd(5);
+  if(v===lock[vi])v=(v+1+rnd(4))%5;
+  c[vi]=v;
+  if(codes.some(function(x){return same(x,c);}))continue;
+  codes.push(c);
+ }
+
+ var pool=codes.filter(function(x){return x[vi]===lock[vi];});
+ var set=pickClueSet(pool,lock);
+
+ S.logicVi=vi;
+ S.logicClues=set;
+ S.logicSolo=null;
+ S.logicSurv=codes.filter(function(x){
+  if(x[vi]!==lock[vi])return false;
+  return set.every(function(s){return s.test(x);});
+ });
+
+ for(var q=codes.length-1;q>0;q--){
+  var j2=rnd(q+1),tt=codes[q];codes[q]=codes[j2];codes[j2]=tt;
+ }
+
+ S.keys=codes.map(function(code,k){
+  var g=makeKey(code);
+  g.position.set((Math.random()-.5)*.62,
+                 .52-k*.30+(Math.random()-.5)*.14,
+                 -.04+k*.015);
+  g.rotation.z=(Math.random()-.5)*.85;
+  g.rotation.x=(Math.random()-.5)*.20;
+  keysRoot.add(g);
+  var obj={g:g,id:k,code:code,teeth:g.userData.teeth,mat:g.userData.mat,
+   viewed:true,revealUntil:Infinity,dead:false};
+  g.traverse(function(o){o.userData.keyRef=obj;});
+  return obj;
+ });
+ S.keysCenter=0.02;
+ S.keysNeedH=2.95;
+ layout();
+};
+
+/* ---------- 锁孔只看一根 ---------- */
+var _ps2=peekStart;
+peekStart=function(){
+ if(!MODE.logic){ _ps2(); return; }
+ if(S.phase!=='lock'||S.peeking)return;
+ if(S.logicVi===undefined)return;
+ S.peeked=false;
+ S.peeking=true;
+ S.peekUntil=0;
+ pins.forEach(function(p,i){ p.visible=(i===S.logicVi); });
+ datum.visible=true;
+ vig.classList.add('on');
+ peekBar.style.display='none';
+ SFX.peek();
+ msg('锁孔里只看得清第 '+(S.logicVi+1)+' 根 —— 想清楚再开');
+ updateUI();
+};
+
+/* ---------- 线索卡 ---------- */
+paintClue=function(){
+ var show=MODE.logic&&(S.phase==='lock'||S.phase==='keys');
+ clueCard.style.display=show?'block':'none';
+ if(!show)return;
+ if(!S.logicClues||S.logicVi===undefined)return;
+
+ var h='<div style="font-size:10px;letter-spacing:.2em;color:#8f8270;'+
+  'margin-bottom:6px">推理模式 · 没有时间限制 · 只有一次机会</div>';
+ h+='<div style="color:#a2957f">锁孔里看清：<b style="color:#e6c47f">第 '+
+  (S.logicVi+1)+' 根 = '+S.lock[S.logicVi]+' 格</b></div>';
+ S.logicClues.forEach(function(c){
+  h+='<div style="color:#a2957f;margin-top:3px">线索：<b style="color:#9fd7a0">'+
+   c.txt+'</b></div>';
+ });
+ if(S.logicSolo){
+  h+='<div style="color:#a2957f;margin-top:3px">追加：<b style="color:#9fd7a0">'+
+   S.logicSolo.txt+'</b></div>';
+ }
+ var cnt=S.logicSurv?S.logicSurv.length:0;
+ h+='<div style="margin-top:7px;font-size:11.5px;color:#e6c47f">符合条件的还有 '+
+  cnt+' 把'+(cnt<=1?'　✅ 能确定了':'　—— 买线索，还是赌？')+'</div>';
+ if(S.phase==='keys'&&S.selKey>=0&&S.keys[S.selKey]){
+  var k2=S.keys[S.selKey];
+  h+='<div style="margin-top:6px;color:#e6c47f">已选第 '+(k2.id+1)+
+   ' 把 → '+k2.code.join(' - ')+'</div>';
+ }
+ clueCard.innerHTML=h;
+};
+
+/* ---------- 加线索（花 40 金） ---------- */
+var CLUE_COST=40;
+document.getElementById('btnR').onclick=function(){
+ if(!MODE.logic){ reviewKey(); return; }
+ if(S.phase!=='keys'||S.busy)return;
+ if(S.logicSurv&&S.logicSurv.length<=1){toast('已经能确定了',1200);return;}
+ if(S.coins<CLUE_COST){toast('金币不够',1200);return;}
+ var solo=findSolo(S.logicSurv,S.lock);
+ if(!solo){toast('没有更多线索了',1200);return;}
+ S.coins-=CLUE_COST;
+ S.logicSolo=solo;
+ S.logicSurv=S.logicSurv.filter(function(x){return solo.test(x);});
+ SFX.coin();haptic(15);
+ save();updateUI();updateHud();
+ toast('买了一条线索 <b>−'+CLUE_COST+' 金</b>',1600);
+ paintClue();
+};
+
+/* ---------- 一次性定生死 ---------- */
+var _bkey2=buyKey;
+buyKey=function(){
+ if(!MODE.logic){ _bkey2(); return; }
+ if(S.phase!=='keys'||S.busy||S.selKey<0)return;
+ if(S.coins<CFG.price){toast('金币不够');return;}
+ var k=S.keys[S.selKey],b=S.boxes[S.selBox];
+ S.busy=true;
+ S.coins-=CFG.price;
+ updateUI();save();
+ var ok=same(k.code,S.lock);
+ setTimeout(function(){
+  if(ok){
+   SFX.open();haptic([10,20,40]);
+   afterOpen(b);
+  }else{
+   SFX.wrong();haptic([60,40,120]);
+   k.dead=true;
+   toast('猜错了 —— <b>这只箱子没了</b>',2600);
+   S.busy=true;
+   setTimeout(function(){ S.busy=false; fadeTo(newRound); },1600);
+  }
+ },280);
+};
+
+/* ---------- 按钮文字刷新（覆盖 v14 的规则） ---------- */
+setInterval(function(){
+ if(!MODE.logic)return;
+ if(S.phase==='lock'){
+  btnA.disabled=false;
+  btnA.textContent=S.peeking?'移开视线':'看锁孔 · 无限制';
+  btnB.textContent='去挑钥匙 →';
+ }else if(S.phase==='keys'){
+  btnR.style.display='block';
+  btnR.textContent='加线索 · '+CLUE_COST+' 金';
+  btnR.disabled=S.busy||S.coins<CLUE_COST||(S.logicSurv&&S.logicSurv.length<=1);
+  if(S.selKey>=0&&S.keys[S.selKey]){
+   msgEl.textContent='第 '+(S.keys[S.selKey].id+1)+' 把 → '+
+    S.keys[S.selKey].code.join(' - ')+'　·　一次机会，猜错作废';
+  }
+ }
+},380);
+
+/* ---------- 进入推理模式时清空旧线索 ---------- */
+var _cb2=confirmBox;
+confirmBox=function(){
+ S.logicClues=null;S.logicSolo=null;S.logicSurv=null;S.logicVi=undefined;
+ _cb2();
+}; 
+/* ===== 补丁 v16：钥匙选中光环 + 好友列表（联机预备） ===== */
+
+/* ---------- ① 选中钥匙：双圈呼吸光环 ---------- */
+(function(){
+ const inner=new THREE.Mesh(
+  new THREE.RingGeometry(.24,.275,60,1),
+  new THREE.MeshBasicMaterial({color:0xffe0a8,transparent:true,opacity:.9,
+   side:THREE.DoubleSide,blending:THREE.AdditiveBlending,depthWrite:false}));
+ inner.visible=false;
+ inner.scale.set(1.75,1.0,1);
+ sceneK.add(inner);
+
+ const outer=new THREE.Mesh(
+  new THREE.RingGeometry(.34,.36,60,1),
+  new THREE.MeshBasicMaterial({color:0xffd07a,transparent:true,opacity:.45,
+   side:THREE.DoubleSide,blending:THREE.AdditiveBlending,depthWrite:false}));
+ outer.visible=false;
+ outer.scale.set(1.75,1.0,1);
+ sceneK.add(outer);
+
+ function loop(t){
+  const on=(S.phase==='keys'&&S.selKey>=0&&S.keys[S.selKey]);
+  if(on){
+   const k=S.keys[S.selKey];
+   const p=k.g.position;
+   const pulse=1+.045*Math.sin(t*.005);
+   inner.visible=outer.visible=true;
+   inner.position.set(p.x-.05,p.y,p.z+.05);
+   outer.position.copy(inner.position);
+   inner.scale.set(1.75*pulse,1.0*pulse,1);
+   outer.scale.set(1.75*(1+.08*Math.sin(t*.0032)),
+                    1.0*(1+.08*Math.sin(t*.0032)),1);
+   inner.material.opacity=.55+.40*Math.abs(Math.sin(t*.004));
+   outer.material.opacity=.20+.22*Math.abs(Math.sin(t*.003));
+   k.mat.emissive.setHex(0x6a4a10);
+   k.mat.emissiveIntensity=1;
+  }else{
+   inner.visible=outer.visible=false;
+  }
+  requestAnimationFrame(loop);
+ }
+ requestAnimationFrame(loop);
+})();
+
+/* ---------- ② 好友 / 联机预备面板 ---------- */
+(function(){
+ const CODE_KEY='keyhole_mycode_v1', FR_KEY='keyhole_friends_v1';
+ function myCode(){
+  let c=null;
+  try{c=localStorage.getItem(CODE_KEY);}catch(e){}
+  if(!c){
+   const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+   c='';
+   for(let i=0;i<6;i++)c+=A[Math.floor(Math.random()*A.length)];
+   try{localStorage.setItem(CODE_KEY,c);}catch(e){}
+  }
+  return c;
+ }
+ function getFriends(){
+  try{return JSON.parse(localStorage.getItem(FR_KEY)||'[]');}catch(e){return [];}
+ }
+ function setFriends(a){
+  try{localStorage.setItem(FR_KEY,JSON.stringify(a));}catch(e){}
+ }
+
+ const p=document.createElement('section');
+ p.id='friendScreen';
+ p.className='panel';
+ p.innerHTML='<div class="phead"><h2 style="letter-spacing:.3em">好 友</h2>'+
+  '<div class="sp"></div><button id="frClose">关闭</button></div>'+
+  '<div id="frBody" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>';
+ document.body.appendChild(p);
+
+ const setList=document.getElementById('setList');
+ const lab=document.createElement('div');
+ lab.className='lab';
+ lab.style.marginTop='16px';
+ lab.textContent='社 交';
+ const row=document.createElement('div');
+ row.className='mrow';
+ row.innerHTML='<button id="btnFriend">好友 / 联机</button>';
+ setList.insertBefore(row,setList.lastElementChild);
+ setList.insertBefore(lab,row);
+
+ function render(){
+  const fr=getFriends();
+  let h='<div style="font-size:10px;letter-spacing:.24em;color:#7d7266;'+
+   'margin-bottom:8px">我 的 好 友 码</div>'+
+   '<div id="frCode" style="font-size:30px;letter-spacing:.28em;color:#e6c47f;'+
+   'font-weight:200;padding:16px;border-radius:14px;background:#16121099;'+
+   'border:1px solid #e6c47f33;text-align:center">'+myCode()+'</div>'+
+   '<div style="font-size:10.5px;color:#5f5548;text-align:center;margin-top:8px">'+
+   '点一下复制，发给朋友</div>'+
+   '<div style="font-size:10px;letter-spacing:.24em;color:#7d7266;'+
+   'margin:20px 0 8px">添 加 好 友</div>'+
+   '<div style="display:flex;gap:8px">'+
+   '<input id="frInput" maxlength="6" placeholder="6 位好友码" '+
+   'style="flex:1;padding:14px;border-radius:12px;border:1px solid #ffffff1f;'+
+   'background:#ffffff0a;color:#efe6d6;font-size:15px;text-align:center;'+
+   'letter-spacing:.24em;font-family:inherit;outline:none">'+
+   '<button id="frAdd" style="flex:0 0 auto;padding:14px 18px;font-size:13.5px;'+
+   'border-radius:12px">添加</button></div>'+
+   '<div style="font-size:10px;letter-spacing:.24em;color:#7d7266;'+
+   'margin:20px 0 8px">好 友（'+fr.length+'）</div>';
+
+  if(fr.length===0){
+   h+='<div style="font-size:12px;color:#5f5548;padding:18px 0;text-align:center">'+
+    '还没有好友</div>';
+  }else{
+   fr.forEach(function(f,i){
+    h+='<div class="brow" style="margin-bottom:7px">'+
+     '<span class="dot" style="background:#4f9dff"></span>'+
+     '<span class="bn">'+f.name+'</span>'+
+     '<span class="bc">'+f.code+'</span>'+
+     '<span class="bp" data-del="'+i+'" style="color:#e98a76;width:38px">删除</span></div>';
+   });
+  }
+
+  h+='<div style="margin-top:18px;padding:13px 15px;border-radius:12px;'+
+   'background:#1a1510;border:1px solid #e6c47f33;font-size:11px;'+
+   'line-height:1.95;color:#b8a684">'+
+   '<b style="color:#e6c47f">现在是单机预览</b><br>'+
+   '好友码只存在这台手机上，加别人也看不到对方的东西。<br>'+
+   '真正的联机需要一个后端（推荐 Firebase，免费），'+
+   '接上之后这里就能显示好友藏品、做拍卖行。</div>';
+
+  document.getElementById('frBody').innerHTML=h;
+
+  document.getElementById('frCode').onclick=function(){
+   try{navigator.clipboard.writeText(myCode());}catch(e){}
+   toast('好友码已复制',1200);
+  };
+  document.getElementById('frAdd').onclick=function(){
+   const v=(document.getElementById('frInput').value||'').trim().toUpperCase();
+   if(v.length!==6){toast('好友码是 6 位',1300);return;}
+   if(v===myCode()){toast('这是你自己的码',1300);return;}
+   const arr=getFriends();
+   if(arr.some(function(x){return x.code===v;})){toast('已经加过了',1300);return;}
+   arr.push({code:v,name:'好友 '+v,ts:Date.now()});
+   setFriends(arr);
+   toast('已添加（仅本机）',1300);
+   render();
+  };
+  document.getElementById('frBody').onclick=function(e){
+   const d=e.target.getAttribute&&e.target.getAttribute('data-del');
+   if(d!==null&&d!==undefined&&d!==''){
+    const arr=getFriends();
+    arr.splice(+d,1);
+    setFriends(arr);
+    render();
+   }
+  };
+ }
+
+ document.getElementById('btnFriend').onclick=function(){
+  SFX.tap();
+  render();
+  p.classList.add('on');
+ };
+ document.getElementById('frClose').onclick=function(){
+  p.classList.remove('on');
+ };
+})();  
 </script>
 </body>
 </html>

@@ -4442,6 +4442,93 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
 
   setTimeout(function(){ try{ applyKeyTransform(); hideCursor(); }catch(e){} },1200);
 })();
+/* ===== v51：白色描边+柔光 · 修光环漏判 ===== */
+(function(){
+
+  function cleanOutlines(){
+    try{
+      var ks=keysRoot.children;
+      for(var i=0;i<ks.length;i++){
+        var key=ks[i], rm=[];
+        key.traverse(function(m){ if(m.__ol) rm.push(m); });
+        for(var j=0;j<rm.length;j++){ if(rm[j].parent) rm[j].parent.remove(rm[j]); }
+        key.__outlined=false;
+      }
+    }catch(e){}
+  }
+
+  function addOutlines(){
+    try{
+      var ks=keysRoot.children;
+      for(var i=0;i<ks.length;i++){
+        var key=ks[i];
+        if(key.__outlined) continue;
+        key.__outlined=true;
+        var meshes=[];
+        key.traverse(function(m){ if(m.isMesh && m.geometry) meshes.push(m); });
+        for(var j=0;j<meshes.length;j++){
+          try{
+            var m=meshes[j];
+            var ol=new THREE.Mesh(m.geometry, new THREE.MeshBasicMaterial({color:0xffffff, side:THREE.BackSide}));
+            ol.scale.set(1.28,1.28,1.28); ol.__ol=true; ol.renderOrder=-2; m.add(ol);
+
+            var gl=new THREE.Mesh(m.geometry, new THREE.MeshBasicMaterial({color:0xffffff, side:THREE.BackSide, transparent:true, opacity:0.22}));
+            gl.scale.set(1.55,1.55,1.55); gl.__ol=true; gl.renderOrder=-3; m.add(gl);
+          }catch(e){}
+        }
+      }
+    }catch(e){}
+  }
+
+  /* 隐藏大光环：直接挂在 keysRoot 下的圆环也算 */
+  function hideHalo(){
+    try{
+      if(typeof keysRoot==='undefined' || !keysRoot) return;
+      var root=keysRoot, g=0;
+      while(root.parent && g++<12) root=root.parent;
+      var n=0;
+      root.traverse(function(o){
+        if(!o.isMesh || !o.geometry) return;
+        var t=o.geometry.type;
+        if(t!=='TorusGeometry' && t!=='RingGeometry' && t!=='CircleGeometry') return;
+        var par=o.geometry.parameters || {};
+        if(par.radius!==undefined && par.radius<0.12) return;
+
+        /* 判断它是不是"某把钥匙的零件"：往上找到 keysRoot 的前一层 */
+        var p=o.parent, isKeyPart=false;
+        while(p && p!==keysRoot){
+          if(p.parent===keysRoot){ isKeyPart=true; break; }
+          p=p.parent;
+        }
+        if(isKeyPart) return;
+
+        if(o.visible){ o.visible=false; n++; }
+      });
+      if(n) try{ toast('隐藏光环 '+n+' 个'); }catch(e){}
+    }catch(e){}
+  }
+
+  function applyKeyTransform(){
+    try{
+      if(typeof keysRoot==='undefined' || !keysRoot) return;
+      if(keysRoot.__by===undefined) keysRoot.__by=keysRoot.position.y;
+      var isLogic = (MODE===MODES.logic || MODE===MODES.logicHell);
+      keysRoot.position.y = keysRoot.__by + (isLogic ? 0 : 0.18);
+      keysRoot.scale.set(0.86,0.86,0.86);
+    }catch(e){}
+  }
+
+  try{
+    var _bk=buildKeys;
+    buildKeys=function(){
+      var r=_bk.apply(this,arguments);
+      try{ cleanOutlines(); applyKeyTransform(); hideHalo(); addOutlines(); }catch(e){}
+      return r;
+    };
+  }catch(e){}
+
+  setTimeout(function(){ try{ cleanOutlines(); applyKeyTransform(); hideHalo(); addOutlines(); }catch(e){} },1200);
+})();  
 </script>
 </body>
 </html>

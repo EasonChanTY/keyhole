@@ -3792,6 +3792,55 @@ applyLvPrice();
 paintProf();
 if(window.__paintSet)window.__paintSet();
 updateHud();  
+/* ===== 补丁 v21：修免费箱点不动 ===== */
+(function(){
+
+ /* ① 让按钮能被点 */
+ freeBtn.style.pointerEvents='auto';
+ freeBtn.style.cursor='pointer';
+ freeBtn.style.zIndex='12';
+ freeBtn.style.position='static';
+ freeBtn.style.padding='4px 9px';
+ freeBtn.style.fontSize='10.5px';
+ freeBtn.style.borderRadius='8px';
+
+ /* ② 确保它还在顶栏第二行 */
+ var h2=document.querySelector('#hud .h2');
+ if(h2&&freeBtn.parentNode!==h2){
+  var era=document.getElementById('btnEra');
+  if(era&&era.parentNode===h2)h2.insertBefore(freeBtn,era.nextSibling);
+  else h2.appendChild(freeBtn);
+ }
+
+ /* ③ 线索卡也是 div，同样可能挡住按钮 → 一律不吃触摸 */
+ if(typeof clueCard!=='undefined'&&clueCard)clueCard.style.pointerEvents='none';
+
+ /* ④ 重新绑定点击（原来的绑定可能被覆盖） */
+ freeBtn.onclick=function(ev){
+  ev&&ev.stopPropagation();
+  var rm=freeRemain();
+  if(rm>0){
+   var m=Math.ceil(rm/60000);
+   toast('还没到时间 · 还要等 <b>'+
+    (m>=60?Math.ceil(m/60)+' 小时':m+' 分钟')+'</b>',1800);
+   return;
+  }
+  localStorage.setItem(FK,String(Date.now()));
+  var idx=0;
+  while(Math.random()<S.lv*0.012&&idx<2)idx++;
+  var tier=TIERS[idx];
+  var loot=rollLoot(tier);
+  S.selBox=-1;
+  S.hasNest=false;
+  SFX.open();haptic([10,20,30]);
+  toast('🎁 <b>免费'+tier.name+'</b>已送到',1700);
+  fadeTo(function(){startStage({tier:tier,loot:loot});});
+  paintFree();
+ };
+
+ /* ⑤ 画一遍最新状态 */
+ paintFree();
+})();  
 </script>
 </body>
 </html>

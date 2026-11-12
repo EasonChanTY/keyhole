@@ -4288,6 +4288,46 @@ updateHud();
 })();  
 /* v42-A 修正：msgl 应为 msg */
 try{ window.msgl = msg; }catch(e){ try{ window.msgl = function(t){ var n=document.getElementById('toast'); if(n){ n.textContent=t; n.style.display='block'; setTimeout(function(){ n.style.display='none'; },1600);} }; }catch(e2){} }  
+/* v46 修正：难度切换不再依赖 data-model，按按钮文字兜底 */
+paintModes = function(){
+  try{
+    var bs=[].slice.call(document.querySelectorAll('#modeRow button'));
+
+    /* 给每个按钮补齐 data-model（推理按钮原来没有） */
+    bs.forEach(function(b){
+      var m=b.getAttribute('data-model');
+      var label=(b.textContent||'').replace(/\s+/g,'');
+      if(!m){
+        if(label==='推理') m='logic';
+        else if(label==='地狱') m='hell';
+        else if(label==='简单') m='easy';
+        else if(label==='困难') m='hard';
+        else if(label==='噩梦') m='nightmare';
+      }
+      if(m) b.setAttribute('data-model', m);
+    });
+
+    var cur = MODE===MODES.easy?'easy'
+            : MODE===MODES.hard?'hard'
+            : MODE===MODES.hell?'hell'
+            : (MODE===MODES.logic||MODE===MODES.logicHell)?'logic'
+            : 'nightmare';
+
+    bs.forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-model')===cur); });
+
+    bs.forEach(function(b){
+      b.onclick=function(){
+        var key=b.getAttribute('data-model');
+        var target=MODES[key];
+        if(!target){ try{ toast('切换失败：'+key); }catch(e){} return; }
+        MODE=target;
+        try{ SFX.tap(); haptic(10); paintModes(); }catch(e){}
+        try{ toast('难度已切换为 <b>'+MODE.name+'</b><br>下一局生效',1600); }catch(e){}
+      };
+    });
+  }catch(e){}
+};
+setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
 </script>
 </body>
 </html>

@@ -3469,7 +3469,329 @@ setInterval(function(){
 
 /* 现在就把当前时代记一笔 */
 cxMark('era',curEra().n);
-cxMark('mode',(MODE&&MODE.key)||'easy');  
+cxMark('mode',(MODE&&MODE.key)||'easy'); 
+/* ===== 补丁 v20：金币修正 / 等级 / 头像 / 推理齿数 / 免费箱成长 ===== */
+
+/* ---------- ① 初始金币永久 1800 ---------- */
+(function(){
+ const SAVE='keyhole_v13';
+ if(!localStorage.getItem(SAVE)){
+  S.coins=1800;save();
+ }else if(!localStorage.getItem('keyhole_v20_bump')){
+  localStorage.setItem('keyhole_v20_bump','1');
+  S.coins=Math.max(S.coins,1800);save();
+ }
+ updateHud();
+})();
+
+/* ---------- ② 等级 / 经验 / 头像 ---------- */
+S.xp=0;S.lv=1;S.avatar='';
+try{
+ const p=JSON.parse(localStorage.getItem('keyhole_v20_prof')||'null');
+ if(p){S.xp=p.xp||0;S.lv=p.lv||1;S.avatar=p.av||'';}
+}catch(e){}
+
+const _save0=save;
+save=function(){
+ _save0();
+ try{
+  localStorage.setItem('keyhole_v20_prof',
+   JSON.stringify({xp:S.xp,lv:S.lv,av:S.avatar}));
+ }catch(e){}
+};
+
+function xpNeed(lv){return Math.round(12*Math.pow(lv,1.5));}
+function xpTotal(){
+ let t=S.xp;
+ for(let i=1;i<S.lv;i++)t+=xpNeed(i);
+ return t;
+}
+function lvBonus(){
+ const l=Math.min(6,Math.floor(S.lv/5));
+ return 0.10*l;
+}
+function applyLvPrice(){
+ const m=1+lvBonus();
+ TIERS.forEach(function(t){
+  if(t.base===undefined)t.base=t.price;
+  t.price=Math.round(t.base*m);
+ });
+}
+TIERS.forEach(function(t){if(t.base===undefined)t.base=t.price;});
+
+function addXp(n){
+ if(!n||n<=0||S.lv>=30)return;
+ S.xp+=n;
+ let up=false;
+ while(S.lv<30&&S.xp>=xpNeed(S.lv)){
+  S.xp-=xpNeed(S.lv);
+  S.lv++;
+  up=true;
+ }
+ if(up){
+  applyLvPrice();
+  SFX.cheer();haptic([20,30,60]);
+  toast('升 级 了 ！<b>Lv.'+S.lv+'</b><br>'+
+   (S.lv%5===0?'箱子价格上涨 '+Math.round(lvBonus()*100)+'%':'免费箱更快了'),2600);
+  updateHud();
+ }
+ save();
+ paintProf();
+}
+
+/* ---------- 顶栏头像 + 等级 ---------- */
+const profBox=document.createElement('div');
+profBox.id='profBox';
+profBox.style.cssText='display:flex;align-items:center;gap:7px;pointer-events:auto';
+profBox.innerHTML=
+ '<div id="avImg" style="width:30px;height:30px;border-radius:50%;'+
+ 'background:#2a2114 center/cover no-repeat;border:1px solid #e6c47f55"></div>'+
+ '<div style="display:flex;flex-direction:column;gap:3px">'+
+ '<span style="font-size:9px;letter-spacing:.08em;color:#8f8270">Lv.'+
+ '<b id="lvNum" style="color:#e6c47f;font-size:11px">1</b></span>'+
+ '<span style="width:36px;height:3px;background:#ffffff14;border-radius:2px;overflow:hidden">'+
+ '<i id="lvBar" style="display:block;height:100%;width:0;background:#e6c47f"></i></span>'+
+ '</div>';
+(function(){
+ const h1=document.querySelector('#hud .h1');
+ if(h1)h1.insertBefore(profBox,h1.firstChild);
+})();
+
+function paintProf(){
+ const n=document.getElementById('lvNum');
+ const b=document.getElementById('lvBar');
+ const a=document.getElementById('avImg');
+ if(n)n.textContent=S.lv;
+ if(b){
+  const need=xpNeed(S.lv);
+  b.style.width=Math.min(100,Math.round(S.xp/need*100))+'%';
+ }
+ if(a)a.style.backgroundImage=S.avatar?('url('+S.avatar+')'):'';
+}
+
+/* ---------- 设置里的头像区 ---------- */
+(function(){
+ const setList=document.getElementById('setList');
+ const lab=document.createElement('div');
+ lab.className='lab';lab.style.marginTop='16px';lab.textContent='资 料';
+ const row=document.createElement('div');
+ row.className='mrow';
+ row.style.alignItems='center';
+ row.innerHTML=
+  '<div id="avBig" style="width:52px;height:52px;border-radius:50%;'+
+  'background:#2a2114 center/cover no-repeat;border:1px solid #e6c47f55;flex:0 0 auto"></div>'+
+  '<div style="flex:1;font-size:11.5px;color:#9c8f7b;line-height:1.7">'+
+  '<div>等级 <b id="setLv" style="color:#e6c47f">1</b> / 30</div>'+
+  '<div id="setXp" style="color:#6f6558;font-size:10.5px"></div></div>'+
+  '<button id="btnAv" style="flex:0 0 auto;padding:11px 14px;font-size:12.5px;'+
+  'border-radius:11px">换头像</button>'+
+  '<input id="avFile" type="file" accept="image/*" style="display:none">';
+ setList.insertBefore(row,setList.lastElementChild);
+ setList.insertBefore(lab,row);
+
+ function paintSet(){
+  const s=document.getElementById('setLv');
+  const x=document.getElementById('setXp');
+  const a=document.getElementById('avBig');
+  if(s)s.textContent=S.lv;
+  if(x){
+   const te=xpTotal();
+   x.textContent='经验 '+te+' · 箱子价格 +'+Math.round(lvBonus()*100)+'%'+
+    ' · 免费箱 '+freeHours()+' 小时';
+  }
+  if(a)a.style.backgroundImage=S.avatar?('url('+S.avatar+')'):'';
+ }
+ window.__paintSet=paintSet;
+
+ document.getElementById('btnAv').onclick=function(){
+  document.getElementById('avFile').click();
+ };
+ document.getElementById('avFile').onchange=function(e){
+  const f=e.target.files&&e.target.files[0];
+  if(!f)return;
+  const url=URL.createObjectURL(f);
+  const img=new Image();
+  img.onload=function(){
+   const cv=document.createElement('canvas');
+   cv.width=cv.height=128;
+   const x=cv.getContext('2d');
+   const s=Math.min(img.width,img.height);
+   x.drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,128,128);
+   S.avatar=cv.toDataURL('image/jpeg',0.82);
+   URL.revokeObjectURL(url);
+   save();paintProf();paintSet();
+   toast('头像已更新',1400);
+  };
+  img.src=url;
+ };
+ paintSet();
+})();
+
+/* ---------- ③ 免费箱：等级越高冷却越短、品级越好 ---------- */
+function freeHours(){return Math.max(6,24-S.lv*0.6);}
+freeRemain=function(){
+ return freeHours()*3600000-(Date.now()-freeLast());
+};
+paintFree=function(){
+ const rm=freeRemain();
+ if(rm<=0){
+  freeBtn.innerHTML='🎁 领取';
+  freeBtn.classList.add('ready');
+ }else{
+  const h=Math.floor(rm/3600000),m=Math.floor(rm%3600000/60000);
+  freeBtn.innerHTML='🎁 '+(h>0?h+'时':'')+m+'分';
+  freeBtn.classList.remove('ready');
+ }
+};
+freeBtn.onclick=function(){
+ if(freeRemain()>0){toast('已经领过了 —— 等待刷新',1600);return;}
+ localStorage.setItem(FK,String(Date.now()));
+ let idx=0;
+ while(Math.random()<S.lv*0.012&&idx<2)idx++;
+ const tier=TIERS[idx];
+ const loot=rollLoot(tier);
+ S.selBox=-1;S.hasNest=false;
+ SFX.open();haptic([10,20,30]);
+ toast('🎁 <b>免费'+tier.name+'</b>已送到',1700);
+ fadeTo(function(){startStage({tier:tier,loot:loot});});
+ paintFree();
+};
+
+/* ---------- ④ 卖出获得经验 ---------- */
+const _dSell=document.getElementById('dSell').onclick;
+document.getElementById('dSell').onclick=function(e){
+ const it=S.bag[S.detailIdx];
+ const p=it?priceOf(ITEM_BY_ID[it.id],it.cond):0;
+ const n0=S.bag.length;
+ _dSell.call(this,e);
+ if(S.bag.length<n0&&p>0)addXp(Math.round(p*0.6));
+};
+const _bSell=document.getElementById('bulkSell').onclick;
+document.getElementById('bulkSell').onclick=function(e){
+ let sum=0;
+ S.picked.forEach(function(i){
+  const it=S.bag[i];
+  if(it)sum+=priceOf(ITEM_BY_ID[it.id],it.cond);
+ });
+ const n0=S.bag.length;
+ _bSell.call(this,e);
+ if(S.bag.length<n0&&sum>0)addXp(Math.round(sum*0.6));
+};
+
+/* ---------- ⑤ 推理困难/噩梦：齿数增加 ---------- */
+buildCands=function(lock){
+ const N=lock.length;
+ const out=[];
+ const sum=lock.reduce(function(a,b){return a+b;},0);
+ out.push({txt:'所有格数加起来 = '+sum,
+  test:function(c){return c.reduce(function(a,b){return a+b;},0)===sum;}});
+ const mx=Math.max.apply(null,lock);
+ if(lock.filter(function(x){return x===mx;}).length===1){
+  const k=lock.indexOf(mx);
+  out.push({txt:'最高的一根是第 '+(k+1)+' 根',
+   test:function(c){
+    const m=Math.max.apply(null,c);
+    return c.filter(function(x){return x===m;}).length===1&&c.indexOf(m)===k;
+   }});
+ }
+ for(let i=0;i<N;i++){
+  for(let j=0;j<N;j++){
+   if(i===j)continue;
+   const d=lock[i]-lock[j];
+   if(d>0){
+    out.push({txt:'第 '+(i+1)+' 根比第 '+(j+1)+' 根高 '+d+' 格',
+     test:(function(a,b,dd){return function(c){return c[a]-c[b]===dd;};})(i,j,d)});
+   }
+   if(i<j){
+    const s2=lock[i]+lock[j];
+    out.push({txt:'第 '+(i+1)+' 根和第 '+(j+1)+' 根加起来 = '+s2+' 格',
+     test:(function(a,b,ss){return function(c){return c[a]+c[b]===ss;};})(i,j,s2)});
+   }
+  }
+ }
+ const z=lock.filter(function(x){return x===0;}).length;
+ out.push({txt:(z?'有一根是平的（0 格）':'没有一根是平的'),
+  test:function(c){return c.filter(function(x){return x===0;}).length===z;}});
+ return out;
+};
+
+const _cf5=confirmBox;
+confirmBox=function(){
+ if(MODE.logic){
+  MODE.teeth=[4,5,6][LOGIC_LV];
+  MODE.step=[.050,.042,.036][LOGIC_LV];
+ }
+ _cf5();
+};
+
+const _bk5=buildKeys;
+buildKeys=function(swan,n){
+ if(!MODE.logic){ _bk5(swan,n); return; }
+
+ clearGroup(keysRoot);
+ const lock=S.lock,N=lock.length;
+ const K=[6,7,8][LOGIC_LV];
+ const nClue=[2,1,1][LOGIC_LV];
+ const vi=rnd(N);
+ const codes=[lock.slice()];
+ var guard=0,c,i;
+
+ const sameWant=Math.min(3,K-3);
+ while(codes.length-1<sameWant&&guard++<1500){
+  c=lock.slice();
+  for(i=0;i<N;i++) if(i!==vi) c[i]=rnd(5);
+  if(same(c,lock))continue;
+  if(codes.some(function(x){return same(x,c);}))continue;
+  codes.push(c);
+ }
+ guard=0;
+ while(codes.length<K&&guard++<3000){
+  c=lock.slice();
+  var v=rnd(5);
+  if(v===lock[vi])v=(v+1+rnd(4))%5;
+  c[vi]=v;
+  if(codes.some(function(x){return same(x,c);}))continue;
+  codes.push(c);
+ }
+
+ const pool=codes.filter(function(x){return x[vi]===lock[vi];});
+ var set=pickClueSet(pool,lock);
+ if(nClue===1)set=[set[0]];
+
+ S.logicVi=vi;
+ S.logicClues=set;
+ S.logicSolo=null;
+ S.logicSurv=codes.filter(function(x){
+  if(x[vi]!==lock[vi])return false;
+  return set.every(function(s){return s.test(x);});
+ });
+
+ for(var q=codes.length-1;q>0;q--){
+  var j2=rnd(q+1),tt=codes[q];codes[q]=codes[j2];codes[j2]=tt;
+ }
+ S.keys=codes.map(function(code,k){
+  var g=makeKey(code);
+  g.position.set((Math.random()-.5)*.62,
+                 .52-k*.28+(Math.random()-.5)*.14,
+                 -.04+k*.015);
+  g.rotation.z=(Math.random()-.5)*.85;
+  g.rotation.x=(Math.random()-.5)*.20;
+  keysRoot.add(g);
+  var obj={g:g,id:k,code:code,teeth:g.userData.teeth,mat:g.userData.mat,
+   viewed:true,revealUntil:Infinity,dead:false};
+  g.traverse(function(o){o.userData.keyRef=obj;});
+  return obj;
+ });
+ S.keysCenter=0.02;
+ S.keysNeedH=3.1;
+ layout();
+};
+
+/* ---------- 初始化 ---------- */
+applyLvPrice();
+paintProf();
+if(window.__paintSet)window.__paintSet();
+updateHud();  
 </script>
 </body>
 </html>

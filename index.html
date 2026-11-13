@@ -8494,6 +8494,112 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   };
 
 })();  
+/* ===== v129：试开按钮文案锁定 ===== */
+(function(){
+
+  function keyPriceNow(){
+    const f=S.keyFails||0;
+    return CFG.price+f*8;
+  }
+
+  function label(){
+    const b=document.getElementById('btnB');
+    if(!b)return;
+    if(S.phase!=='keys')return;
+    const f=S.keyFails||0;
+    const t=(f>0?'再买一把 · ':'买下并试开 · ')+keyPriceNow()+' 金';
+    if(b.textContent!==t)b.textContent=t;
+  }
+
+  /* 盯住按钮，谁改都立刻纠正 */
+  function watch(){
+    const b=document.getElementById('btnB');
+    if(!b||b.__w129)return;
+    b.__w129=1;
+    new MutationObserver(label).observe(b,{childList:true,characterData:true,subtree:true});
+  }
+
+  /* 每局开始把失败计数清零 */
+  try{
+    const _nr=newRound;
+    newRound=function(){
+      try{S.keyFails=0;}catch(e){}
+      return _nr.apply(this,arguments);
+    };
+  }catch(e){}
+
+  /* 失败一把就 +1（如果之前的补丁没加，这里兜底） */
+  if(!window.__kfAdded){
+    window.__kfAdded=1;
+    try{
+      const _bk=buyKey;
+      buyKey=function(){
+        const before=(S.keys||[]).filter(k=>k.dead).length;
+        const r=_bk.apply(this,arguments);
+        setTimeout(function(){
+          try{
+            const after=(S.keys||[]).filter(k=>k.dead).length;
+            if(after>before&&S.phase==='keys')S.keyFails=(S.keyFails||0)+1;
+            else if(S.phase==='reveal'||S.phase==='opening')S.keyFails=0;
+          }catch(e){}
+        },700);
+        return r;
+      };
+    }catch(e){}
+  }
+
+  /* 顺手删掉可能存在的重复按钮 */
+  function clean(){
+    document.querySelectorAll('button,div').forEach(el=>{
+      if(el.id==='btnB')return;
+      const t=(el.textContent||'').replace(/\s/g,'');
+      if(t==='买下并试开（20金）'||t==='买下并试开(20金)')el.remove();
+    });
+  }
+
+  watch();
+  setInterval(function(){watch();label();clean();},250);
+  setTimeout(label,300);
+})();
+/* ===== v130：360° 旋转中心对齐到物品中心 ===== */
+(function(){
+
+  const _di=drawItem;
+
+  drawItem=function(entry){
+    try{ window.__curItem=(entry&&entry.kind==='item')?entry.item:null; }catch(e){}
+
+    const r=_di.apply(this,arguments);
+
+    try{
+      const insp=S.insp;
+      if(insp&&insp.obj&&!insp.__centered){
+        const o=insp.obj;
+        insp.__centered=1;
+
+        const s0=o.scale.x||1;
+        o.scale.setScalar(1);                    /* 用真实尺寸算包围盒 */
+
+        const box=new THREE.Box3().setFromObject(o);
+        const c=new THREE.Vector3();
+        box.getCenter(c);
+
+        o.scale.setScalar(s0);
+
+        /* 把所有子物体（含瑕疵裂纹）整体平移，让中心落到原点 */
+        o.children.forEach(function(ch){
+          ch.position.x-=c.x;
+          ch.position.y-=c.y;
+          ch.position.z-=c.z;
+        });
+      }
+    }catch(e){}
+
+    window.__curItem=null;
+    return r;
+  };
+
+})();  
 </script>
 </body>
 </html>

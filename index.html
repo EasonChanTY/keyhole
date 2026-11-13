@@ -9339,6 +9339,94 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
 
   setInterval(injectWarBox,1200);
 
+})(); 
+/* ===== v150：保管费 / 阶级维持费 / 查税风暴 ===== */
+(function(){
+  const FEE_SLOT='keyhole_fee_slot_v1';
+  const ERA=1200000;                 /* 20 分钟 */
+  const FLOOR=200;                   /* 金币保底 */
+  const slot=()=>Math.floor(Date.now()/ERA);
+
+  function bagVal(){
+    let v=0;
+    (S.bag||[]).forEach(function(it){
+      const d=ITEM_BY_ID[it.id];
+      if(d){ try{ v+=priceOf(d,it.cond); }catch(e){} }
+    });
+    return v;
+  }
+  function assets(){ return (S.coins||0)+bagVal(); }
+
+  const MAINT=[0,0,0,0,0,200,800,2500,8000,25000,80000];
+  function rankIdx(){
+    try{ if(window.__rankOf) return window.__rankOf(); }catch(e){}
+    const t=[0,600,1500,3500,8000,18000,40000,90000,200000,500000,1200000];
+    const v=assets(); let i=0;
+    t.forEach(function(x,k){ if(v>=x) i=k; });
+    return i;
+  }
+
+  /* 扣钱：不低于 200 */
+  function charge(n){
+    const before=S.coins||0;
+    S.coins=Math.max(FLOOR,before-n);
+    return before-S.coins;
+  }
+
+  /* ---------- 每次时代切换结算一次 ---------- */
+  function settleFees(){
+    try{
+      const cur=slot();
+      const last=+(localStorage.getItem(FEE_SLOT)||0);
+      if(last===cur) return;                  /* 本时代已结算 */
+      localStorage.setItem(FEE_SLOT,String(cur));
+      if(last===0) return;                    /* 第一次不扣 */
+      if(S.phase==='title') return;
+
+      const a=assets();
+      const custody=Math.min(3000,Math.round(a*0.004));
+      const maint=MAINT[rankIdx()]||0;
+
+      let lost=0;
+      if(maint>0) lost+=charge(maint);
+      if(custody>0) lost+=charge(custody);
+
+      try{save();updateHud();}catch(e){}
+
+      if(lost>0){
+        const parts=[];
+        if(maint>0)parts.push('阶级维持 −'+maint);
+        if(custody>0)parts.push('仓库保管 −'+custody);
+        try{toast('新时代结算<br>'+parts.join(' · ')+'<br>共支出 '+lost+' 金',2600);}catch(e){}
+      }
+    }catch(e){}
+  }
+
+  setInterval(settleFees,8000);
+  settleFees();
+
+  /* ---------- 查税风暴：噩梦/地狱、金币>2万、3% ---------- */
+  try{
+    const _cb=confirmBox;
+    confirmBox=function(){
+      const r=_cb.apply(this,arguments);
+      try{
+        const hard=(MODE===MODES.nightmare||MODE===MODES.hell);
+        if(hard && (S.coins||0)>20000 && Math.random()<0.03){
+          const pct=0.25+Math.random()*0.15;          /* 25%~40% */
+          const want=Math.round((S.coins||0)*pct);
+          const lost=charge(want);
+          try{
+            toast('⚠ <b>查税风暴</b><br>被扣 '+lost+' 金（'+Math.round(pct*100)+'%）',3000);
+            try{haptic([80,60,160]);flash(5);}catch(e){}
+          }catch(e){}
+          try{save();updateHud();}catch(e){}
+        }
+      }catch(e){}
+      return r;
+    };
+  }catch(e){}
+
 })();  
 </script>
 </body>

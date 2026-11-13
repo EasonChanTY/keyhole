@@ -8561,45 +8561,32 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   setInterval(function(){watch();label();clean();},250);
   setTimeout(label,300);
 })();
-/* ===== v130：360° 旋转中心对齐到物品中心 ===== */
+/* ===== v131：建模时直接以物品重心为原点 ===== */
 (function(){
 
-  const _di=drawItem;
+  const _mk=makeItemMesh;
 
-  drawItem=function(entry){
-    try{ window.__curItem=(entry&&entry.kind==='item')?entry.item:null; }catch(e){}
+  makeItemMesh=function(tier){
+    const inner=_mk.apply(this,arguments);
 
-    const r=_di.apply(this,arguments);
+    const pivot=new THREE.Group();
 
     try{
-      const insp=S.insp;
-      if(insp&&insp.obj&&!insp.__centered){
-        const o=insp.obj;
-        insp.__centered=1;
-
-        const s0=o.scale.x||1;
-        o.scale.setScalar(1);                    /* 用真实尺寸算包围盒 */
-
-        const box=new THREE.Box3().setFromObject(o);
+      inner.updateMatrixWorld(true);
+      const box=new THREE.Box3().setFromObject(inner);
+      if(!box.isEmpty()){
         const c=new THREE.Vector3();
         box.getCenter(c);
-
-        o.scale.setScalar(s0);
-
-        /* 把所有子物体（含瑕疵裂纹）整体平移，让中心落到原点 */
-        o.children.forEach(function(ch){
-          ch.position.x-=c.x;
-          ch.position.y-=c.y;
-          ch.position.z-=c.z;
-        });
+        /* 把模型整体挪到以自身中心为原点 */
+        inner.position.set(-c.x,-c.y,-c.z);
       }
     }catch(e){}
 
-    window.__curItem=null;
-    return r;
+    pivot.add(inner);
+    return pivot;
   };
 
-})();  
+})();
 </script>
 </body>
 </html>

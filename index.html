@@ -9428,6 +9428,91 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   }catch(e){}
 
 })();  
+/* ===== v151：保管费/维持费（立刻可见）+ 查税风暴（监听买箱） ===== */
+(function(){
+  const FEE_SLOT='keyhole_fee_slot_v2';
+  const ERA=1200000, FLOOR=200;
+  const slot=()=>Math.floor(Date.now()/ERA);
+
+  function bagVal(){
+    let v=0;
+    (S.bag||[]).forEach(function(it){
+      const d=ITEM_BY_ID[it.id];
+      if(d){try{v+=priceOf(d,it.cond);}catch(e){}}
+    });
+    return v;
+  }
+  const assets=()=>(S.coins||0)+bagVal();
+
+  const MAINT=[0,0,0,0,0,200,800,2500,8000,25000,80000];
+  function rankIdx(){
+    try{ if(typeof window.__rankOf==='function')return window.__rankOf(); }catch(e){}
+    const t=[0,600,1500,3500,8000,18000,40000,90000,200000,500000,1200000];
+    const v=assets(); let i=0;
+    t.forEach(function(x,k){ if(v>=x)i=k; });
+    return i;
+  }
+
+  function charge(n){
+    const before=S.coins||0;
+    S.coins=Math.max(FLOOR,before-n);
+    return before-S.coins;
+  }
+
+  function settle(){
+    try{
+      const cur=slot();
+      const last=+(localStorage.getItem(FEE_SLOT)||0);
+      if(last===cur) return;
+
+      localStorage.setItem(FEE_SLOT,String(cur));
+
+      const a=assets();
+      const custody=Math.min(3000,Math.round(a*0.004));
+      const maint=MAINT[rankIdx()]||0;
+
+      let lost=0;
+      if(maint>0) lost+=charge(maint);
+      if(custody>0) lost+=charge(custody);
+
+      try{save();updateHud();}catch(e){}
+
+      if(lost>0){
+        const p=[];
+        if(maint>0)p.push('阶级维持 −'+maint);
+        if(custody>0)p.push('仓库保管 −'+custody);
+        try{toast('时代结算<br>'+p.join(' · ')+'<br>共支出 '+lost+' 金',2800);}catch(e){}
+      }else{
+        try{toast('时代结算：身价较低，本期无支出',2000);}catch(e){}
+      }
+    }catch(e){}
+  }
+
+  /* 打开后 1.5 秒先结算一次，之后每 8 秒检查是否到了新时代 */
+  setTimeout(settle,1500);
+  setInterval(settle,8000);
+
+  /* ---------- 查税风暴：监听「买箱」动作（box → lock） ---------- */
+  let prevPhase=S.phase;
+  setInterval(function(){
+    try{
+      if(prevPhase==='box' && S.phase==='lock'){
+        const hard=(MODE===MODES.nightmare||MODE===MODES.hell);
+        if(hard && (S.coins||0)>20000 && Math.random()<0.03){
+          const pct=0.25+Math.random()*0.15;
+          const lost=charge(Math.round((S.coins||0)*pct));
+          try{
+            haptic([80,60,160]);flash(5);
+            toast('⚠ <b>查税风暴</b><br>被扣 '+lost+' 金（'+Math.round(pct*100)+'%）',3000);
+          }catch(e){}
+          try{save();updateHud();}catch(e){}
+        }
+      }
+      prevPhase=S.phase;
+    }catch(e){}
+  },300);
+
+})();  
 </script>
 </body>
 </html>

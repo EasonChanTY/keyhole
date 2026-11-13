@@ -8898,24 +8898,37 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   try{ updateHud(); }catch(e){}
 
 })();  
-/* ===== v143：只修地狱钥匙(9把) + 黑色物件价格区间 ===== */
+/* ===== v145：推理模式钥匙（数量/叠放/居中，一段搞定） ===== */
 (function(){
 
-  /* ---------- 1. 地狱推理：补齐到 9 把钥匙 ---------- */
+  const KEYS  = [6,7,8,9];     /* 简单/困难/噩梦/地狱 */
+  const TEETH = [4,4,4,6];     /* 地狱锁芯 6 根 */
+  const lvOf  = ()=>Math.max(0, Math.min(3, LOGIC_LV|0));
+
+  /* ---------- 地狱齿口 ---------- */
+  try{
+    const _cb = confirmBox;
+    confirmBox = function(){
+      try{ if(MODE===MODES.logic) MODES.logic.teeth = TEETH[lvOf()]; }catch(e){}
+      return _cb.apply(this, arguments);
+    };
+  }catch(e){}
+
+  /* ---------- 钥匙：数量补齐 + 居中叠放 ---------- */
   const _bk = buildKeys;
   buildKeys = function(swan, n){
     const r = _bk.apply(this, arguments);
 
     try{
       if(!MODE || !MODE.logic) return r;
-      if((LOGIC_LV|0) !== 3) return r;         /* 只处理地狱档 */
       if(!S.keys) return r;
 
-      const want = 9;
+      const want = KEYS[lvOf()];
       const lock = S.lock || [];
       const N = lock.length;
       if(N < 2) return r;
 
+      /* 补齐到应有数量 */
       const seen = {};
       S.keys.forEach(k=>{ seen[k.code.join(',')] = 1; });
 
@@ -8939,17 +8952,27 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
         S.keys.push(obj);
       }
 
-      /* 轻微叠放 */
+      /* 居中、缩小、轻微叠放（不会被 UI 遮住） */
+      keysRoot.position.set(0, 0, 0);
+      keysRoot.scale.setScalar(0.90);
+
       const cnt = S.keys.length;
-      const sp = Math.min(.175, 1.45 / Math.max(1, cnt-1));
-      const top = .58;
+      const span = Math.min(1.05, cnt * 0.13);
+      const sp = cnt > 1 ? span/(cnt-1) : 0;
+      const top = span/2;
+
       S.keys.forEach(function(k, i){
         k.id = i;
-        k.g.position.set((i%2===0 ? -.016 : .016), top - i*sp, i*0.0035);
-        k.g.rotation.z = (i%2===0 ? 1 : -1) * 0.035;
-        k.g.rotation.y = 0.10;
+        k.g.position.set(
+          (i % 2 === 0 ? -.012 : .012),
+          top - i * sp,
+          i * 0.0028
+        );
+        k.g.rotation.z = (i % 2 === 0 ? 1 : -1) * 0.03;
+        k.g.rotation.y = 0.08;
       });
-      S.keysCenter = top - (cnt-1)*sp/2;
+
+      S.keysCenter = 0;
 
       try{ layout(); }catch(e){}
       try{ updateUI(); }catch(e){}
@@ -8958,32 +8981,6 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
 
     return r;
   };
-
-  /* 地狱齿口 6 根（其它推理档 4 根） */
-  try{
-    const _cb = confirmBox;
-    confirmBox = function(){
-      try{ if(MODE===MODES.logic) MODES.logic.teeth = (LOGIC_LV===3 ? 6 : 4); }catch(e){}
-      return _cb.apply(this, arguments);
-    };
-  }catch(e){}
-
-  /* ---------- 2. 黑色物件价格：1 ~ 100000，越贵越罕见，按时代定值 ---------- */
-  try{
-    const _pa = priceAt;
-    priceAt = function(item, cond, ep){
-      if(item && item.dark){
-        const era = eraAt(ep);
-        if(!era.dark) return 0;                 /* 非暗市卖不掉 */
-
-        const h = hash(item.id + '|dkX|' + ep); /* 同一件在同一时代价格固定 */
-        const base = 1 + Math.pow(h, 3) * 99999; /* 立方偏向低价 */
-        const em = (era.m && era.m.relic) || 1;
-        return Math.max(1, Math.round(base * em));
-      }
-      return _pa.apply(this, arguments);
-    };
-  }catch(e){}
 
 })();
 </script>

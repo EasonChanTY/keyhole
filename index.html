@@ -4504,6 +4504,162 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   }catch(e){}
 
 })();  
+/* ===== 商店：护甲 + 盲盒箱 ===== */
+(function(){
+  const ERA_MS=4*3600000;
+  const SHOP_KEY='keyhole_shop_v1';
+  const ARM_KEY='keyhole_armor_v1';
+
+  const DEF=[
+   {id:'bronze', kind:'armor', name:'青铜护甲', price:20,  shield:20,  desc:'抵消 20 金伤害', stock:3},
+   {id:'silver', kind:'armor', name:'白银护甲', price:50,  shield:50,  desc:'抵消 50 金伤害', stock:3},
+   {id:'gold',   kind:'armor', name:'黄金护甲', price:100, shield:100, desc:'抵消 100 金伤害', stock:2},
+   {id:'diamond',kind:'armor', name:'钻石护甲', price:220, shield:120, bombProof:true,
+    desc:'免疫炸弹 + 抵消 120 金伤害', stock:1},
+
+   {id:'bw', kind:'box', name:'盲盒木箱', price:45,   tier:0, desc:'3 件 · 不用钥匙直接开', stock:5},
+   {id:'bs', kind:'box', name:'盲盒银箱', price:260,  tier:2, desc:'6 件 · 不用钥匙直接开', stock:3},
+   {id:'bg', kind:'box', name:'盲盒金箱', price:600,  tier:3, desc:'8 件 · 不用钥匙直接开', stock:2},
+   {id:'bd', kind:'box', name:'盲盒钻石箱',price:3200, tier:5, desc:'12 件 · 顶级品质', stock:1}
+  ];
+
+  const slot=()=>Math.floor(Date.now()/ERA_MS);
+  function loadShop(){
+   let d={slot:slot(),stock:{}};
+   try{const r=JSON.parse(localStorage.getItem(SHOP_KEY)||'null');if(r)d=r;}catch(e){}
+   if(d.slot!==slot())d={slot:slot(),stock:{}};
+   DEF.forEach(x=>{if(d.stock[x.id]===undefined)d.stock[x.id]=x.stock;});
+   return d;
+  }
+  const saveShop=d=>{try{localStorage.setItem(SHOP_KEY,JSON.stringify(d));}catch(e){}};
+  let SD=loadShop();
+
+  const loadArmor=()=>{try{return JSON.parse(localStorage.getItem(ARM_KEY)||'null');}catch(e){return null;}};
+  const saveArmor=a=>{try{a?localStorage.setItem(ARM_KEY,JSON.stringify(a)):localStorage.removeItem(ARM_KEY);}catch(e){}};
+
+  /* ---- 面板 ---- */
+  const sec=document.createElement('section');
+  sec.id='shopScreen';sec.className='panel';
+  sec.innerHTML='<div class="phead"><h2>商 店</h2><div class="sp"></div><button id="shopClose">关闭</button></div>'+
+   '<div style="font-size:11px;color:#7d7266;margin-bottom:10px" id="shopEra"></div>'+
+   '<div id="shopBody" style="flex:1;overflow-y:auto;padding-bottom:20px"></div>';
+  document.body.appendChild(sec);
+  const closeShop=()=>$('shopScreen').classList.remove('on');
+  $('shopClose').onclick=closeShop;
+
+  function renderShop(){
+   SD=loadShop();
+   $('shopEra').textContent='时代 · '+curEra().n+' · 库存随时代刷新（4 小时）';
+   const a=loadArmor();
+   let html='';
+   if(a)html+='<div style="font-size:11px;color:#8ef2a8;margin-bottom:10px">'+
+    '已装备：'+a.name+'（还能吸收 '+a.shield+'）</div>';
+   DEF.forEach(it=>{
+    const st=SD.stock[it.id]||0;
+    html+='<div class="catrow" style="padding:12px;align-items:flex-start">'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-size:14px;color:#ddd2c0">'+it.name+'</div>'+
+        '<div style="font-size:10.5px;color:#7d7266;margin-top:3px;line-height:1.6">'+it.desc+'</div>'+
+      '</div>'+
+      '<div style="text-align:right;flex:0 0 auto">'+
+        '<div style="color:#e6c47f;font-size:13px">'+it.price+' 金</div>'+
+        '<div style="font-size:10px;margin:3px 0 6px;color:'+(st>0?'#8c9686':'#e98a76')+'">'+
+          (st>0?('剩 '+st):'已售罄')+'</div>'+
+        '<button data-buy="'+it.id+'" '+(st<=0?'disabled':'')+
+          ' style="padding:7px 12px;font-size:12px;flex:0 0 auto">购买</button>'+
+      '</div></div>';
+   });
+   $('shopBody').innerHTML=html;
+   $('shopBody').querySelectorAll('button[data-buy]').forEach(b=>{
+    b.onclick=()=>buy(b.getAttribute('data-buy'));
+   });
+  }
+
+  function buy(id){
+   SD=loadShop();
+   const it=DEF.filter(x=>x.id===id)[0];
+   if(!it)return;
+   if((SD.stock[id]||0)<=0){toast('已售罄');return;}
+   if(S.phase==='reveal'||S.phase==='opening'){toast('开箱时不能买');return;}
+   if(S.coins<it.price){toast('金币不够');return;}
+
+   if(it.kind==='armor'){
+    if(loadArmor()){toast('已经穿着一件护甲，用完再买');return;}
+    S.coins-=it.price;SD.stock[id]--;saveShop(SD);
+    saveArmor({name:it.name,shield:it.shield,bombProof:!!it.bombProof});
+    try{SFX.coin();}catch(e){}
+    updateHud();save();
+    toast('已装备 <b>'+it.name+'</b>',1500);
+    renderShop();
+    return;
+   }
+
+   S.coins-=it.price;SD.stock[id]--;saveShop(SD);
+   updateHud();save();
+   const tier=TIERS[it.tier];
+   const loot=rollLoot(tier);
+   closeShop();
+   try{SFX.open();}catch(e){}
+   setTimeout(()=>fadeTo(()=>startStage({tier,loot})),120);
+  }
+
+  /* ---- 设置里加入口 ---- */
+  function addEntry(){
+   const list=$('setList');
+   if(!list||$('btnShop'))return;
+   const lab=document.createElement('div');lab.className='lab';lab.textContent='商 店';
+   const row=document.createElement('div');row.className='mrow';
+   const b=document.createElement('button');b.id='btnShop';b.textContent='商店';
+   b.onclick=()=>{renderShop();$('shopScreen').classList.add('on');};
+   row.appendChild(b);list.appendChild(lab);list.appendChild(row);
+  }
+  addEntry();setInterval(addEntry,1200);
+
+  /* ---- 护甲抵挡伤害 ---- */
+  try{
+   const _resolve=resolveEvent;
+   resolveEvent=function(insp){
+    try{
+     const ev=insp&&insp.entry&&insp.entry.ev;
+     const DMG={scorpion:20,sulfur:12,bomb:60};
+     const dmg=DMG[ev]||0;
+     const a=loadArmor();
+     if(dmg>0&&a&&a.shield>0){
+      if(ev==='bomb'&&a.bombProof){
+       insp.resolved=true;
+       try{addMk('钻石护甲 · 免疫爆炸','#8ef2a8');}catch(e){}
+       toast('钻石护甲挡住了爆炸',1900);
+       updateHud();save();return;
+      }
+      const absorbed=Math.min(a.shield,dmg);
+      a.shield-=absorbed;
+      saveArmor(a.shield>0?a:null);
+      const left=dmg-absorbed;
+      if(left>0)S.coins=Math.max(0,S.coins-left);
+      insp.resolved=true;
+      try{addMk(a.name+' 吸收 '+absorbed+' 点'+(left?('，仍损失 '+left):'，全部挡住'),'#8ef2a8');}catch(e){}
+      toast('护甲挡下 <b>'+absorbed+'</b> 点伤害'+(left?('，仍损失 '+left):' 全部挡住'),1900);
+      updateHud();save();return;
+     }
+    }catch(e){}
+    return _resolve.apply(this,arguments);
+   };
+  }catch(e){}
+
+  /* ---- 修：按钮闪烁（重复刷新文字引起） ---- */
+  try{
+   const _ui=updateUI;let lastSig='';
+   updateUI=function(){
+    const sig=S.phase+'|'+S.selBox+'|'+S.selKey+'|'+S.busy+'|'+S.coins+'|'+(S.keys?S.keys.length:0);
+    if(sig===lastSig)return;
+    lastSig=sig;
+    return _ui.apply(this,arguments);
+   };
+  }catch(e){}
+  const st2=document.createElement('style');
+  st2.textContent='#btnA,#btnB{transition:none!important}';
+  document.head.appendChild(st2);
+})();  
 </script>
 </body>
 </html>

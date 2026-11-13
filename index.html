@@ -7953,6 +7953,32 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   },1500);
 
 })();  
+/* 换一批按钮锁定 */
+(function(){
+  function fix(){
+    var b=document.getElementById('btnB');
+    if(!b)return;
+    if(S.phase!=='box')return;
+    var c=(window.__rerollNow&&window.__rerollNow())||10;
+    var t='换一批 · '+c+' 金';
+    if(b.textContent!==t)b.textContent=t;
+  }
+  var b=document.getElementById('btnB');
+  if(b){
+    new MutationObserver(fix).observe(b,{childList:true,characterData:true,subtree:true});
+  }
+  setInterval(fix,200);
+
+  setInterval(function(){
+    var all=document.querySelectorAll('button,div,span');
+    for(var i=0;i<all.length;i++){
+      var el=all[i];
+      if(el.id==='btnB')continue;
+      var t=(el.textContent||'').replace(/\s/g,'');
+      if(t==='换一批（10金）'||t==='换一批(10金)')el.remove();
+    }
+  },400);
+})();  
 </script>
 </body>
 </html>

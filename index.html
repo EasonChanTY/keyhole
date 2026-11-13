@@ -8898,7 +8898,251 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   try{ updateHud(); }catch(e){}
 
 })();  
+/* ===== v146：战乱时代 · 特供物资 / 垃圾暴涨 / 特供危险 ===== */
+(function(){
 
+  /* ---------- 1. 新增「特供」品质 ---------- */
+  try{
+    CAT.special={name:'特供',css:'#ff8a3a'};
+  }catch(e){}
+
+  const WAR_ITEMS=[
+    {id:'rifle',  n:'制式步枪', t:5,c:'special',b:4200, war:true,d:'枪身编号被磨掉了，枪膛还算干净。'},
+    {id:'pistol', n:'军用手枪', t:5,c:'special',b:2600, war:true,d:'握把上缠着旧布条，有汗渍。'},
+    {id:'sabre',  n:'军官军刀', t:5,c:'special',b:1800, war:true,d:'刀鞘凹了一块，刃口仍有寒光。'},
+    {id:'grenade',n:'手榴弹',   t:5,c:'special',b:900,  war:true,d:'保险销还在，没人敢碰。'},
+    {id:'mg',     n:'重机枪',   t:5,c:'special',b:9000, war:true,d:'枪管发黑，脚架还能撑住。'},
+    {id:'gen',    n:'便携发电机',t:5,c:'special',b:7000,war:true,d:'摇把还在，油箱里剩一点底。'},
+    {id:'chip',   n:'军用芯片', t:5,c:'special',b:22000,war:true,d:'封在陶瓷壳里，编号被刮花了。'},
+    {id:'missile',n:'战术导弹', t:5,c:'special',b:65000,war:true,d:'这东西本不该出现在一箱旧货里。'},
+    {id:'gasmask',n:'防毒面具', t:5,c:'special',b:1400, war:true,d:'镜片有雾，滤罐还是密封的。'},
+    {id:'radio',  n:'军用电台', t:5,c:'special',b:3200, war:true,d:'调到某个频段时会有电流声。'},
+    {id:'fuel',   n:'燃料罐',   t:5,c:'special',b:600,  war:true,d:'铁皮罐，摇一摇还有小半罐。'},
+    {id:'medkit', n:'野战医疗箱',t:5,c:'special',b:1200,war:true,d:'绷带受潮了，吗啡还完好。'}
+  ];
+
+  try{
+    WAR_ITEMS.forEach(it=>{
+      if(ITEM_BY_ID[it.id])return;
+      ITEMS.push(it);
+      ITEM_BY_ID[it.id]=it;
+    });
+  }catch(e){}
+
+  /* ---------- 2. 价格规则 ---------- */
+  try{
+    const _pa=priceAt;
+
+    priceAt=function(item,cond,ep){
+      try{
+        if(!item)return _pa.apply(this,arguments);
+        const era=eraAt(ep);
+        const isWar=(era.n==='战乱');
+        const cm=COND_MUL[cond]!==undefined?COND_MUL[cond]:1;
+
+        /* 特供物资：战乱时代正常价，其它时代只剩 4% */
+        if(item.war){
+          const f=isWar?1:0.04;
+          const jitter=.9+hash(item.id+'|w|'+ep)*.2;
+          return Math.max(1,Math.round(item.b*f*cm*jitter));
+        }
+
+        /* 战乱时代：垃圾暴涨 50~200 倍 */
+        if(isWar&&item.c==='junk'){
+          const m=50+hash(item.id+'|jw|'+ep)*150;
+          return Math.max(1,Math.round(item.b*m*cm));
+        }
+
+        /* 战乱时代：其它品质大贬值（约三折） */
+        if(isWar&&item.c!=='junk'&&item.c!=='special'){
+          return Math.max(1,Math.round(_pa.apply(this,arguments)*.3));
+        }
+      }catch(e){}
+      return _pa.apply(this,arguments);
+    };
+  }catch(e){}
+
+  /* ---------- 3. 战乱时代才掉特供物资 ---------- */
+  try{
+    const _rl=rollLoot;
+    rollLoot=function(tier){
+      const out=_rl.apply(this,arguments);
+      try{
+        if(curEra().n==='战乱'&&Math.random()<.42&&out.length){
+          const it=WAR_ITEMS[rnd(WAR_ITEMS.length)];
+          const slot=Math.floor(Math.random()*out.length);
+          out[slot]={kind:'item',item:it,cond:(Math.random()<.45?1:(Math.random()<.6?2:3))};
+        }
+        /* 特供危险：概率不高 */
+        if(curEra().n==='战乱'&&Math.random()<.09&&out.length){
+          out.splice(Math.min(1,out.length),0,
+            {kind:'evt',ev:(Math.random()<.5?'rads':'raid')});
+        }
+      }catch(e){}
+      return out;
+    };
+  }catch(e){}
+
+  /* ---------- 4. 特供危险：仓库物品瑕疵增强 ---------- */
+  try{
+    EVT_NAME.rads='放射性物资';
+    EVT_NAME.raid='战乱侵袭';
+    const _mem=makeEventMesh;
+    makeEventMesh=function(ev){
+      if(ev==='rads'||ev==='raid')ev='bomb';
+      return _mem.call(this,ev);
+    };
+  }catch(e){}
+
+  try{
+    const _res=resolveEvent;
+    resolveEvent=function(insp){
+      try{
+        const ev=insp&&insp.entry&&insp.entry.ev;
+        if((ev==='rads'||ev==='raid')&&insp&&!insp.resolved){
+          insp.resolved=true;
+          let n=0;
+          (S.bag||[]).forEach(it=>{
+            if(it.cond<5&&Math.random()<.35){
+              it.cond=Math.min(5,it.cond+1);
+              n++;
+            }
+          });
+          try{
+            addMk((EVT_NAME[ev]||ev)+' · '+n+' 件藏品受损');
+            toast('<b>'+(EVT_NAME[ev]||ev)+'</b><br>'+
+              (n?('仓库里有 '+n+' 件物品出现新的瑕疵，价值下降'):'这次没造成损伤'),2600);
+          }catch(e){}
+          try{updateHud();save();}catch(e){}
+          return;
+        }
+      }catch(e){}
+      return _res.apply(this,arguments);
+    };
+  }catch(e){}
+
+  /* ---------- 5. 建模 ---------- */
+  const B=window.__ITEM_BUILD=window.__ITEM_BUILD||{};
+  const mat=window.__ITEM_MAT||function(c,r,m,e,ei){
+    const x=new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m||0});
+    if(e){x.emissive=new THREE.Color(e);x.emissiveIntensity=ei||.3;}
+    return x;
+  };
+  const put=window.__ITEM_PUT||function(g,geo,m,x,y,z,rx,ry,rz){
+    const o=new THREE.Mesh(geo,m);
+    o.position.set(x||0,y||0,z||0);
+    o.rotation.set(rx||0,ry||0,rz||0);
+    o.castShadow=true;g.add(o);return o;
+  };
+
+  B.rifle=function(){
+    const g=new THREE.Group();
+    put(g,new THREE.BoxGeometry(.24,.014,.012),mat(0x2f2f33,.5,.7),0,.04,0);
+    put(g,new THREE.BoxGeometry(.06,.03,.016),mat(0x3d2a1a,.7,.1),-.1,.03,0);
+    put(g,new THREE.BoxGeometry(.045,.045,.03),mat(0x3d2a1a,.7,.1),-.02,.03,0);
+    put(g,new THREE.CylinderGeometry(.005,.005,.09,8),mat(0x222226,.4,.9),.14,.045,0,0,0,Math.PI/2);
+    put(g,new THREE.BoxGeometry(.02,.05,.01),mat(0x2a2a2e,.4,.8),.06,.015,0);
+    return g;
+  };
+  B.pistol=function(){
+    const g=new THREE.Group();
+    put(g,new THREE.BoxGeometry(.11,.03,.018),mat(0x2f2f33,.45,.85),0,.06,0);
+    put(g,new THREE.BoxGeometry(.035,.075,.022),mat(0x2a2a2e,.6,.6),-.035,.02,0);
+    put(g,new THREE.CylinderGeometry(.005,.005,.05,8),mat(0x1f1f22,.3,.9),.07,.06,0,0,0,Math.PI/2);
+    return g;
+  };
+  B.sabre=function(){
+    const g=new THREE.Group();
+    put(g,new THREE.BoxGeometry(.02,.16,.006),mat(0xd9dee4,.1,.95),0,.09,0);
+    put(g,new THREE.BoxGeometry(.055,.01,.012),mat(0xb08a3e,.3,.9),0,.008,0);
+    put(g,new THREE.CylinderGeometry(.009,.009,.05,10),mat(0x2a2118,.8,.1),0,-.022,0);
+    return g;
+  };
+  B.grenade=function(){
+    const g=new THREE.Group();
+    put(g,new THREE.SphereGeometry(.035,16,14),mat(0x3a4a2a,.7,.3),0,.04,0);
+    put(g,new THREE.CylinderGeometry(.012,.014,.02,10),mat(0x2f2f33,.4,.9),0,.078,0);
+    put(g,new THREE.TorusGeometry(.014,.003,6,14),mat(0x9a9a9e,.3,.9),.014,.072,0);
+    return g;
+  };
+  B.mg=function(){
+    const g=new THREE.Group();
+    put(g,new THREE.BoxGeometry(.2,.04,.03),mat(0x2a2a2e,.5,.8),0,.06,0);
+    put(g,new THREE.CylinderGeometry(.008,.008,.14,10),mat(0x222226,.35,.9),.14,.07,0,0,0,Math.PI/2);
+    put(g,new THREE.CylinderGeometry(.004,.004,.12,6),mat(0x2a2a2e,.5,.7),-.02,.02,0);
+    put(g,new THREE.CylinderGeometry(.004,.004,.12,6),mat(0x2a2a2e,.5,.7),.06,.02,0);
+    return g;
+  };
+  B.gen=function(){
+    const g=new THREE.Group();
+    put(g,new THREE.BoxGeometry(.09,.07,.06),mat(0x4a5a3a,.6,.4),0,.045,0);
+    put(g,new THREE.CylinderGeometry(.025,.025,.03,14),mat(0x2a2a2e,.5,.8),-.06,.045,0,0,0,Math.PI/2);
+    put(g,new THREE.BoxGeometry(.05,.012,.012),mat(0x9a9a9e,.4,.9),.03,.09,0);
+    return g;
+  };
+  B.chip=function(){
+    const g=new THREE.Group();
+    put(g,new THREE.BoxGeometry(.05,.006,.05),mat(0x1f2a22,.35,.6),0,.03,0);
+    put(g,new THREE.BoxGeometry(.02,.008,.02),mat(0xd8b25c,.2,.95),0,.036,0);
+    for(let i=0;i<6;i++){
+      put(g,new THREE.BoxGeometry(.003,.002,.012),mat(0xc9b06a,.3,.9),
+        -.018+i*.007,.0265,.028);
+    }
+    return g;
+  };
+  B.missile=function(){
+    const g=new THREE.Group();
+    put(g,new THREE.CylinderGeometry(.02,.02,.16,16),mat(0x5a5a4e,.4,.6),0,.09,0);
+    put(g,new THREE.ConeGeometry(.02,.05,16),mat(0x8a3a2a,.4,.5),0,.195,0);
+    put(g,new THREE.ConeGeometry(.028,.03,12),mat(0x4a4a42,.4,.6),0,.012,0,Math.PI,0,0);
+    for(let i=0;i<4;i++){
+      put(g,new THREE.BoxGeometry(.004,.05,.02),mat(0x4a4a42,.5,.6),
+        Math.cos(i*Math.PI/2)*.02,.03,Math.sin(i*Math.PI/2)*.02);
+    }
+    return g;
+  };
+  B.gasmask=function(){
+    const g=new THREE.Group();
+    put(g,new THREE.SphereGeometry(.05,18,14),mat(0x3a3f2a,.7,.2),0,.05,0);
+    put(g,new THREE.CylinderGeometry(.014,.016,.03,12),mat(0x2a2a2e,.5,.6),0,.025,.04,Math.PI/2,0,0);
+    put(g,new THREE.SphereGeometry(.022,14,12),mat(0x9fb8c8,.15,.1),-.02,.065,.035);
+    put(g,new THREE.SphereGeometry(.022,14,12),mat(0x9fb8c8,.15,.1),.02,.065,.035);
+    return g;
+  };
+  B.radio=function(){
+    const g=new THREE.Group();
+    put(g,new THREE.BoxGeometry(.09,.065,.04),mat(0x3a4230,.6,.3),0,.035,0);
+    put(g,new THREE.CylinderGeometry(.003,.003,.09,6),mat(0x9a9a9e,.3,.9),.035,.11,0,0,0,.2);
+    put(g,new THREE.SphereGeometry(.008,10,8),mat(0x222226,.4,.6),-.03,.05,.022);
+    return g;
+  };
+  B.fuel=function(){
+    const g=new THREE.Group();
+    put(g,new THREE.CylinderGeometry(.035,.035,.08,16),mat(0x8a3a2a,.6,.5),0,.04,0);
+    put(g,new THREE.CylinderGeometry(.011,.011,.02,10),mat(0x2a2a2e,.4,.8),.02,.088,0);
+    return g;
+  };
+  B.medkit=function(){
+    const g=new THREE.Group();
+    put(g,new THREE.BoxGeometry(.08,.05,.05),mat(0xe8e2d0,.8,.1),0,.03,0);
+    put(g,new THREE.BoxGeometry(.03,.008,.008),mat(0xc03a3a,.6,.1),0,.056,0);
+    put(g,new THREE.BoxGeometry(.008,.008,.03),mat(0xc03a3a,.6,.1),0,.056,0);
+    return g;
+  };
+
+  /* 让建模生效（如果已有注册表会自动用） */
+  try{
+    const _mk=makeItemMesh;
+    makeItemMesh=function(t){
+      const it=window.__curItem;
+      if(it&&B[it.id]){
+        try{ return B[it.id](); }catch(e){}
+      }
+      return _mk.apply(this,arguments);
+    };
+  }catch(e){}
+
+})();
 </script>
 </body>
 </html>

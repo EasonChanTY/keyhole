@@ -6164,6 +6164,186 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
 
   ensureTop();buildTabs();enforce();updateHud();
 
+})(); 
+/* ===== v112：图鉴全量重写（含所有新物品/危险/玩法） ===== */
+(function(){
+  const CK='keyhole_codex_v2';
+  let CX={era:{},item:{},danger:{},play:{}};
+  try{ Object.assign(CX,JSON.parse(localStorage.getItem(CK)||'{}')); }catch(e){}
+  const saveCX=()=>{try{localStorage.setItem(CK,JSON.stringify(CX));}catch(e){}};
+  function seen(k,id){
+    if(!id)return;
+    if(CX[k][id])return;
+    CX[k][id]=1;saveCX();
+  }
+
+  /* ---- 自动记录“见过” ---- */
+  try{
+    const _d=drawItem;
+    drawItem=function(en){
+      try{
+        if(en&&en.kind==='item'&&en.item)seen('item',en.item.id);
+        if(en&&en.kind==='evt')seen('danger',en.ev);
+      }catch(e){}
+      return _d.apply(this,arguments);
+    };
+  }catch(e){}
+  try{
+    const _nr=newRound;
+    newRound=function(){
+      try{seen('era',curEra().n);}catch(e){}
+      return _nr.apply(this,arguments);
+    };
+  }catch(e){}
+
+  /* ---- 内容表 ---- */
+  const DANGERS=[
+   ['scorpion','毒蝎子','−20 金'],
+   ['sulfur','硫磺瓶','−12 金'],
+   ['bomb','炸弹','−60 金，整箱报废'],
+   ['oil','灯油','+2 灯油'],
+   ['nest','箱中箱','再开一只'],
+   ['spike','图钉','−5 金'],
+   ['acid','酸液瓶','−30 金'],
+   ['rat','铁齿鼠','−8 金']
+  ];
+
+  const PLAY=[
+   ['box','挑箱子','下面一排箱子，玻璃下只露出最贵的两件，其余靠运气。越贵的箱子出好货概率越高。'],
+   ['lock','窥视锁孔','扣 1 灯油，限时看清锁芯每根齿的长短，齿越长数字越大。'],
+   ['keys','挑钥匙','每把只能举起看一次（约 2.6 秒），凭记忆挑出与锁芯一致的那把。'],
+   ['try','试开','花 20 金插进去。对了开箱，错了这把报废，可以再挑。'],
+   ['brute','暴力开','花钱跳过解谜，但箱里最贵的一件必定碎裂。'],
+   ['reveal','验货','物品要转半圈才能收；转到瑕疵那面会掉价，完美品相不打折。'],
+   ['bag','背包','点物品看 24 小时行情，可单卖、可批量出售、可收藏。'],
+   ['free','免费木箱','每 24 小时一次（等级越高越快），白拿三件。'],
+   ['shop','商店','用金币买护甲和盲盒。库存随时代刷新，卖完售罄。'],
+   ['armor','护甲','青铜/白银/黄金按数值吸收伤害；钻石护甲免疫炸弹。一次只能穿一件。'],
+   ['blind','盲盒','商店直接买、不用钥匙的箱子。省掉窥视和挑钥匙，但对赌性质更重。'],
+   ['bond','债券','每个时代发行 3 只，10 个时代后结算。多数会跌，少数暴涨。到期前不能取，可提前按现值 90% 转手。'],
+   ['rank','阶级','按金币 + 背包估价 + 债券本金算总身价，从「桥洞常客」到「齿口之王」共 11 级。阶级越高，商店解锁越多。'],
+   ['hell','地狱难度','齿口 8~10 根随机、4 个遮挡、掉落更好，但选错罚得更狠。'],
+   ['logic','推理模式','没有时间限制，只能看清一根锁芯，靠线索推理，只有一次机会。'],
+   ['pg','战报','每次开箱的结果都会记进背包与身价，市价随时代波动。']
+  ];
+
+  /* ---- 渲染 ---- */
+  const TABS=[['era','时代'],['item','物品'],['danger','危险'],['play','玩法']];
+  let tab='era';
+
+  function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+  function render(){
+    const body=document.getElementById('cxBody');
+    const wrap=document.getElementById('cxTabs');
+    if(!body||!wrap)return;
+
+    const btns=wrap.querySelectorAll('button');
+    btns.forEach((b,i)=>{
+      const k=TABS[i]?TABS[i][0]:'era';
+      b.classList.toggle('on',k===tab);
+      if(!b.__cxb){b.__cxb=1;b.onclick=()=>{tab=k;render();};}
+    });
+
+    let html='';
+
+    if(tab==='era'){
+      const n=Object.keys(CX.era).length;
+      html+='<div style="font-size:11px;color:#6f6558;margin-bottom:10px">'
+        +'已解锁 '+n+' / '+ERAS.length+'</div>';
+      ERAS.forEach(e=>{
+        const ok=CX.era[e.n];
+        html+='<div class="catrow" style="align-items:flex-start">'+
+          '<div style="flex:1"><div class="cn" style="width:auto;color:'+
+          (ok?'#ddd2c0':'#544b40')+'">'+(ok?e.n:'？？？')+'</div>'+
+          (ok?'<div style="font-size:10.5px;color:#7d7266;margin-top:3px;line-height:1.7">'
+            +e.d+'</div>':'')+'</div>'+
+          '<span class="cv">'+(ok?'已解锁':'未解锁')+'</span></div>';
+      });
+    }
+
+    if(tab==='item'){
+      const n=Object.keys(CX.item).length;
+      html+='<div style="font-size:11px;color:#6f6558;margin-bottom:10px">'
+        +'已解锁 '+n+' / '+ITEMS.length+'</div>';
+      [1,2,3,4,5].forEach(t=>{
+        const list=ITEMS.filter(it=>it.t===t);
+        if(!list.length)return;
+        const cn=({1:'垃圾',2:'杂物',3:'古物',4:'珠宝',5:'传世'})[t];
+        const cc=({1:'#6d5b47',2:'#8c9686',3:'#4f9dff',4:'#b57aff',5:'#ffcf5c'})[t];
+        html+='<div style="font-size:11px;color:'+cc+';letter-spacing:.14em;margin:12px 0 6px">'+cn+'</div>';
+        list.forEach(it=>{
+          const ok=CX.item[it.id];
+          html+='<div class="catrow" style="align-items:flex-start">'+
+            '<span class="dot" style="background:'+cc+';margin-top:5px"></span>'+
+            '<div style="flex:1"><div style="font-size:13px;color:'+
+            (ok?'#ddd2c0':'#544b40')+'">'+((ok&&it.uniq)?'◆ ':'')+
+            (ok?it.n:'？？？')+'</div>'+
+            (ok?'<div style="font-size:10.5px;color:#7d7266;margin-top:2px;line-height:1.65">'
+              +esc(it.d)+'</div>':'')+'</div>'+
+            '<span class="cv">'+(ok?'估 '+priceOf(it,1)+' 金':'未解锁')+'</span></div>';
+        });
+      });
+    }
+
+    if(tab==='danger'){
+      const n=Object.keys(CX.danger).length;
+      html+='<div style="font-size:11px;color:#6f6558;margin-bottom:10px">'
+        +'已遇到 '+n+' / '+DANGERS.length+'</div>';
+      DANGERS.forEach(d=>{
+        const ok=CX.danger[d[0]];
+        html+='<div class="catrow">'+
+          '<div style="flex:1;font-size:13px;color:'+(ok?'#ddd2c0':'#544b40')+'">'+
+          (ok?d[1]:'？？？')+'</div>'+
+          '<span class="cv" style="width:auto">'+(ok?d[2]:'未解锁')+'</span></div>';
+      });
+    }
+
+    if(tab==='play'){
+      html+='<div style="font-size:11px;color:#6f6558;margin-bottom:10px">'
+        +'全部玩法说明</div>';
+      PLAY.forEach(p=>{
+        html+='<div class="catrow" style="align-items:flex-start;flex-direction:column;gap:4px">'+
+          '<div style="font-size:13px;color:#ddd2c0">'+p[1]+'</div>'+
+          '<div style="font-size:10.5px;color:#7d7266;line-height:1.75">'+p[2]+'</div></div>';
+      });
+    }
+
+    body.innerHTML=html;
+  }
+
+  /* ---- 接管打开入口 ---- */
+  function hook(){
+    const btn=document.getElementById('btnCodex');
+    if(btn&&!btn.__cxh){
+      btn.__cxh=1;
+      btn.onclick=()=>{
+        document.getElementById('cxScreen').classList.add('on');
+        render();
+      };
+    }
+    const scr=document.getElementById('cxScreen');
+    if(scr&&scr.classList.contains('on')){
+      const body=document.getElementById('cxBody');
+      if(body&&body.getAttribute('data-cx')!==tab){
+        body.setAttribute('data-cx',tab);
+        render();
+      }
+    }
+  }
+  hook();
+  setInterval(hook,800);
+  setInterval(()=>{
+    const scr=document.getElementById('cxScreen');
+    if(scr&&scr.classList.contains('on')){
+      const body=document.getElementById('cxBody');
+      if(body){body.setAttribute('data-cx',tab);}
+    }
+  },3000);
+
+  /* 提前把基础玩法标成已解锁（这些不需要“见过”） */
+  PLAY.forEach(p=>{ if(p[0]!=='pg') seen('play',p[0]); });
+
 })();  
 </script>
 </body>

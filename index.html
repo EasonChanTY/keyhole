@@ -7423,6 +7423,349 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   setInterval(injectOmni,1500);
 
 })();  
+/* ===== v120：阶级化债券 / 阶级化换一批 / 护甲重做 + 光环 ===== */
+(function(){
+  const BK='keyhole_bonds_v1', ARM_KEY='keyhole_armor_v1';
+  const ERA=1800000;
+  const eraIdx=()=>Math.floor(Date.now()/ERA);
+  const loadB=()=>{try{return JSON.parse(localStorage.getItem(BK)||'[]');}catch(e){return[];}};
+  const saveB=a=>{try{localStorage.setItem(BK,JSON.stringify(a));}catch(e){}};
+  const loadArmor=()=>{try{return JSON.parse(localStorage.getItem(ARM_KEY)||'null');}catch(e){return null;}};
+  const saveArmor=a=>{try{a?localStorage.setItem(ARM_KEY,JSON.stringify(a)):
+    localStorage.removeItem(ARM_KEY);}catch(e){}};
+  const rank=()=>{try{return (window.__rankOf&&window.__rankOf())||0;}catch(e){return 0;}};
+  const fmt=n=>n.toLocaleString('en-US');
+
+  /* ---------- 1. 换一批：按阶级 + 资产比例涨价 ---------- */
+  function rerollNow(){
+    const r=rank();
+    const v=Math.round(10 + (S.coins||0)*0.004 + r*15);
+    return Math.max(10,Math.min(800,v));
+  }
+  window.__rerollNow=rerollNow;
+  try{ rerollCost=function(){ return rerollNow(); }; }catch(e){}
+
+  document.addEventListener('click',function(e){
+    const b=document.getElementById('btnB');
+    if(!b)return;
+    let t=e.target; if(t!==b&&t.parentElement!==b)return;
+    if(S.phase!=='box')return;
+    e.preventDefault();e.stopPropagation();
+    if(e.stopImmediatePropagation)e.stopImmediatePropagation();
+    const c=rerollNow();
+    if(S.coins<c){toast('换一批需要 <b>'+c+'</b> 金，金币不够');return;}
+    S.coins-=c;save();updateHud();
+    try{SFX.tap();}catch(e){}
+    newRound();
+  },true);
+
+  setInterval(()=>{
+    try{
+      const b=document.getElementById('btnB');
+      if(b&&S.phase==='box'){
+        const t='换一批 · '+rerollNow()+' 金';
+        if(b.textContent!==t)b.textContent=t;
+      }
+    }catch(e){}
+  },400);
+
+  /* ---------- 2. 债券：按阶级涨价 + 加风险 ---------- */
+  const BPROF={steady:['稳健','小跌小涨，偶尔小赚'],
+   high:['高息','多半亏，涨起来很猛'],wild:['狂野','十有九亏，可能翻几倍']};
+  const ERA_NAMES={
+   '收藏热':['藏品信托','拍卖行票据','古董抵押债'],
+   '大萧条':['救济债券','粮食配给券','典当同业债'],
+   '镀金年代':['铁路建设债','钢铁托拉斯票','豪华宅邸债'],
+   '战乱':['军需采购票','避难所债券','抚恤基金券'],
+   '考古热':['发掘基金券','海外考察债','文物修复票'],
+   '复古潮':['旧物回收债','唱片版权券','胶片修复债'],
+   '平淡日子':['市政公债','储蓄存单','商会周转票'],
+   '拍卖狂热':['拍卖保证金','天价担保债','委托竞拍票'],
+   '熔炉时代':['贵金属抵押债','熔炼许可票','矿脉开采债'],
+   '暗市':['过桥债','黑账簿票据','夜航货运券']
+  };
+  const GEN=['市政公债','商号承兑票','货运债券','银号周转券'];
+
+  function offers2(){
+    const e=eraIdx(),era=curEra(),r=rank();
+    const pool=ERA_NAMES[era.n]||GEN;
+    const f=1+r*0.9;                       /* 阶级越高越贵 */
+    const out=[];
+    for(let i=0;i<3;i++){
+      const h=hash('bond'+e+'#'+i);
+      const nm=pool[Math.floor(h*pool.length)%pool.length];
+      let price=Math.round((70+h*1100)*f);
+      let prof=(h>.63?'wild':(h>.30?'high':'steady'));
+      if(r>=5&&prof==='steady')prof='high';
+      if(r>=8&&prof!=='wild')prof='wild';
+      out.push({e,name:era.n+'·'+nm,price,prof});
+    }
+    return out;
+  }
+  function settle2(b){
+    const h=hash('settle'+b.name+b.e);let m;
+    if(b.prof==='steady'){if(h<.55)m=.85+h*.15;else if(h<.90)m=1+h*.15;else m=1.15+h*.2;}
+    else if(b.prof==='high'){if(h<.58)m=.35+h*.45;else if(h<.90)m=.95+h*.5;else m=2+h*2;}
+    else {if(h<.62)m=.10+h*.5;else if(h<.88)m=1+h*1.2;else m=3+h*5;}
+    return Math.round(b.price*m);
+  }
+  function bpath(b){
+    const f=settle2(b),a=[b.price];
+    for(let i=1;i<=10;i++){
+      const t=i/10;
+      const base=b.price+(f-b.price)*t;
+      const noise=(hash(b.name+b.e+'|'+i)-.5)*b.price*.25*Math.sin(Math.PI*t);
+      a.push(Math.max(1,Math.round(base+noise)));
+    }
+    return a;
+  }
+  const bkOf=b=>Math.min(10,Math.max(0,eraIdx()-(b.buyEra||b.e)));
+  const sellVal=b=>Math.round(bpath(b)[bkOf(b)]*.9);
+
+  function drawChart(cv,arr,cur,hover){
+    const r=cv.getBoundingClientRect();if(r.width<10)return;
+    const dpr=Math.min(devicePixelRatio,2);
+    cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);
+    const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);
+    const W=r.width,H=r.height;x.clearRect(0,0,W,H);
+    const mn=Math.min.apply(null,arr),mx=Math.max.apply(null,arr);
+    const sp=Math.max(1,mx-mn);
+    const X=i=>i*(W/(arr.length-1));
+    const Y=v=>7+(1-(v-mn)/sp)*(H-16);
+    x.strokeStyle='#ffffff14';x.lineWidth=1;
+    [0,.5,1].forEach(k=>{const yy=7+k*(H-16);x.beginPath();x.moveTo(0,yy);x.lineTo(W,yy);x.stroke();});
+    const g=x.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,'rgba(230,196,127,.18)');g.addColorStop(1,'rgba(230,196,127,0)');
+    x.beginPath();x.moveTo(X(0),Y(arr[0]));
+    for(let i=1;i<arr.length;i++)x.lineTo(X(i),Y(arr[i]));
+    x.lineTo(W,H);x.lineTo(0,H);x.closePath();x.fillStyle=g;x.fill();
+    x.beginPath();x.moveTo(X(0),Y(arr[0]));
+    for(let i=1;i<arr.length;i++)x.lineTo(X(i),Y(arr[i]));
+    x.strokeStyle=arr[arr.length-1]>=arr[0]?'#8ef2a8':'#ff9a86';
+    x.lineWidth=1.6;x.lineJoin='round';x.stroke();
+    if(hover!=null){
+      const hh=Math.max(0,Math.min(arr.length-1,hover));
+      x.strokeStyle='#e6c47f88';x.lineWidth=1;
+      x.beginPath();x.moveTo(X(hh),4);x.lineTo(X(hh),H-4);x.stroke();
+      x.beginPath();x.arc(X(hh),Y(arr[hh]),3.6,0,Math.PI*2);
+      x.fillStyle='#fff6dd';x.fill();x.strokeStyle='#0a0705';x.lineWidth=1.2;x.stroke();
+      const lb=arr[hh]+' 金';
+      x.font='10px -apple-system,sans-serif';
+      const tw=x.measureText(lb).width;
+      let bx=Math.max(2,Math.min(W-tw-16,X(hh)-tw/2-7));
+      x.fillStyle='#0b0806ee';x.fillRect(bx,0,tw+14,15);
+      x.fillStyle='#e6c47f';x.fillText(lb,bx+7,11);
+    }
+    x.beginPath();x.arc(X(cur),Y(arr[cur]),3.2,0,Math.PI*2);
+    x.fillStyle='#e6c47f';x.fill();x.strokeStyle='#0a0705';x.lineWidth=1.2;x.stroke();
+  }
+
+  function renderBonds2(){
+    const pane=document.getElementById('bondPane');
+    if(!pane)return;
+    const list=loadB(),cur=eraIdx(),off=offers2(),r=rank();
+
+    let html='<div style="font-size:11px;color:#a99c88;line-height:1.8;margin-bottom:10px">'+
+      '你的阶级：<b style="color:#e6c47f">'+['桥洞常客','咸鱼翻身中','城中村租客','小有积蓄',
+      '巷口收藏家','街区名人','城里富商','上流圈边缘','大收藏家','传奇寻宝人','齿口之王'][r]+
+      '</b> · 阶级越高，债券越贵、波动越大<br>'+
+      '买入后 10 个时代结算，到期前只能按现值 90% 转手</div>';
+
+    off.forEach((o,i)=>{
+      html+='<div style="padding:12px;border:1px solid #e6c47f44;border-radius:12px;'+
+        'background:#1b1510;margin-bottom:8px">'+
+        '<div style="display:flex;align-items:center">'+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-size:13px;color:#e6c47f">'+o.name+'</div>'+
+            '<div style="font-size:10px;color:#a99c88;margin-top:3px">'+
+              BPROF[o.prof][0]+' · '+BPROF[o.prof][1]+'</div></div>'+
+          '<div style="text-align:right;flex:0 0 auto;margin-left:8px">'+
+            '<div style="font-size:12.5px;color:#e6c47f">'+fmt(o.price)+' 金</div>'+
+            '<button data-buy5="'+i+'" style="margin-top:5px;padding:6px 13px;'+
+              'font-size:11.5px;flex:0 0 auto;color:#efe6d6">买入</button>'+
+          '</div></div></div>';
+    });
+
+    html+='<div style="font-size:11px;color:#a99c88;margin:14px 0 6px">持有中（'+list.length+'）</div>';
+    if(!list.length)html+='<div style="font-size:12px;color:#8c7e69;padding:8px 2px">还没有债券</div>';
+
+    list.forEach((b,i)=>{
+      const p=bpath(b),k=bkOf(b),left=(b.buyEra||b.e)+10-cur;
+      const now=p[k],diff=now-b.price;
+      html+='<div style="padding:11px 12px;border:1px solid #ffffff16;border-radius:12px;'+
+        'background:#1b1510;margin-bottom:9px">'+
+        '<div style="display:flex;align-items:center">'+
+          '<div style="flex:1;font-size:12.5px;color:#ddd2c0">'+b.name+'</div>'+
+          '<div style="font-size:11.5px;color:'+(diff>=0?'#8ef2a8':'#ff9a86')+'">'+
+            (diff>=0?'+':'')+fmt(diff)+'</div></div>'+
+        '<div style="font-size:10.5px;color:#a99c88;margin:4px 0 6px">'+
+          '现值 '+fmt(now)+' · 买入 '+fmt(b.price)+' · '+
+          (left>0?(left+' 个时代后到期'):'已到期，稍后自动结算')+'</div>'+
+        '<canvas class="b5c" data-i="'+i+'" style="width:100%;height:58px;display:block"></canvas>'+
+        '<div style="display:flex;align-items:center;margin-top:7px">'+
+          '<div style="flex:1;font-size:10.5px;color:#a99c88">转手可得 '+
+            '<b style="color:#e6c47f">'+fmt(sellVal(b))+'</b> 金</div>'+
+          '<button data-sell5="'+i+'" style="flex:0 0 auto;padding:7px 13px;font-size:11.5px;'+
+            'color:#e2a390;background:#2a1411;border:1px solid #c0563a55">转手</button>'+
+        '</div></div>';
+    });
+    pane.innerHTML=html;
+
+    pane.querySelectorAll('button[data-buy5]').forEach(bt=>{
+      bt.onclick=()=>{
+        const o=off[+bt.getAttribute('data-buy5')];
+        if(S.coins<o.price){toast('金币不够 · 需要 '+fmt(o.price));return;}
+        S.coins-=o.price;save();updateHud();
+        const l=loadB();
+        l.push({name:o.name,price:o.price,prof:o.prof,e:o.e,buyEra:eraIdx()});
+        saveB(l);
+        try{SFX.coin();}catch(e){}
+        toast('买入 <b>'+o.name+'</b><br>'+fmt(o.price)+' 金',1500);
+        renderBonds2();
+      };
+    });
+
+    pane.querySelectorAll('button[data-sell5]').forEach(bt=>{
+      bt.onclick=()=>{
+        const idx=+bt.getAttribute('data-sell5');
+        const l=loadB(),b=l[idx];if(!b)return;
+        const v=sellVal(b);
+        if(!confirm('提前转手「'+b.name+'」？\n可得 '+fmt(v)+' 金（现值 90%）'))return;
+        S.coins+=v;l.splice(idx,1);
+        saveB(l);save();updateHud();
+        try{SFX.coin();}catch(e){}
+        toast('已转手 <b>+'+fmt(v)+' 金</b>',1500);
+        renderBonds2();
+      };
+    });
+
+    pane.querySelectorAll('.b5c').forEach(cv=>{
+      const i=+cv.dataset.i,b=list[i];
+      const arr=bpath(b),k=bkOf(b);
+      drawChart(cv,arr,k,null);
+      const move=e=>{
+        const r2=cv.getBoundingClientRect();
+        const x=Math.max(0,Math.min(1,(e.clientX-r2.left)/r2.width));
+        drawChart(cv,arr,k,Math.round(x*(arr.length-1)));
+      };
+      cv.addEventListener('pointerdown',e=>{e.stopPropagation();move(e);});
+      cv.addEventListener('pointermove',e=>{if(e.buttons||e.pointerType==='mouse')move(e);});
+      cv.addEventListener('pointerup',e=>{
+        const r2=cv.getBoundingClientRect();
+        const x=Math.max(0,Math.min(1,(e.clientX-r2.left)/r2.width));
+        drawChart(cv,arr,Math.round(x*(arr.length-1)),null);
+      });
+    });
+  }
+  window.__renderBonds2=renderBonds2;
+
+  function bindTabs2(){
+    const tg=document.getElementById('tabGoods');
+    const tb=document.getElementById('tabBond');
+    const pane=document.getElementById('bondPane');
+    const body=document.getElementById('shopBody');
+    if(!tg||!tb||!pane||!body)return;
+    tb.onclick=()=>{
+      tb.classList.add('on');tg.classList.remove('on');
+      body.style.display='none';pane.style.display='block';
+      renderBonds2();
+    };
+    tg.onclick=()=>{
+      tg.classList.add('on');tb.classList.remove('on');
+      pane.style.display='none';body.style.display='';
+      if(typeof window.__renderGoods==='function')window.__renderGoods();
+    };
+  }
+
+  /* ---------- 3. 护甲重做 ---------- */
+  const ARM2={
+    bronze:{name:'青铜护甲',price:30,shield:25,desc:'吸收 25 金固定伤害'},
+    silver:{name:'白银护甲',price:90,shield:70,desc:'吸收 70 金固定伤害'},
+    gold:{name:'黄金护甲',price:220,shield:160,desc:'吸收 160 金固定伤害'},
+    diamond:{name:'钻石护甲',price:700,shield:200,bombProof:true,
+      desc:'免疫炸弹 + 吸收 200 金伤害 · 昂贵'},
+    omni:{name:'全能护甲',price:1200,shield:0,omni:true,
+      desc:'挡下一次「按金库百分比」的危险'}
+  };
+  const AURA={'青铜护甲':'#cd7f32','白银护甲':'#d9e2ec','黄金护甲':'#ffd257',
+   '钻石护甲':'#7fe3ff','全能护甲':'#b57aff'};
+
+  function buyArmor(k){
+    const a=ARM2[k];if(!a)return;
+    if(loadArmor()){toast('已经穿着一件护甲，用完再买');return;}
+    if(S.coins<a.price){toast('金币不够 · 需要 '+a.price+' 金');return;}
+    S.coins-=a.price;
+    saveArmor({name:a.name,shield:a.shield,bombProof:!!a.bombProof,omni:!!a.omni});
+    paintAura();
+    try{SFX.coin();}catch(e){}
+    updateHud();save();
+    toast('已装备 <b>'+a.name+'</b>',1500);
+  }
+
+  document.addEventListener('click',function(e){
+    let t=e.target,key=null,null2=false;
+    while(t&&t!==document.body){
+      if(t.getAttribute&&t.getAttribute('data-buy3')){key=t.getAttribute('data-buy3');break;}
+      if(t.id==='omniBuy'){key='omni';break;}
+      t=t.parentElement;
+    }
+    if(!key||!ARM2[key])return;
+    e.preventDefault();e.stopPropagation();
+    if(e.stopImmediatePropagation)e.stopImmediatePropagation();
+    buyArmor(key);
+  },true);
+
+  /* 把商店里的旧价格/描述改成新数值 */
+  function syncArmorRows(){
+    const body=document.getElementById('shopBody');
+    if(!body)return;
+    body.querySelectorAll('button[data-buy3]').forEach(btn=>{
+      const k=btn.getAttribute('data-buy3');
+      const a=ARM2[k];if(!a)return;
+      const row=btn.closest('.catrow');
+      if(!row)return;
+      const priceEl=[...row.querySelectorAll('div')].find(d=>/金$/.test((d.textContent||'').trim())&&d.children.length===0);
+      if(priceEl)priceEl.textContent=a.price+' 金';
+      const descEl=[...row.querySelectorAll('div')].find(d=>d.children.length===0&&d.textContent===row.getAttribute('data-olddesc'));
+      const d2=row.querySelector('div[style*="font-size:10.5px"]');
+      if(d2)d2.textContent=a.desc;
+    });
+    const omni=document.getElementById('omniRow');
+    if(omni){
+      const pe=[...omni.querySelectorAll('div')].find(d=>/金$/.test((d.textContent||'').trim())&&d.children.length===0);
+      if(pe)pe.textContent=ARM2.omni.price+' 金';
+    }
+  }
+  setInterval(syncArmorRows,1200);
+
+  /* ---------- 4. 头像光环 ---------- */
+  const auraCss=document.createElement('style');
+  auraCss.textContent='@keyframes auraPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.35)}}';
+  document.head.appendChild(auraCss);
+
+  function paintAura(){
+    try{
+      const el=document.getElementById('avImg');
+      if(!el)return;
+      const a=loadArmor();
+      if(!a){el.style.boxShadow='';el.style.animation='';return;}
+      const c=AURA[a.name]||'#e6c47f';
+      el.style.borderRadius='50%';
+      el.style.boxShadow='0 0 0 2px '+c+', 0 0 16px '+c+'aa, 0 0 30px '+c+'44';
+      el.style.animation='auraPulse 2.2s ease-in-out infinite';
+    }catch(e){}
+  }
+  setInterval(paintAura,1500);
+
+  bindTabs2();paintAura();syncArmorRows();
+  setInterval(bindTabs2,1500);
+  setInterval(()=>{
+    const p=document.getElementById('shopScreen');
+    const pane=document.getElementById('bondPane');
+    if(p&&p.classList.contains('on')&&pane&&pane.style.display==='block')renderBonds2();
+  },30000);
+
+})();  
 </script>
 </body>
 </html>

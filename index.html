@@ -8268,6 +8268,88 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   };
 
 })();  
+/* ===== v125：修金属发黑 + 统一材质质感 ===== */
+(function(){
+
+  /* 1. 展台补一盏柔和补光，让金属有反射 */
+  try{
+    if(typeof sceneR!=='undefined'&&!sceneR.__fill){
+      sceneR.__fill=1;
+      const f=new THREE.DirectionalLight(0xcfe0ff,1.15);
+      f.position.set(1.6,1.4,2.2);
+      sceneR.add(f);
+      const f2=new THREE.DirectionalLight(0xffd9a0,.8);
+      f2.position.set(-1.8,.8,1.6);
+      sceneR.add(f2);
+    }
+  }catch(e){}
+
+  /* 2. 统一处理所有物品材质：不发黑、金属感保留、亮色提一点自发光 */
+  const _mk=makeItemMesh;
+  makeItemMesh=function(tier){
+    const g=_mk.apply(this,arguments);
+    try{
+      const item=window.__curItem;
+      g.traverse(o=>{
+        if(!o.isMesh||!o.material)return;
+        const m=o.material;
+        if(m.metalness===undefined)return;
+
+        /* 金属度不要顶满，否则没反射就是黑的 */
+        if(m.metalness>0.8)m.metalness=0.8;
+        /* 太光滑也容易黑，给个下限 */
+        if(m.roughness<0.22)m.roughness=0.22;
+        m.envMapIntensity=1.45;
+
+        /* 亮色金属补一点自发光，彻底避免“漆黑一片” */
+        try{
+          const c=m.color;
+          if(c){
+            const lum=(c.r+c.g+c.b)/3;
+            if(lum>0.55&&m.metalness>0.4){
+              if(!m.emissive){m.emissive=new THREE.Color(0x000000);}
+              m.emissive.setRGB(c.r*.18,c.g*.18,c.b*.18);
+              m.emissiveIntensity=.55;
+            }
+          }
+        }catch(e){}
+        m.needsUpdate=true;
+      });
+    }catch(e){}
+    return g;
+  };
+
+  /* 3. 银戒指 / 铁戒指单独调亮（这两件最容易黑） */
+  try{
+    const _mk2=makeItemMesh;
+    makeItemMesh=function(tier){
+      const g=_mk2.apply(this,arguments);
+      try{
+        const it=window.__curItem;
+        if(it&&(it.id==='sring'||it.id==='ring2'||it.id==='blued')){
+          g.traverse(o=>{
+            if(!o.isMesh||!o.material)return;
+            const m=o.material;
+            if(m.metalness!==undefined){
+              m.metalness=.55;
+              m.roughness=.28;
+              m.envMapIntensity=1.6;
+              if(!m.emissive)m.emissive=new THREE.Color(0x000000);
+              m.emissive.setHex(it.id==='blued'?0x1a2a66:0x333333);
+              m.emissiveIntensity=.35;
+              m.needsUpdate=true;
+            }
+          });
+        }
+      }catch(e){}
+      return g;
+    };
+  }catch(e){}
+
+  /* 4. 顺手把展台整体曝光提一点 */
+  try{ if(renderer)renderer.toneMappingExposure=1.15; }catch(e){}
+
+})();  
 </script>
 </body>
 </html>

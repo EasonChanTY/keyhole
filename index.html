@@ -8587,6 +8587,195 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   };
 
 })();
+/* ===== v132：等级180 / 灯油不自动满 / 商店随时代浮动 ===== */
+(function(){
+
+  /* ---------- 1. 等级：180 封顶 + 越升越慢 ---------- */
+  try{ CFG.oilMax=30; }catch(e){}
+
+  try{ xpNeed=function(lv){ return Math.round(18*Math.pow(lv,1.4)); }; }catch(e){}
+
+  try{
+    addXp=function(n){
+      if(!n||n<=0||S.lv>=180)return;
+      S.xp+=n;
+      let up=false;
+      while(S.lv<180&&S.xp>=xpNeed(S.lv)){
+        S.xp-=xpNeed(S.lv);S.lv++;up=true;
+      }
+      if(up){
+        try{SFX.cheer();haptic([20,30,60]);
+          toast('升 级 了 ！<b>Lv.'+S.lv+'</b>',1800);}catch(e){}
+      }
+      try{save();updateHud();}catch(e){}
+    };
+  }catch(e){}
+  try{ gainXp=function(n){ addXp(n); }; }catch(e){}
+
+  /* 箱子涨价：每 5 级 +2%，最高 +60% */
+  try{ lvBonus=function(){ return Math.min(.6,Math.floor((S.lv||1)/5)*.02); }; }catch(e){}
+  /* 免费箱冷却：等级越高越短，最低 4 小时 */
+  try{ freeHours=function(){ return Math.max(4,24-(S.lv||1)*.12); }; }catch(e){}
+
+  /* 显示 /30 → /180 */
+  function fixLvText(){
+    try{
+      const all=document.querySelectorAll('div,span,b,small');
+      for(let i=0;i<all.length;i++){
+        const el=all[i];
+        if(el.children.length)continue;
+        const t=el.textContent||'';
+        if(/\/\s*30/.test(t)&&(t.indexOf('等级')>=0||t.indexOf('Lv')>=0||t.indexOf('级')>=0)){
+          el.textContent=t.replace(/\/\s*30/g,'/ 180');
+        }
+      }
+    }catch(e){}
+  }
+  setInterval(fixLvText,800);
+
+  /* ---------- 2. 灯油：开箱后不再被补满 ---------- */
+  try{
+    const _nr=newRound;
+    newRound=function(){
+      const keepOil=(typeof S.oil==='number')?S.oil:null;
+      const r=_nr.apply(this,arguments);
+      try{
+        if(keepOil!==null)S.oil=Math.max(0,Math.min(CFG.oilMax,keepOil));
+        updateHud();
+      }catch(e){}
+      return r;
+    };
+  }catch(e){}
+
+  /* 也拦住“开箱完成”时的补满（如果那里有加油） */
+  try{
+    const _ao=afterOpen;
+    afterOpen=function(b){
+      const keepOil=(typeof S.oil==='number')?S.oil:null;
+      const r=_ao.apply(this,arguments);
+      try{ if(keepOil!==null)S.oil=Math.min(CFG.oilMax,keepOil); }catch(e){}
+      return r;
+    };
+  }catch(e){}
+
+  /* ---------- 3. 商店：价格随时代浮动 ---------- */
+  const BASE={bronze:30,silver:90,gold:220,diamond:1200,
+    bw:45,bs:260,bg:600,bd:3200};
+  const TYPES={bronze:'青铜护甲',silver:'白银护甲',gold:'黄金护甲',
+    diamond:'钻石护甲',bw:'盲盒木箱',bs:'盲盒银箱',bg:'盲盒金箱',bd:'盲盒钻石箱'};
+  const eraSlot=()=>Math.floor(Date.now()/1800000);
+  const mul=id=>.85+hash('shop'+id+eraSlot())*.45;
+  function priceOf2(id){
+    if(id==='omni')return Math.max(200,Math.round((S.coins||0)*.10));
+    return Math.round((BASE[id]||0)*mul(id));
+  }
+
+  function syncShop(){
+    const body=document.getElementById('shopBody');
+    if(!body)return;
+
+    /* 顶部写明时代影响 */
+    const eraEl=document.getElementById('shopEra');
+    if(eraEl){
+      const ms=1800000-(Date.now()%1800000);
+      const t='时代 · '+curEra().n+' · 价格系数 ×0.85～×1.30 · '+
+        Math.ceil(ms/60000)+' 分钟后重算';
+      if(eraEl.textContent!==t)eraEl.textContent=t;
+    }
+
+    const btns=body.querySelectorAll('button');
+    for(let i=0;i<btns.length;i++){
+      const btn=btns[i];
+      const id=btn.getAttribute('data-buy3')||btn.getAttribute('data-buy');
+      if(!id||BASE[id]===undefined)continue;
+      const row=btn.closest?btn.closest('.catrow'):null;
+      if(!row)continue;
+      const p=priceOf2(id),m=mul(id);
+      const els=row.getElementsByTagName('*');
+      for(let j=0;j<els.length;j++){
+        const el=els[j];
+        if(el.children.length)continue;
+        const tx=(el.textContent||'').trim();
+        if(/^\d+\s*金$/.test(tx)){
+          el.textContent=p+' 金 ×'+m.toFixed(2);
+        }
+      }
+    }
+
+    /* 全能护甲那一行 */
+    const omni=document.getElementById('omniRow');
+    if(omni){
+      const els=omni.getElementsByTagName('*');
+      for(let j=0;j<els.length;j++){
+        const el=els[j];
+        if(el.children.length)continue;
+        if(/^≈?\d+\s*金$/.test((el.textContent||'').trim())){
+          el.textContent='≈'+priceOf2('omni')+' 金';
+        }
+      }
+    }
+  }
+  window.__syncShop=syncShop;
+  setInterval(syncShop,1000);
+  setInterval(()=>{
+    const p=document.getElementById('shopScreen');
+    if(p&&p.classList.contains('on'))syncShop();
+  },1200);
+
+  /* ---------- 4. 购买按浮动价结算 ---------- */
+  window.addEventListener('click',function(e){
+    let t=e.target,id=null;
+    while(t&&t!==document.body){
+      const a=t.getAttribute&&(t.getAttribute('data-buy3')||t.getAttribute('data-buy'));
+      if(a){id=a;break;}
+      if(t.id==='omniBuy'){id='omni';break;}
+      t=t.parentElement;
+    }
+    if(!id||BASE[id]===undefined&&id!=='omni')return;
+    e.preventDefault();e.stopPropagation();
+    if(e.stopImmediatePropagation)e.stopImmediatePropagation();
+
+    if(id==='omni'){
+      if(S.coins<priceOf2('omni')){toast('金币不够');return;}
+      if(typeof loadArmor==='function'&&loadArmor()){toast('已经穿着护甲');return;}
+      S.coins-=priceOf2('omni');
+      try{saveArmor({name:'全能护甲',shield:0,omni:true});}catch(err){}
+      updateHud();save();toast('已装备 <b>全能护甲</b>',1400);
+      syncShop();return;
+    }
+
+    const p=priceOf2(id);
+    if(S.coins<p){toast('金币不够 · 需要 '+p+' 金');return;}
+    S.coins-=p;save();updateHud();
+
+    if(TYPES[id]&&id!=='bw'&&id!=='bs'&&id!=='bg'&&id!=='bd'){
+      /* 护甲 */
+      let cur=null;
+      try{cur=JSON.parse(localStorage.getItem('keyhole_armor_v1')||'null');}catch(err){}
+      if(cur){S.coins+=p;updateHud();toast('已经穿着一件护甲');return;}
+      const sh={bronze:25,silver:70,gold:160,diamond:200}[id];
+      try{
+        localStorage.setItem('keyhole_armor_v1',JSON.stringify({
+          name:TYPES[id],shield:sh,bombProof:id==='diamond'
+        }));
+      }catch(err){}
+    }else{
+      /* 盲盒 */
+      const tierIndex={bw:0,bs:2,bg:3,bd:5}[id];
+      const tier=TIERS[tierIndex];
+      const loot=rollLoot(tier);
+      const panel=document.getElementById('shopScreen');
+      if(panel)panel.classList.remove('on');
+      setTimeout(()=>{try{fadeTo(()=>startStage({tier,loot}));}catch(err){}},120);
+    }
+    syncShop();
+  },true);
+
+  /* ---------- 启动 ---------- */
+  setTimeout(syncShop,500);
+  setTimeout(fixLvText,800);
+
+})();  
 </script>
 </body>
 </html>

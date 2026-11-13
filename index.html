@@ -9200,6 +9200,146 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   try{ updateHud(); }catch(e){}
 
 })();  
+/* ===== v148：战乱变稀有 / 特供更难出 / 战乱涨价 / 物资箱 ===== */
+(function(){
+
+  /* ---------- 1. 时代权重：战乱出现率约 3~4% ---------- */
+  try{
+    eraAt=function(ep){
+      const slot=Math.floor(ep*3);
+      const h=hash('era'+slot);
+      const W=ERAS.map(e=> e.n==='战乱' ? 0.35 : 1);
+      let tot=0; W.forEach(w=>tot+=w);
+      let r=h*tot, a=0;
+      for(let i=0;i<ERAS.length;i++){
+        a+=W[i];
+        if(r<a) return ERAS[i];
+      }
+      return ERAS[0];
+    };
+  }catch(e){}
+
+  /* ---------- 2. 特供物资：掉率降低 + 越贵越难 ---------- */
+  const WAR_ITEMS=ITEMS.filter(it=>it.war);
+
+  function pickWar(){
+    let tot=0;
+    const w=WAR_ITEMS.map(function(it){
+      const x=1/Math.pow(Math.max(1,it.b),0.85);   /* 价格越高权重越低 */
+      tot+=x; return x;
+    });
+    let r=Math.random()*tot,a=0;
+    for(let i=0;i<WAR_ITEMS.length;i++){
+      a+=w[i];
+      if(r<a) return WAR_ITEMS[i];
+    }
+    return WAR_ITEMS[0];
+  }
+  window.__pickWar=pickWar;
+
+  try{
+    const _rl=rollLoot;
+    rollLoot=function(tier){
+      const out=_rl.apply(this,arguments);
+      try{
+        if(curEra().n==='战乱' && Math.random()<0.18 && out.length){
+          const it=pickWar();
+          const slot=Math.floor(Math.random()*out.length);
+          out[slot]={kind:'item',item:it,cond:1+Math.floor(Math.random()*3)};
+        }
+      }catch(e){}
+      return out;
+    };
+  }catch(e){}
+
+  /* ---------- 3. 战乱时代箱子涨价 3~6 倍 ---------- */
+  function warMul(b){
+    const name=b&&b.tier?b.tier.name:'';
+    return 3 + hash(name+'|warprice|'+Math.floor(Date.now()/1200000))*3;
+  }
+
+  try{
+    const _cb=confirmBox;
+    confirmBox=function(){
+      let b=null,p0=null;
+      try{ b=S.boxes[S.selBox]; }catch(e){}
+      try{
+        if(b && curEra().n==='战乱'){
+          p0=b.tier.price;
+          b.tier.price=Math.round(p0*warMul(b));
+        }
+      }catch(e){}
+      const r=_cb.apply(this,arguments);
+      try{ if(p0!==null) b.tier.price=p0; }catch(e){}
+      return r;
+    };
+  }catch(e){}
+
+  /* 按钮上显示涨价后的价格 */
+  setInterval(function(){
+    try{
+      if(S.phase!=='box'||S.selBox<0)return;
+      const b=S.boxes[S.selBox];
+      if(!b||curEra().n!=='战乱')return;
+      const p=Math.round(b.tier.price*warMul(b));
+      const btn=document.getElementById('btnA');
+      if(btn&&btn.textContent!=='买下这只 · '+p+' 金'){
+        btn.textContent='买下这只 · '+p+' 金';
+      }
+    }catch(e){}
+  },500);
+
+  /* ---------- 4. 战乱物资箱（商店） ---------- */
+  function injectWarBox(){
+    const body=document.getElementById('shopBody');
+    if(!body)return;
+    const isWar=(curEra().n==='战乱');
+    const old=document.getElementById('warBoxRow');
+
+    if(!isWar){ if(old)old.remove(); return; }
+    if(old) return;
+    if(!body.children.length) return;
+
+    const d=document.createElement('div');
+    d.id='warBoxRow';
+    d.className='catrow';
+    d.style.cssText='padding:12px;align-items:flex-start;border-color:#ff8a3a66';
+    d.innerHTML=
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-size:14px;color:#ff8a3a">战乱物资箱</div>'+
+        '<div style="font-size:10.5px;color:#7d7266;margin-top:3px;line-height:1.6">'+
+          '只有两种结果：特供物资，或者危险物</div>'+
+      '</div>'+
+      '<div style="text-align:right;flex:0 0 auto;margin-left:8px">'+
+        '<div style="color:#e6c47f;font-size:13px">1800 金</div>'+
+        '<button id="warBoxBuy" style="margin-top:6px;padding:7px 12px;font-size:12px">购买</button>'+
+      '</div>';
+    body.appendChild(d);
+
+    document.getElementById('warBoxBuy').onclick=function(){
+      if(S.coins<1800){toast('金币不够 · 需要 1800');return;}
+      S.coins-=1800;
+      try{save();updateHud();SFX.open();}catch(e){}
+      const panel=document.getElementById('shopScreen');
+      if(panel)panel.classList.remove('on');
+
+      let loot;
+      if(Math.random()<0.5){
+        const it=pickWar();
+        loot=[{kind:'item',item:it,cond:1+Math.floor(Math.random()*3)}];
+      }else{
+        const evs=['rads','raid','bomb'];
+        loot=[{kind:'evt',ev:evs[Math.floor(Math.random()*evs.length)]}];
+      }
+      setTimeout(function(){
+        try{ fadeTo(()=>startStage({tier:TIERS[0],loot:loot})); }catch(e){}
+      },120);
+    };
+  }
+
+  setInterval(injectWarBox,1200);
+
+})();  
 </script>
 </body>
 </html>

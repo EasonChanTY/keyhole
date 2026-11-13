@@ -8960,6 +8960,70 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
     };
   }
 
+})(); 
+/* ===== v136：回退开箱流程（开完自动换一批，保证不卡） ===== */
+(function(){
+
+  /* 清掉上一版留下的「已开」标记 */
+  try{
+    (S.boxes||[]).forEach(b=>{ b.used=false; if(b.g)b.g.visible=true; });
+  }catch(e){}
+
+  function finishAndRefresh(){
+    try{
+      stSumEl.classList.remove('on');
+      stageEl.classList.remove('on');
+      uiEl.style.display='flex';
+      S.phase='box';
+      S.selBox=-1;
+      document.getElementById('msg').textContent='点开一只箱子';
+    }catch(e){}
+    try{ newRound(); }catch(e){}
+  }
+
+  const take=document.getElementById('btnTake');
+  if(take){
+    take.onclick=function(){
+      finishAndRefresh();
+    };
+  }
+
+  const nest=document.getElementById('btnNest');
+  if(nest){
+    nest.onclick=function(){
+      try{ stSumEl.classList.remove('on'); }catch(e){}
+      try{
+        const t=TIERS[3];
+        startStage({tier:t,loot:rollLoot(t)});
+      }catch(e){}
+    };
+  }
+
+  /* 保证箱子重新可见 */
+  const _nr=newRound;
+  newRound=function(){
+    const r=_nr.apply(this,arguments);
+    try{
+      (S.boxes||[]).forEach(b=>{
+        b.used=false;
+        if(b.g)b.g.visible=true;
+      });
+      stageEl.classList.remove('on');
+      uiEl.style.display='flex';
+    }catch(e){}
+    return r;
+  };
+
+  /* 万一卡在舞台阶段，给个兜底：点空白也能退回 */
+  setInterval(function(){
+    try{
+      if(S.phase==='box'&&stageEl.classList.contains('on')){
+        stageEl.classList.remove('on');
+        uiEl.style.display='flex';
+      }
+    }catch(e){}
+  },800);
+
 })();  
 </script>
 </body>

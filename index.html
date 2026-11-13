@@ -5437,6 +5437,147 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   setTimeout(relayoutBoxes,500);
   setInterval(relayoutBoxes,2500);
 
+})(); 
+/* ===== v109：彻底解决按钮互抢 + 箱子抽搐 ===== */
+(function(){
+
+  /* 1) 清掉所有旧的定时器（它们才是互相打架的根源） */
+  try{ for(let i=1;i<20000;i++)clearInterval(i); }catch(e){}
+
+  const rc=()=>{try{return (typeof rerollCost==='function')?rerollCost():10;}catch(e){return 10;}};
+
+  /* 2) 顶栏灯油 + 时代倒计时（唯一来源） */
+  try{
+    updateHud=function(){
+      try{
+        hCoins.textContent=S.coins;
+        bagCount.textContent=S.bag.length;
+        hOil.innerHTML='灯油 <b style="color:#e6c47f">'+S.oil+
+          '</b><span style="color:#6f6558">/'+CFG.oilMax+'</span>';
+        btnEra.textContent='时代 · '+curEra().n+' ›';
+        const ms=1800000-(Date.now()%1800000);
+        hLeft.textContent='时代 '+Math.ceil(ms/60000)+' 分后变';
+        localStorage.setItem('keyhole_oil_v1',String(S.oil));
+      }catch(e){}
+    };
+  }catch(e){}
+
+  /* 3) 按钮：每 250ms 强制校准，并只改一次避免闪 */
+  function enforce(){
+    try{
+      const b=document.getElementById('btnB');
+      if(!b)return;
+      const p=S.phase;
+      let txt=null,show=true,dis=false;
+      if(p==='box'){ txt='换一批 · '+rc()+' 金'; dis=(S.selBox<0); }
+      else if(p==='lock'){ txt='去挑钥匙 →'; }
+      else if(p==='keys'){ txt='买下并试开 · '+CFG.price+' 金'; dis=(S.selKey<0||S.busy); }
+      else show=false;
+
+      if(!show){ if(b.style.display!=='none')b.style.display='none'; return; }
+      if(b.style.display==='none')b.style.display='';
+      if(txt&&b.textContent!==txt)b.textContent=txt;
+      if(b.disabled!==dis)b.disabled=dis;
+    }catch(e){}
+  }
+  setInterval(enforce,250);
+
+  /* 4) 灯油：加载时恢复 + 定时写盘 */
+  try{
+    CFG.oilMax=30;CFG.oilStart=30;
+    const v=localStorage.getItem('keyhole_oil_v1');
+    S.oil=(v===null)?CFG.oilMax:Math.max(0,Math.min(CFG.oilMax,+v));
+  }catch(e){}
+  setInterval(()=>{try{localStorage.setItem('keyhole_oil_v1',String(S.oil));}catch(e){}},2000);
+
+  /* 5) 时代切换补满灯油 */
+  const OS='keyhole_oil_era_v3';
+  const eraSlot=()=>Math.floor(Date.now()/1800000);
+  setInterval(()=>{
+    try{
+      const cur=eraSlot(),last=+(localStorage.getItem(OS)||0);
+      if(last!==cur){
+        localStorage.setItem(OS,String(cur));
+        if(last!==0){S.oil=CFG.oilMax;updateHud();save();
+          try{toast('新时代 · <b>灯油补满 '+CFG.oilMax+'</b>',1700);}catch(e){}}
+      }
+    }catch(e){}
+  },10000);
+
+  /* 6) 债券到期结算（重新挂上，因为定时器被清过） */
+  const BK='keyhole_bonds_v1';
+  const eraIdx=()=>Math.floor(Date.now()/1800000);
+  function settle(b){
+    const h=hash('settle'+b.name+b.e);let m;
+    if(b.prof==='steady'){ if(h<.55)m=.85+h*.15; else if(h<.90)m=1+h*.15; else m=1.15+h*.2; }
+    else if(b.prof==='high'){ if(h<.58)m=.35+h*.45; else if(h<.90)m=.95+h*.5; else m=2+h*2; }
+    else { if(h<.62)m=.10+h*.5; else if(h<.88)m=1+h*1.2; else m=3+h*5; }
+    return Math.round(b.price*m);
+  }
+  setInterval(()=>{
+    try{
+      const cur=eraIdx();
+      let list=[];
+      try{list=JSON.parse(localStorage.getItem(BK)||'[]');}catch(e){}
+      let keep=[],done=[];
+      list.forEach(b=>{
+        if(cur>=(b.buyEra||b.e)+10){
+          const out=settle(b);S.coins+=out;done.push(b.name+' 到期 '+out+' 金');
+        }else keep.push(b);
+      });
+      if(done.length){
+        localStorage.setItem(BK,JSON.stringify(keep));
+        save();updateHud();
+        try{toast('债券结算：<br>'+done.join('<br>'),3200);}catch(e){}
+      }
+    }catch(e){}
+  },20000);
+
+  /* 7) 箱子：只在每局开始时排一次，之后不再动它（不再抽搐） */
+  function arrangeBoxes(){
+    try{
+      if(typeof boxRoot==='undefined'||!boxRoot)return;
+      const gs=boxRoot.children,n=gs.length;
+      if(n<2)return;
+      const perCol=Math.ceil(n/2);
+      const top=1.05,span=1.95;
+      const step=perCol>1?span/(perCol-1):0;
+      for(let i=0;i<n;i++){
+        const col=i<perCol?0:1,row=i%perCol;
+        gs[i].position.x=col?0.62:-0.62;
+        gs[i].position.y=top-row*step;
+        gs[i].rotation.y=col?-0.20:0.20;
+      }
+    }catch(e){}
+  }
+  try{ CFG.boxCount=6; }catch(e){}
+  try{
+    const _nr=newRound;
+    newRound=function(){
+      const r=_nr.apply(this,arguments);
+      setTimeout(arrangeBoxes,80);
+      return r;
+    };
+  }catch(e){}
+
+  /* 8) 免费箱倒计时恢复 */
+  setInterval(()=>{try{paintFree&&paintFree();}catch(e){}},15000);
+
+  /* 9) 其他每帧刷新（阶级名牌、商店按钮） */
+  setInterval(()=>{try{updateHud();}catch(e){}},5000);
+  setInterval(()=>{
+    try{
+      const r=document.getElementById('hudRow3');
+      if(r)r.style.paddingRight='16px';
+      const chip=document.getElementById('rankChip');
+      if(chip)chip.style.pointerEvents='auto';
+    }catch(e){}
+  },1200);
+
+  /* 立刻执行一次 */
+  enforce();updateHud();
+  setTimeout(arrangeBoxes,300);
+
 })();  
 </script>
 </body>

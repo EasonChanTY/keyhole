@@ -4660,6 +4660,199 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   st2.textContent='#btnA,#btnB{transition:none!important}';
   document.head.appendChild(st2);
 })();  
+/* ===== v105：灯油 30 / 时代 30 分钟 / 危险物更多 / 品质更丰富 / 商店入口 ===== */
+(function(){
+
+  /* ---------- 1. 灯油 5 → 30 ---------- */
+  try{ CFG.oilMax=30; CFG.oilStart=30; }catch(e){}
+  try{ if(S.oil>CFG.oilMax)S.oil=CFG.oilMax; }catch(e){}
+  const OILS='keyhole_oil_era_v2';
+  const eraSlot=()=>Math.floor(Date.now()/1800000);   /* 30 分钟一格 */
+
+  /* ---------- 2. 时代 30 分钟一换 ---------- */
+  try{
+    eraAt=function(ep){
+      const i=Math.floor(hash('era'+Math.floor(ep/0.5))*ERAS.length);
+      return ERAS[Math.min(i,ERAS.length-1)];
+    };
+  }catch(e){}
+
+  /* ---------- 3. HUD：灯油数字 + 30 分钟倒计时 ---------- */
+  try{
+    updateHud=function(){
+      try{
+        hCoins.textContent=S.coins;
+        bagCount.textContent=S.bag.length;
+        hOil.innerHTML='灯油 <b style="color:#e6c47f">'+S.oil+
+          '</b><span style="color:#6f6558">/'+CFG.oilMax+'</span>';
+        btnEra.textContent='时代 · '+curEra().n+' ›';
+        const ms=1800000-(Date.now()%1800000);
+        hLeft.textContent='时代 '+Math.ceil(ms/60000)+' 分后变';
+      }catch(e){}
+    };
+  }catch(e){}
+
+  /* ---------- 4. 时代切换补满灯油 ---------- */
+  (function oilTick(){
+    try{
+      const cur=eraSlot(),last=+(localStorage.getItem(OILS)||0);
+      if(last!==cur){
+        localStorage.setItem(OILS,String(cur));
+        if(last!==0){
+          S.oil=CFG.oilMax;
+          try{toast('新时代 · <b>灯油已补满 '+CFG.oilMax+'</b>',1800);}catch(e){}
+        }
+        updateHud();save();
+      }
+    }catch(e){}
+    setTimeout(oilTick,15000);
+  })();
+
+  /* ---------- 5. 危险物：更多种类 + 概率略升 ---------- */
+  try{
+    MODES.easy.haz+=.010; MODES.hard.haz+=.015;
+    MODES.nightmare.haz+=.020;
+    if(MODES.hell)MODES.hell.haz+=.025;
+    TIERS.forEach(t=>{ t.hz=(t.hz||0)+.008; });
+  }catch(e){}
+
+  const NEW_EVT={spike:5, acid:30, rat:8};
+  try{
+    Object.keys(NEW_EVT).forEach(k=>{
+      if(!EVT_NAME[k])EVT_NAME[k]=({spike:'图钉',acid:'酸液瓶',rat:'铁齿鼠'})[k];
+    });
+  }catch(e){}
+
+  /* 新危险物借用已有模型，避免白屏 */
+  try{
+    const _mem=makeEventMesh;
+    makeEventMesh=function(ev){
+      if(ev==='spike'||ev==='acid')ev='sulfur';
+      else if(ev==='rat')ev='scorpion';
+      return _mem.call(this,ev);
+    };
+  }catch(e){}
+
+  /* 新危险物结算（护甲仍可抵扣） */
+  try{
+    const _res=resolveEvent;
+    resolveEvent=function(insp){
+      try{
+        const ev=insp&&insp.entry&&insp.entry.ev;
+        if(ev&&NEW_EVT[ev]!==undefined&&!insp.resolved){
+          const dmg=NEW_EVT[ev];
+          let a=null;
+          try{a=JSON.parse(localStorage.getItem('keyhole_armor_v1')||'null');}catch(e){}
+          if(a&&a.shield>0){
+            const ab=Math.min(a.shield,dmg);a.shield-=ab;
+            try{a.shield>0?localStorage.setItem('keyhole_armor_v1',JSON.stringify(a)):
+              localStorage.removeItem('keyhole_armor_v1');}catch(e){}
+            const left=dmg-ab;
+            if(left>0)S.coins=Math.max(0,S.coins-left);
+            insp.resolved=true;
+            try{addMk(a.name+' 吸收 '+ab+' 点'+(left?('，仍损失 '+left):''),'#8ef2a8');}catch(e){}
+            toast('护甲挡下 <b>'+ab+'</b> 点伤害','1400');
+            updateHud();save();return;
+          }
+          S.coins=Math.max(0,S.coins-dmg);
+          insp.resolved=true;
+          try{
+            const nm=EVT_NAME[ev]||ev;
+            addMk(nm+' −'+dmg);
+            toast('<b>'+nm+'</b> −'+dmg+' 金',1900);
+          }catch(e){}
+          updateHud();save();return;
+        }
+      }catch(e){}
+      return _res.apply(this,arguments);
+    };
+  }catch(e){}
+
+  /* 危险物出现时按新种类抽签 */
+  try{
+    const _rl=rollLoot;
+    rollLoot=function(tier){
+      const out=_rl.apply(this,arguments);
+      try{
+        for(let i=0;i<out.length;i++){
+          if(out[i]&&out[i].kind==='evt'&&(out[i].ev==='scorpion'||out[i].ev==='sulfur')){
+            const r=Math.random();
+            if(r<.22)out[i].ev='spike';
+            else if(r<.44)out[i].ev='acid';
+            else if(r<.62)out[i].ev='rat';
+          }
+        }
+      }catch(e){}
+      return out;
+    };
+  }catch(e){}
+
+  /* ---------- 6. 黑曜石藏品概率 +8% ---------- */
+  try{
+    const _rl2=rollLoot;
+    rollLoot=function(tier){
+      const out=_rl2.apply(this,arguments);
+      try{
+        if(tier&&tier.special==='obsidian'&&Math.random()<.08){
+          let has=false;
+          for(let i=0;i<out.length;i++)
+            if(out[i]&&out[i].kind==='item'&&out[i].item&&out[i].item.uniq){has=true;break;}
+          if(!has&&out.length){
+            out[out.length-1]={kind:'item',item:OBS_ITEMS[rnd(OBS_ITEMS.length)],cond:1};
+          }
+        }
+      }catch(e){}
+      return out;
+    };
+  }catch(e){}
+
+  /* ---------- 7. 各品质新增物品 ---------- */
+  try{
+    const ADD=[
+     {id:'tin',n:'铁皮盒',t:1,c:'junk',b:3,d:'盖子变形了，还能扣上。'},
+     {id:'card',n:'硬纸板',t:1,c:'junk',b:1,d:'上面印着半截广告，看不出是什么产品。'},
+     {id:'wk',n:'断齿钥匙',t:1,c:'junk',b:2,d:'开不了任何锁，但握着挺沉。'},
+     {id:'pen',n:'旧钢笔',t:2,c:'curio',b:12,d:'笔尖分叉，墨水早干了。'},
+     {id:'bottle',n:'玻璃瓶',t:2,c:'curio',b:9,d:'瓶底有一圈气泡，像凝固的雨。'},
+     {id:'buckle',n:'铜扣带',t:2,c:'curio',b:14,d:'皮子烂光了，只剩下扣子。'},
+     {id:'spoon',n:'银汤匙',t:3,c:'antique',b:33,d:'柄上刻着一朵玫瑰，磨得很浅。'},
+     {id:'photo',n:'老照片',t:3,c:'antique',b:26,d:'一对夫妻，脸都模糊了，笑得很好。'},
+     {id:'mirror',n:'铜镜',t:3,c:'antique',b:38,d:'照人有点黄，但很清楚。'},
+     {id:'jade2',n:'翡翠坠',t:4,c:'gem',b:108,d:'一小块，透光时像有云在里面走。'},
+     {id:'fpeng',n:'金笔',t:4,c:'gem',b:96,d:'笔身刻着某家银行的名字。'},
+     {id:'agate',n:'玛瑙同心',t:4,c:'gem',b:88,d:'一层一层的红，像年轮。'},
+     {id:'blued',n:'蓝钻戒',t:5,c:'relic',b:520,d:'蓝得几乎发黑，光一照就亮起来。'},
+     {id:'pearlset',n:'月华珠串',t:5,c:'relic',b:468,d:'三十六颗，大小一致，据说能安神。'}
+    ];
+    ADD.forEach(it=>{
+      if(ITEM_BY_ID[it.id])return;
+      ITEMS.push(it);ITEM_BY_ID[it.id]=it;
+      (POOL[it.t]=POOL[it.t]||[]).push(it);
+    });
+  }catch(e){}
+
+  /* ---------- 8. 顶栏加「商店」按钮 ---------- */
+  function addTopShop(){
+    try{
+      const h1=document.querySelector('#hud .h1');
+      const bag=document.getElementById('btnBag');
+      if(!h1||!bag||document.getElementById('btnShopTop'))return;
+      const b=document.createElement('button');
+      b.id='btnShopTop';b.textContent='商店';
+      b.onclick=function(){
+        const entry=document.getElementById('btnShop');
+        const panel=document.getElementById('shopScreen');
+        if(!panel){toast('商店模块还没装上（补丁没粘全）',2200);return;}
+        if(entry){entry.click();}
+        else panel.classList.add('on');
+      };
+      h1.insertBefore(b,bag);
+    }catch(e){}
+  }
+  addTopShop();
+  setInterval(addTopShop,1500);
+
+})();  
 </script>
 </body>
 </html>

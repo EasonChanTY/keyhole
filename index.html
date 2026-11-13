@@ -4853,6 +4853,257 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   setInterval(addTopShop,1500);
 
 })();  
+/* ===== v106：按钮修复 / 阶级系统 / 商店解锁 / 债券 ===== */
+(function(){
+
+  /* ---------- 1. 「换一批」只在选箱界面 ---------- */
+  function rc(){ try{ return (typeof rerollCost==='function')?rerollCost():10; }catch(e){ return 10; } }
+  function enforceBtns(){
+    try{
+      const b=document.getElementById('btnB');
+      if(!b)return;
+      const p=S.phase;
+      if(p==='box'){
+        b.style.display='';
+        const t='换一批 · '+rc()+' 金';
+        if(b.textContent!==t)b.textContent=t;
+      }else if(p==='lock'){
+        b.style.display='';
+        if(b.textContent!=='去挑钥匙 →')b.textContent='去挑钥匙 →';
+      }else if(p==='keys'){
+        b.style.display='';
+        const t=(MODE.logic?'试开 · ':'买下并试开 · ')+CFG.price+' 金';
+        if(b.textContent!==t)b.textContent=t;
+      }else{
+        b.style.display='none';
+      }
+    }catch(e){}
+  }
+  setInterval(enforceBtns,400);
+
+  /* ---------- 2. 阶级 ---------- */
+  function netWorth(){
+    let v=S.coins||0;
+    (S.bag||[]).forEach(it=>{
+      const d=ITEM_BY_ID[it.id];
+      if(d){ try{ v+=priceOf(d,it.cond); }catch(e){} }
+    });
+    try{ v+=bondValue(); }catch(e){}
+    return v;
+  }
+  const RANKS=[
+    {n:'桥洞常客',   v:0,      d:'睡了三年桥洞，钥匙串是捡的'},
+    {n:'咸鱼翻身中', v:600,    d:'刚有点本钱，还没翻身'},
+    {n:'城中村租客', v:1500,   d:'房租勉强交得上'},
+    {n:'小有积蓄',   v:3500,   d:'开始有人叫你老板'},
+    {n:'巷口收藏家', v:8000,   d:'巷子口摆摊，识货的都来问你'},
+    {n:'街区名人',   v:18000,  d:'整条街都认识你这张脸'},
+    {n:'城里富商',   v:40000,  d:'开始有账本，也有了仇家'},
+    {n:'上流圈边缘', v:90000,  d:'请柬终于寄到你家'},
+    {n:'大收藏家',   v:200000, d:'博物馆馆长亲自来访'},
+    {n:'传奇寻宝人', v:500000, d:'你的名字写进了行价里'},
+    {n:'齿口之王',   v:1200000,d:'所有锁芯最后都听你的'}
+  ];
+  function rankOf(){
+    const v=netWorth();let i=0;
+    for(let k=0;k<RANKS.length;k++) if(v>=RANKS[k].v) i=k;
+    return i;
+  }
+  window.__rankOf=rankOf;
+
+  /* 面板 */
+  const rankSec=document.createElement('section');
+  rankSec.id='rankScreen';rankSec.className='panel';
+  rankSec.innerHTML='<div class="phead"><h2>阶 级</h2><div class="sp"></div><button id="rankClose">关闭</button></div>'+
+   '<div id="rankBody" style="flex:1;overflow-y:auto;padding-bottom:20px"></div>';
+  document.body.appendChild(rankSec);
+  document.getElementById('rankClose').onclick=()=>rankSec.classList.remove('on');
+  function renderRank(){
+    const v=netWorth(),cur=rankOf();
+    let html='<div style="font-size:12px;color:#a2957f;margin-bottom:12px">'+
+      '当前身价约 <b style="color:#e6c47f">'+v+'</b> 金（含背包估价 + 债券）</div>';
+    RANKS.forEach((r,i)=>{
+      const on=i===cur;
+      html+='<div class="catrow" style="padding:11px 12px;'+
+        (on?'border-color:#e6c47f66;background:#2a2114aa;':'')+'">'+
+        '<div style="flex:1"><div style="font-size:13.5px;color:'+(on?'#e6c47f':'#b7a88e')+'">'+
+        r.n+'</div><div style="font-size:10.5px;color:#6f6558;margin-top:2px">'+
+        r.d+'</div></div>'+
+        '<div style="text-align:right;font-size:11px;color:'+(i<=cur?'#8ef2a8':'#544b40')+'">'+
+        r.v+'</div></div>';
+    });
+    document.getElementById('rankBody').innerHTML=html;
+  }
+
+  /* ---------- 3. 债券 ---------- */
+  const BK='keyhole_bonds_v1';
+  const ERA_MS=1800000;
+  const eraIdx=()=>Math.floor(Date.now()/ERA_MS);
+  function loadBonds(){ try{return JSON.parse(localStorage.getItem(BK)||'[]');}catch(e){return [];} }
+  function saveBonds(a){ try{localStorage.setItem(BK,JSON.stringify(a));}catch(e){} }
+  function bondValue(){
+    let v=0;
+    loadBonds().forEach(b=>{ v+=b.price; });
+    return v;
+  }
+  const BNAMES=['铁路建设债','南洋航运券','矿山开发票','电报公司债','盐务专营券',
+    '运河工程债','瓷器外销券','银号承兑票','丝路货运债','老城改造券','军需采购票','茶马商道债'];
+  const BPROF={
+    steady:{t:'稳健',r:'多数小跌小涨，偶尔小赚'},
+    high:{t:'高息',r:'跌得多，但涨起来很猛'},
+    wild:{t:'狂野',r:'十有八九亏，但可能翻好几倍'}
+  };
+  function bondOffer(){
+    const e=eraIdx();
+    const h=hash('bond'+e);
+    const era=curEra();
+    const name=era.n+'·'+BNAMES[Math.floor(h*BNAMES.length)];
+    const price=Math.round(120+h*880);          /* 120~1000 */
+    let prof='steady';
+    if(h>.72)prof='wild'; else if(h>.38)prof='high';
+    const rate=(prof==='wild'?hash('r'+e)*2.2+.8:(prof==='high'?hash('r'+e)*.7+.8:.15+hash('r'+e)*.5));
+    return {e,name,price,prof,rate:+rate.toFixed(2)};
+  }
+  function settleOne(b){
+    const h=hash('settle'+b.name+b.e);
+    let mul;
+    if(b.prof==='steady'){
+      if(h<.55)mul=.85+h*.15;        /* 0.85~1.00 */
+      else if(h<.90)mul=1+h*.15;     /* 1.00~1.135 */
+      else mul=1.15+h*.2;            /* ~1.15~1.35 */
+    }else if(b.prof==='high'){
+      if(h<.58)mul=.35+h*.45;        /* 0.35~0.80 */
+      else if(h<.90)mul=.95+h*.5;    /* 0.95~1.40 */
+      else mul=2+h*2;                /* 2~4 */
+    }else{
+      if(h<.62)mul=.10+h*.5;         /* 0.10~0.60 */
+      else if(h<.88)mul=1+h*1.2;     /* 1~2.2 */
+      else mul=3+h*5;                /* 3~8 */
+    }
+    return Math.round(b.price*mul);
+  }
+  function checkBonds(){
+    const list=loadBonds(),cur=eraIdx();
+    let changed=false,txt=[];
+    const keep=[];
+    list.forEach(b=>{
+      if(cur>=(b.buyEra||b.e)+10){
+        const out=settleOne(b);
+        S.coins+=out;
+        changed=true;
+        txt.push(b.name+' 到期 '+out+' 金');
+      }else keep.push(b);
+    });
+    if(changed){
+      saveBonds(keep);save();updateHud();
+      try{toast('债券结算：'+txt.join('<br>'),3200);}catch(e){}
+    }
+  }
+
+  const bondSec=document.createElement('section');
+  bondSec.id='bondScreen';bondSec.className='panel';
+  bondSec.innerHTML='<div class="phead"><h2>债 券</h2><div class="sp"></div><button id="bondClose">关闭</button></div>'+
+   '<div id="bondBody" style="flex:1;overflow-y:auto;padding-bottom:20px"></div>';
+  document.body.appendChild(bondSec);
+  document.getElementById('bondClose').onclick=()=>bondSec.classList.remove('on');
+
+  function renderBonds(){
+    const o=bondOffer(),list=loadBonds(),cur=eraIdx();
+    let html='<div style="font-size:11px;color:#7d7266;margin-bottom:10px">'+
+      '债券买入后 <b style="color:#e6c47f">10 个时代</b> 结算（约 5 小时）。大部分会跌，小部分暴涨。</div>';
+    html+='<div class="catrow" style="padding:13px;align-items:flex-start;border-color:#e6c47f44">'+
+      '<div style="flex:1"><div style="font-size:14px;color:#e6c47f">'+o.name+'</div>'+
+      '<div style="font-size:10.5px;color:#7d7266;margin-top:4px">'+
+      BPROF[o.prof].t+' · '+BPROF[o.prof].r+'<br>预期收益比 '+o.rate+' 倍</div></div>'+
+      '<div style="text-align:right"><div style="color:#e6c47f;font-size:13px">'+o.price+' 金</div>'+
+      '<button id="bondBuy" style="margin-top:6px;padding:7px 12px;font-size:12px;flex:0 0 auto">买入</button></div></div>';
+    html+='<div style="font-size:11px;color:#7d7266;margin:16px 0 8px">持有中</div>';
+    if(list.length===0) html+='<div style="font-size:12px;color:#544b40">还没有债券</div>';
+    list.forEach(b=>{
+      const left=(b.buyEra||b.e)+10-cur;
+      html+='<div class="catrow"><span style="flex:1;font-size:12.5px;color:#b7a88e">'+b.name+'</span>'+
+        '<span style="font-size:10.5px;color:'+(left<=0?'#8ef2a8':'#8c9686')+'">'+
+        (left<=0?'待结算':(left+' 个时代后'))+'</span>'+
+        '<span style="font-size:12px;color:#e6c47f;width:60px;text-align:right">'+b.price+'</span></div>';
+    });
+    document.getElementById('bondBody').innerHTML=html;
+    const bb=document.getElementById('bondBuy');
+    if(bb)bb.onclick=()=>{
+      const of=bondOffer();
+      if(S.coins<of.price){toast('金币不够');return;}
+      S.coins-=of.price;save();updateHud();
+      const l=loadBonds();
+      l.push({name:of.name,price:of.price,prof:of.prof,e:of.e,buyEra:eraIdx()});
+      saveBonds(l);
+      try{SFX.coin();}catch(e){}
+      toast('买入 <b>'+of.name+'</b>',1500);
+      renderBonds();
+    };
+  }
+
+  /* ---------- 4. 入口按钮 ---------- */
+  function addEntries(){
+    try{
+      const list=document.getElementById('setList');
+      if(!list)return;
+      if(!document.getElementById('btnRank')){
+        const lab=document.createElement('div');lab.className='lab';lab.textContent='阶 级';
+        const row=document.createElement('div');row.className='mrow';
+        const b=document.createElement('button');b.id='btnRank';b.textContent='身价 / 阶级';
+        b.onclick=()=>{renderRank();rankSec.classList.add('on');};
+        row.appendChild(b);list.appendChild(lab);list.appendChild(row);
+      }
+      if(!document.getElementById('btnBond')){
+        const lab=document.createElement('div');lab.className='lab';lab.textContent='投 资';
+        const row=document.createElement('div');row.className='mrow';
+        const b=document.createElement('button');b.id='btnBond';b.textContent='债券';
+        b.onclick=()=>{renderBonds();bondSec.classList.add('on');};
+        row.appendChild(b);list.appendChild(lab);list.appendChild(row);
+      }
+    }catch(e){}
+  }
+  addEntries();setInterval(addEntries,1500);
+
+  /* ---------- 5. 商店按阶级解锁 ---------- */
+  const REQ={gold:3,diamond:5,bs:2,bg:4,bd:6};
+  document.addEventListener('click',function(e){
+    let t=e.target;
+    while(t&&t!==document.body&&!(t.getAttribute&&t.getAttribute('data-buy')))t=t.parentElement;
+    if(!t||t===document.body)return;
+    const id=t.getAttribute('data-buy');
+    const need=REQ[id];
+    if(need===undefined)return;
+    const r=rankOf();
+    if(r<need){
+      e.preventDefault();e.stopPropagation();
+      if(e.stopImmediatePropagation)e.stopImmediatePropagation();
+      toast('阶级不足 · 需要「'+RANKS[need].n+'」',2200);
+    }
+  },true);
+
+  /* 商店里标出未解锁的商品 */
+  setInterval(function(){
+    try{
+      const body=document.getElementById('shopBody');
+      if(!body)return;
+      const r=rankOf();
+      body.querySelectorAll('button[data-buy]').forEach(b=>{
+        const id=b.getAttribute('data-buy'),need=REQ[id];
+        if(need!==undefined&&r<need){
+          b.disabled=true;
+          b.textContent='需 '+RANKS[need].n;
+          b.style.fontSize='10.5px';
+        }
+      });
+    }catch(e){}
+  },1200);
+
+  /* ---------- 6. 启动检查 ---------- */
+  checkBonds();
+  setInterval(checkBonds,20000);
+  setInterval(function(){try{updateHud();}catch(e){}},25000);
+
+})();  
 </script>
 </body>
 </html>

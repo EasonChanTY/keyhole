@@ -5287,6 +5287,157 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
    if(sec.classList.contains('on'))render();
   },30000);
 })();  
+/* ===== v108：顶栏排布 / 箱子6个两列 / 阶级可点 / 灯油持久化 ===== */
+(function(){
+
+  /* ---------- 1. 灯油：持久化，刷新不再回 5 ---------- */
+  const OILK='keyhole_oil_v1';
+  try{ CFG.oilMax=30; CFG.oilStart=30; }catch(e){}
+  try{
+    const v=localStorage.getItem(OILK);
+    if(v===null) S.oil=CFG.oilMax;
+    else S.oil=Math.max(0,Math.min(CFG.oilMax,+v));
+  }catch(e){}
+  setInterval(function(){
+    try{ localStorage.setItem(OILK,String(S.oil)); }catch(e){}
+  },2000);
+  /* 灯油变化立即写 */
+  try{
+    const _uh=updateHud;
+    updateHud=function(){
+      try{localStorage.setItem(OILK,String(S.oil));}catch(e){}
+      return _uh.apply(this,arguments);
+    };
+  }catch(e){}
+
+  /* ---------- 2. 顶栏：商店/债券独立一行，不再挤掉设置 ---------- */
+  function fixTop(){
+    try{
+      const hud=document.getElementById('hud');
+      if(!hud)return;
+      let row=document.getElementById('hudRow3');
+      if(!row){
+        row=document.createElement('div');
+        row.id='hudRow3';
+        row.style.cssText='display:flex;gap:8px;justify-content:flex-end;align-items:center';
+        hud.appendChild(row);
+      }
+      const s=document.getElementById('btnShopTop');
+      const b=document.getElementById('btnBondTop');
+      if(s&&s.parentElement!==row){ s.style.padding='4px 9px';s.style.fontSize='10.5px';row.appendChild(s); }
+      if(b&&b.parentElement!==row){ b.style.padding='4px 9px';b.style.fontSize='10.5px';row.appendChild(b); }
+
+      const chip=document.getElementById('rankChip');
+      if(chip){
+        chip.style.pointerEvents='auto';
+        chip.style.fontSize='9.5px';
+        chip.style.maxWidth='110px';
+        chip.style.overflow='hidden';
+        chip.style.textOverflow='ellipsis';
+        chip.style.whiteSpace='nowrap';
+        if(!chip.__bound){chip.__bound=1;chip.onclick=openRank;}
+      }
+    }catch(e){}
+  }
+  setInterval(fixTop,1200);
+
+  /* ---------- 3. 阶级面板 ---------- */
+  const RANKS=[
+   ['桥洞常客',0,'睡了三年桥洞，钥匙串是捡的'],
+   ['咸鱼翻身中',600,'刚有点本钱，还没翻身'],
+   ['城中村租客',1500,'房租勉强交得上'],
+   ['小有积蓄',3500,'开始有人叫你老板'],
+   ['巷口收藏家',8000,'巷口摆摊，识货的都来问你'],
+   ['街区名人',18000,'整条街都认识你'],
+   ['城里富商',40000,'开始有账本，也有了仇家'],
+   ['上流圈边缘',90000,'请柬终于寄到你家'],
+   ['大收藏家',200000,'博物馆馆长亲自来访'],
+   ['传奇寻宝人',500000,'你的名字写进了行价里'],
+   ['齿口之王',1200000,'所有锁芯最后都听你的']
+  ];
+  function bondV(){
+    try{
+      return JSON.parse(localStorage.getItem('keyhole_bonds_v1')||'[]')
+        .reduce((a,b)=>a+(b.price||0),0);
+    }catch(e){ return 0; }
+  }
+  function worth(){
+    let v=S.coins||0;
+    (S.bag||[]).forEach(it=>{
+      const d=ITEM_BY_ID[it.id];
+      if(d){try{v+=priceOf(d,it.cond);}catch(e){}}
+    });
+    return v+bondV();
+  }
+  function rankIdx2(){
+    const v=worth();let i=0;
+    RANKS.forEach((r,k)=>{if(v>=r[1])i=k;});
+    return i;
+  }
+
+  const rp=document.createElement('section');
+  rp.id='rank2';rp.className='panel';
+  rp.innerHTML='<div class="phead"><h2>阶 级</h2><div class="sp"></div>'+
+   '<button id="r2Close">关闭</button></div>'+
+   '<div id="r2Body" style="flex:1;overflow-y:auto;padding-bottom:20px"></div>';
+  document.body.appendChild(rp);
+  document.getElementById('r2Close').onclick=()=>rp.classList.remove('on');
+
+  function openRank(){
+    const v=worth(),cur=rankIdx2();
+    let html='<div style="font-size:12px;color:#a2957f;line-height:1.8;margin-bottom:14px">'+
+      '当前身价约 <b style="color:#e6c47f;font-size:15px">'+v+'</b> 金<br>'+
+      '<span style="color:#6f6558;font-size:10.5px">= 金币 + 背包估价 + 债券本金</span></div>';
+    html+='<div style="font-size:11px;color:#7d7266;margin-bottom:8px">点击不对，是看要求 ↓</div>';
+    RANKS.forEach((r,i)=>{
+      const on=i===cur, done=i<=cur;
+      html+='<div class="catrow" style="padding:11px 12px;'+
+        (on?'border-color:#e6c47f66;background:#2a2114aa;':'')+'">'+
+        '<div style="flex:1;min-width:0">'+
+          '<div style="font-size:13.5px;color:'+(on?'#e6c47f':'#b7a88e')+'">'+
+            (on?'▶ ':'')+r[0]+'</div>'+
+          '<div style="font-size:10px;color:#6f6558;margin-top:2px">'+r[2]+'</div>'+
+        '</div>'+
+        '<div style="text-align:right;flex:0 0 auto;margin-left:8px">'+
+          '<div style="font-size:11px;color:'+(done?'#8ef2a8':'#544b40')+'">'+
+            r[1]+' 金</div>'+
+          '<div style="font-size:9.5px;color:'+(done?'#8c9686':'#4f463c')+'">'+
+            (done?'已达成':'未达成')+'</div>'+
+        '</div></div>';
+    });
+    document.getElementById('r2Body').innerHTML=html;
+    rp.classList.add('on');
+  }
+
+  /* ---------- 4. 箱子：6 个，两列各 3 ---------- */
+  try{ CFG.boxCount=6; }catch(e){}
+  function relayoutBoxes(){
+    try{
+      if(typeof boxRoot==='undefined'||!boxRoot)return;
+      const gs=boxRoot.children,n=gs.length;
+      if(n<2)return;
+      const perCol=Math.ceil(n/2);
+      const top=1.05,span=1.95;
+      const step=perCol>1?span/(perCol-1):0;
+      for(let i=0;i<n;i++){
+        const col=i<perCol?0:1,row=i%perCol;
+        gs[i].position.set(col?0.62:-0.62,top-row*step,0);
+        gs[i].rotation.y=col?-0.20:0.20;
+      }
+    }catch(e){}
+  }
+  try{
+    const _nr=newRound;
+    newRound=function(){
+      const r=_nr.apply(this,arguments);
+      try{relayoutBoxes();}catch(e){}
+      return r;
+    };
+  }catch(e){}
+  setTimeout(relayoutBoxes,500);
+  setInterval(relayoutBoxes,2500);
+
+})();  
 </script>
 </body>
 </html>

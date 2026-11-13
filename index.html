@@ -6975,6 +6975,454 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   setInterval(enforceKey,400);
 
 })();
+/* ===== v118：背包模块化筛选 + 图鉴补黑曜石/黑暗物件 ===== */
+(function(){
+
+  /* ================= 背包 ================= */
+  let sortMode='desc';   /* desc 价高→低 / asc 低→高 */
+  let keyword='';
+  let qFilter='';
+
+  function bagRows(){
+    let arr=[];
+    (S.bag||[]).forEach((it,i)=>{
+      const d=ITEM_BY_ID[it.id];
+      if(!d)return;
+      arr.push({i,it,def:d,p:priceOf(d,it.cond)});
+    });
+    if(keyword){
+      const k=keyword.toLowerCase();
+      arr=arr.filter(x=>x.def.n.toLowerCase().indexOf(k)>=0);
+    }
+    arr.sort((a,b)=>sortMode==='desc'?b.p-a.p:a.p-b.p);
+    return arr;
+  }
+
+  function ensureTools(){
+    if(document.getElementById('bagTools'))return;
+    const list=document.getElementById('bagList');
+    if(!list||!list.parentNode)return;
+    const t=document.createElement('div');
+    t.id='bagTools';
+    t.style.cssText='display:flex;flex-direction:column;gap:8px;margin-bottom:10px';
+    t.innerHTML=
+      '<input id="bagSearch" placeholder="搜索物品名…" '+
+        'style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid #ffffff20;'+
+        'background:#ffffff0a;color:#efe6d6;font-size:12.5px;font-family:inherit;outline:none">'+
+      '<div style="display:flex;gap:6px">'+
+        '<button id="bagSortDesc" class="small" style="flex:1;padding:8px;font-size:11.5px">价格 ↓</button>'+
+        '<button id="bagSortAsc" class="small" style="flex:1;padding:8px;font-size:11.5px">价格 ↑</button>'+
+        '<button id="bagSelAll" class="small" style="flex:1;padding:8px;font-size:11.5px">全选</button>'+
+        '<button id="bagSelNone" class="small" style="flex:1;padding:8px;font-size:11.5px">清空</button>'+
+      '</div>'+
+      '<div id="bagQ" style="display:flex;gap:5px;flex-wrap:wrap"></div>';
+    list.parentNode.insertBefore(t,list);
+
+    const qs=[['','全部'],['junk','垃圾'],['curio','杂物'],['antique','古物'],
+      ['gem','珠宝'],['relic','传世']];
+    const qw=document.getElementById('bagQ');
+    qs.forEach(q=>{
+      const b=document.createElement('button');
+      b.className='small';b.textContent=q[1];b.setAttribute('data-q',q[0]);
+      b.style.cssText='flex:0 0 auto;padding:6px 11px;font-size:11px;border-radius:9px';
+      b.onclick=()=>{qFilter=q[0];selectQuality(q[0]);};
+      qw.appendChild(b);
+    });
+
+    document.getElementById('bagSearch').oninput=e=>{
+      keyword=e.target.value||'';
+      renderBag2();
+    };
+    document.getElementById('bagSortDesc').onclick=()=>{sortMode='desc';renderBag2();};
+    document.getElementById('bagSortAsc').onclick=()=>{sortMode='asc';renderBag2();};
+    document.getElementById('bagSelAll').onclick=()=>{
+      S.bulk=true;S.picked.clear();
+      bagRows().forEach(r=>S.picked.add(r.i));
+      renderBag2();
+    };
+    document.getElementById('bagSelNone').onclick=()=>{
+      S.picked.clear();renderBag2();
+    };
+  }
+
+  function selectQuality(q){
+    if(!q){ S.picked.clear(); renderBag2(); return; }
+    S.bulk=true;S.picked.clear();
+    (S.bag||[]).forEach((it,i)=>{
+      const d=ITEM_BY_ID[it.id];
+      if(d&&d.c===q)S.picked.add(i);
+    });
+    renderBag2();
+  }
+
+  function renderBag2(){
+    ensureTools();
+    const list=document.getElementById('bagList');
+    if(!list)return;
+    const rows=bagRows();
+
+    /* 质量按钮高亮 */
+    document.querySelectorAll('#bagQ button').forEach(b=>{
+      b.style.background=b.getAttribute('data-q')===qFilter?'#e6c47f':'#ffffff08';
+      b.style.color=b.getAttribute('data-q')===qFilter?'#1c1206':'#a99c88';
+    });
+
+    const empty=document.getElementById('bagEmpty');
+    if(empty)empty.style.display=rows.length?'none':'block';
+
+    list.innerHTML='';
+    rows.forEach(r=>{
+      const row=document.createElement('div');
+      row.className='brow'+(S.picked.has(r.i)?' picked':'');
+      row.innerHTML=
+        (S.bulk?'<span class="ck">'+(S.picked.has(r.i)?'✓':'')+'</span>':'')+
+        '<span class="dot" style="background:'+CAT[r.def.c].css+'"></span>'+
+        '<span class="bn">'+(r.def.uniq?'◆ ':'')+r.def.n+'</span>'+
+        '<span class="bc '+(r.it.cond>1?'bad':'')+'">'+COND_TXT[r.it.cond]+'</span>'+
+        '<span class="bp">'+r.p+'</span>'+
+        '<span class="star">'+(r.it.fav?'★':'')+'</span>';
+      row.onclick=()=>{
+        if(S.bulk){
+          S.picked.has(r.i)?S.picked.delete(r.i):S.picked.add(r.i);
+          renderBag2();
+        }else if(typeof openDetail==='function')openDetail(r.i);
+      };
+      list.appendChild(row);
+    });
+
+    updateBulkBar();
+  }
+
+  function updateBulkBar(){
+    let n=0,s=0;
+    S.picked.forEach(i=>{
+      const it=S.bag[i];if(!it)return;
+      const d=ITEM_BY_ID[it.id];if(!d)return;
+      n++;s+=priceOf(d,it.cond);
+    });
+    const info=document.getElementById('bulkInfo');
+    if(info)info.textContent=n+' 件 · '+s+' 金';
+    const sell=document.getElementById('bulkSell');
+    if(sell){
+      sell.disabled=n===0;
+      sell.textContent=s>0?('出售 '+s+' 金'):'出售';
+    }
+    const bar=document.getElementById('bulkBar');
+    if(bar)bar.classList.toggle('on',!!S.bulk);
+    const bs=document.getElementById('bsBulk');
+    if(bs)bs.textContent=S.bulk?'完成':'批量';
+  }
+
+  function doSell(){
+    let sum=0,n=0;const keep=[];
+    S.bag.forEach((it,i)=>{
+      if(S.picked.has(i)){
+        const d=ITEM_BY_ID[it.id];
+        const p=d?priceOf(d,it.cond):0;
+        if(p>0){sum+=p;n++;}
+      }else keep.push(it);
+    });
+    if(!n){toast('没有可卖的东西');return;}
+    S.coins+=sum;S.bag=keep;S.picked.clear();
+    if(typeof gainXp==='function')gainXp(Math.round(sum*.6));
+    try{SFX.coin();haptic([10,20,30]);}catch(e){}
+    save();updateHud();
+    renderBag2();
+    toast('卖出 '+n+' 件 <b>+'+sum+' 金</b>',1600);
+  }
+
+  /* 覆盖旧的渲染与按钮 */
+  renderBag=renderBag2;
+  const bsBulk=document.getElementById('bsBulk');
+  if(bsBulk)bsBulk.onclick=()=>{
+    S.bulk=!S.bulk;
+    if(!S.bulk)S.picked.clear();
+    renderBag2();
+  };
+  const bulkSell=document.getElementById('bulkSell');
+  if(bulkSell)bulkSell.onclick=doSell;
+  const bulkAll=document.getElementById('bulkAll');
+  if(bulkAll)bulkAll.onclick=()=>{
+    S.bulk=true;
+    const allS=S.picked.size===S.bag.length;
+    S.picked.clear();
+    if(!allS)bagRows().forEach(r=>{if(r.it.cond<5)S.picked.add(r.i);});
+    renderBag2();
+  };
+
+  /* ================= 图鉴补全 ================= */
+  const CXK='keyhole_codex_v2';
+  const cxData=()=>{try{return JSON.parse(localStorage.getItem(CXK)||'{}');}catch(e){return{};}};
+
+  const DARK_SAMPLES=[
+   ['无声之匙','一把没有齿的钥匙，插进任何锁都像插进水里。'],
+   ['倒影残片','镜子里多出来的那一角，摸上去是凉的。'],
+   ['未署名信','信封上没有字，拆开后里面是空的。'],
+   ['熄灭的灯芯','点不着，但靠近会觉得暖。'],
+   ['第七根锁芯','锁孔里不该存在的第八个位置。'],
+   ['夜行价签','写着数字，但没人认得那种货币。']
+  ];
+
+  function appendCodexExtra(){
+    const body=document.getElementById('cxBody');
+    if(!body)return;
+    if(body.querySelector('#cxExtra'))return;
+    /* 只在“物品”标签页追加 */
+    const onBtn=document.querySelector('#cxTabs button.on');
+    const tabName=onBtn?onBtn.textContent.trim():'';
+    if(tabName.indexOf('物品')<0)return;
+
+    const cx=cxData();
+    const has=(k,id)=>cx[k]&&cx[k][id];
+
+    let html='<div id="cxExtra">';
+
+    /* 黑曜石 */
+    html+='<div style="font-size:11px;color:#e6c47f;letter-spacing:.14em;margin:18px 0 8px">'+
+      '◆ 黑 曜 石 藏 品</div>';
+    OBS_ITEMS.forEach(it=>{
+      const ok=has('item',it.id);
+      html+='<div class="catrow" style="align-items:flex-start">'+
+        '<span class="dot" style="background:#ffcf5c;margin-top:5px"></span>'+
+        '<div style="flex:1"><div style="font-size:13px;color:'+
+        (ok?'#ddd2c0':'#544b40')+'">'+(ok?it.n:'？？？')+'</div>'+
+        (ok?'<div style="font-size:10.5px;color:#7d7266;margin-top:2px;line-height:1.65">'+
+          it.d+'</div>':'')+'</div>'+
+        '<span class="cv">'+(ok?('估 '+priceOf(it,1)+' 金'):'未解锁')+'</span></div>';
+    });
+
+    /* 黑暗物件 */
+    html+='<div style="font-size:11px;color:#b57aff;letter-spacing:.14em;margin:18px 0 8px">'+
+      '☾ 黑 暗 物 件（推理模式）</div>';
+    html+='<div style="font-size:10.5px;color:#8c7e69;line-height:1.8;margin-bottom:8px">'+
+      '只能在推理模式得到，只能在暗市（每 3 小时开一次）卖出。'+
+      '名字和瑕疵都是随机生成的，所以每次都不一样。</div>';
+    DARK_SAMPLES.forEach(s=>{
+      html+='<div class="catrow" style="align-items:flex-start">'+
+        '<div style="flex:1"><div style="font-size:12.5px;color:#ddd2c0">'+s[0]+'</div>'+
+        '<div style="font-size:10.5px;color:#7d7266;margin-top:2px;line-height:1.6">'+
+        s[1]+'</div></div></div>';
+    });
+
+    html+='</div>';
+    body.insertAdjacentHTML('beforeend',html);
+  }
+
+  function watchCodex(){
+    const body=document.getElementById('cxBody');
+    if(!body||body.__w118)return;
+    body.__w118=1;
+    new MutationObserver(()=>{appendCodexExtra();}).observe(body,{childList:true});
+    appendCodexExtra();
+  }
+
+  watchCodex();
+  setInterval(watchCodex,1200);
+  setInterval(()=>{appendCodexExtra();},1500);
+
+})(); 
+/* ===== v119：黑曜石重做 / 百分比危险×3 / 全能护甲 ===== */
+(function(){
+
+  /* ---------- 1. 黑曜石：全部 >1000，越接近 1000 越容易 ---------- */
+  const P=[1200,1500,1800,2200,2800,3500,4500,6000,8000,11000,15000,20000,25000];
+  const W=[26, 21,  16,  12,  9,   6.5, 4.5, 3,   2,   1.4,  0.9,  0.6,  0.35];
+  try{
+    const sorted=OBS_ITEMS.slice().sort((a,b)=>a.b-b.b);
+    sorted.forEach((it,i)=>{ it.b=P[Math.min(i,P.length-1)]; });
+  }catch(e){}
+
+  function pickObs(){
+    let tot=0;
+    for(let i=0;i<OBS_ITEMS.length;i++)tot+=W[Math.min(i,W.length-1)];
+    let r=Math.random()*tot,a=0;
+    for(let i=0;i<OBS_ITEMS.length;i++){
+      a+=W[Math.min(i,W.length-1)];
+      if(r<a)return OBS_ITEMS[i];
+    }
+    return OBS_ITEMS[0];
+  }
+  /* 黑曜石也要有瑕疵：40% 完好，其余有瑕疵 */
+  function obsCond(){
+    const r=Math.random();
+    if(r<.40)return 1;
+    if(r<.68)return 2;
+    if(r<.87)return 3;
+    return 4;
+  }
+
+  /* ---------- 2. 黑曜石：降概率 + 取消保底 ---------- */
+  try{
+    const _rl=rollLoot;
+    rollLoot=function(tier){
+      const out=_rl.apply(this,arguments);
+      try{
+        localStorage.setItem('keyhole_obs_pity_v1','0');   /* 保底计数永远归零 */
+        if(tier&&tier.special==='obsidian'){
+          for(let i=0;i<out.length;i++){
+            const e=out[i];
+            if(e&&e.kind==='item'&&e.item&&e.item.uniq){
+              if(Math.random()<.45){
+                e.item=POOL[1][rnd(POOL[1].length)];
+                e.cond=1;
+              }else{
+                e.item=pickObs();
+                e.cond=obsCond();
+              }
+            }
+          }
+        }
+      }catch(e){}
+      return out;
+    };
+  }catch(e){}
+
+  /* ---------- 3. 百分比危险 ×3 ---------- */
+  const PCT={
+    tax:     {name:'税务稽查', pct:.08},
+    thief:   {name:'盗匪夜袭', pct:.05},
+    fire:    {name:'仓房失火', pct:.12},
+    lawsuit: {name:'遗产纠纷', pct:.10}
+  };
+  try{
+    Object.keys(PCT).forEach(k=>{ EVT_NAME[k]=PCT[k].name; });
+    const _mem=makeEventMesh;
+    makeEventMesh=function(ev){
+      if(ev==='tax'||ev==='thief'||ev==='fire'||ev==='lawsuit')ev='bomb';
+      return _mem.call(this,ev);
+    };
+  }catch(e){}
+
+  /* 只在噩梦/地狱出现 */
+  try{
+    const _rl2=rollLoot;
+    rollLoot=function(tier){
+      const out=_rl2.apply(this,arguments);
+      try{
+        const hard=(MODE===MODES.nightmare||MODE===MODES.hell);
+        if(hard&&Math.random()<.20&&out.length){
+          const keys=Object.keys(PCT);
+          const k=keys[rnd(keys.length)];
+          out.splice(Math.min(1,out.length),0,{kind:'evt',ev:k});
+        }
+      }catch(e){}
+      return out;
+    };
+  }catch(e){}
+
+  /* ---------- 4. 结算：炸弹 / 百分比 / 全能护甲 ---------- */
+  const ARM_KEY='keyhole_armor_v1';
+  const loadArmor=()=>{try{return JSON.parse(localStorage.getItem(ARM_KEY)||'null');}catch(e){return null;}};
+  const saveArmor=a=>{try{a?localStorage.setItem(ARM_KEY,JSON.stringify(a)):
+    localStorage.removeItem(ARM_KEY);}catch(e){}};
+
+  try{
+    const _res=resolveEvent;
+    resolveEvent=function(insp){
+      try{
+        const ev=insp&&insp.entry&&insp.entry.ev;
+        if(!ev||!insp||insp.resolved)return _res.apply(this,arguments);
+
+        const a=loadArmor();
+
+        /* 炸弹：钻石护甲免疫，否则整箱全废 */
+        if(ev==='bomb'){
+          if(a&&a.bombProof)return _res.apply(this,arguments);
+          S.coins=Math.max(0,S.coins-60);
+          if(S.bag.length>(S.bagStart||0))S.bag.length=S.bagStart;
+          S.collected=0;S.exploded=true;insp.resolved=true;
+          S.loot=[];S.drawIdx=0;
+          try{SFX.boom();haptic([80,50,180]);flash(6);}catch(e){}
+          try{addMk('炸弹 · 本箱全废');toast('轰 —— <b>箱子炸了</b>',2400);}catch(e){}
+          try{updateHud();save();}catch(e){}
+          setTimeout(()=>{try{showSummary(true);}catch(e){}},900);
+          return;
+        }
+
+        /* 百分比危险 */
+        if(PCT[ev]){
+          const conf=PCT[ev];
+          if(a&&a.omni){
+            saveArmor(null);
+            insp.resolved=true;
+            try{addMk('全能护甲 · 挡下'+conf.name,'#8ef2a8');
+              toast('全能护甲挡下了<b>'+conf.name+'</b>（已消耗）',2200);}catch(e){}
+            try{updateHud();save();}catch(e){}
+            return;
+          }
+          const loss=Math.max(5,Math.round((S.coins||0)*conf.pct));
+          S.coins=Math.max(0,S.coins-loss);
+          insp.resolved=true;
+          try{addMk(conf.name+' −'+loss);
+            toast('<b>'+conf.name+'</b><br>按金库 '+Math.round(conf.pct*100)+'% 扣款 −'+loss+' 金',2300);}catch(e){}
+          try{updateHud();save();}catch(e){}
+          return;
+        }
+      }catch(e){}
+      return _res.apply(this,arguments);
+    };
+  }catch(e){}
+
+  /* ---------- 5. 瑕疵机制继续完善 ---------- */
+  const FLAW2=['一道细裂','边缘缺口','氧化斑','缺角','表面划痕','裂纹贯穿',
+   '碎边','暗裂','内伤','金丝断裂','釉面剥落','虫蛀孔','褪色','压痕'];
+  try{
+    const _rc=revealCond;
+    revealCond=function(){
+      _rc.apply(this,arguments);
+      try{
+        const insp=S.insp;
+        if(insp&&!insp.isEvt&&!insp.crumbled&&insp.cond>=2){
+          const extra=1-(.03+Math.random()*.10)*(insp.cond-1);
+          insp.realPrice=Math.max(1,Math.round(insp.realPrice*extra));
+          addMk('瑕疵：'+FLAW2[rnd(FLAW2.length)]);
+          if(typeof refreshTotal==='function')refreshTotal();
+        }
+      }catch(e){}
+    };
+  }catch(e){}
+
+  /* ---------- 6. 商店：全能护甲（高于钻石护甲） ---------- */
+  const OMNI={id:'omni',name:'全能护甲',price:680,
+    desc:'挡下一次「按金库百分比」的危险（税务/盗匪/失火/纠纷），消耗后失效'};
+
+  function injectOmni(){
+    const body=document.getElementById('shopBody');
+    if(!body)return;
+    if(document.getElementById('omniRow'))return;
+    if(!body.children.length)return;   /* 商品还没渲染 */
+    const d=document.createElement('div');
+    d.id='omniRow';
+    d.className='catrow';
+    d.style.cssText='padding:12px;align-items:flex-start;border-color:#8ef2a844';
+    const a=loadArmor();
+    d.innerHTML=
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-size:14px;color:#8ef2a8">'+OMNI.name+'</div>'+
+        '<div style="font-size:10.5px;color:#7d7266;margin-top:3px;line-height:1.6">'+
+          OMNI.desc+'</div>'+
+      '</div>'+
+      '<div style="text-align:right;flex:0 0 auto;margin-left:8px">'+
+        '<div style="color:#e6c47f;font-size:13px">'+OMNI.price+' 金</div>'+
+        '<button id="omniBuy" style="margin-top:6px;padding:7px 12px;font-size:12px;flex:0 0 auto">购买</button>'+
+      '</div>';
+    body.appendChild(d);
+    document.getElementById('omniBuy').onclick=()=>{
+      if(loadArmor()){toast('已经穿着一件护甲');return;}
+      if(S.coins<OMNI.price){toast('金币不够');return;}
+      S.coins-=OMNI.price;
+      saveArmor({name:OMNI.name,shield:0,omni:true});
+      try{SFX.coin();}catch(e){}
+      updateHud();save();
+      toast('已装备 <b>全能护甲</b>',1500);
+      d.remove();
+    };
+  }
+  const sb=document.getElementById('shopBody');
+  if(sb)new MutationObserver(injectOmni).observe(sb,{childList:true});
+  setInterval(injectOmni,1500);
+
+})();  
 </script>
 </body>
 </html>

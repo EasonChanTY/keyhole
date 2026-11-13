@@ -5808,6 +5808,363 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   },30000);
 
 })();  
+/* ===== v111：债券多只 / 可拖动图表 / 提前转手 ===== */
+(function(){
+
+  /* 接管所有定时器，避免上一个补丁又刷回去 */
+  try{ for(let i=1;i<20000;i++)clearInterval(i); }catch(e){}
+
+  const BK='keyhole_bonds_v1';
+  const ERA=1800000;
+  const eraIdx=()=>Math.floor(Date.now()/ERA);
+  const loadB=()=>{try{return JSON.parse(localStorage.getItem(BK)||'[]');}catch(e){return[];}};
+  const saveB=a=>{try{localStorage.setItem(BK,JSON.stringify(a));}catch(e){}};
+  const rc=()=>{try{return (typeof rerollCost==='function')?rerollCost():10;}catch(e){return 10;}};
+
+  /* ---------- 基础维护 ---------- */
+  try{
+    updateHud=function(){
+      try{
+        hCoins.textContent=S.coins;
+        bagCount.textContent=S.bag.length;
+        hOil.innerHTML='灯油 <b style="color:#e6c47f">'+S.oil+
+          '</b><span style="color:#6f6558">/'+CFG.oilMax+'</span>';
+        btnEra.textContent='时代 · '+curEra().n+' ›';
+        const ms=ERA-(Date.now()%ERA);
+        hLeft.textContent='时代 '+Math.ceil(ms/60000)+' 分后变';
+        localStorage.setItem('keyhole_oil_v1',String(S.oil));
+      }catch(e){}
+    };
+  }catch(e){}
+
+  function enforce(){
+    try{
+      const b=document.getElementById('btnB');
+      if(!b)return;
+      const p=S.phase;
+      let txt=null,show=true,dis=false;
+      if(p==='box'){txt='换一批 · '+rc()+' 金';dis=(S.selBox<0);}
+      else if(p==='lock'){txt='去挑钥匙 →';}
+      else if(p==='keys'){txt='买下并试开 · '+CFG.price+' 金';dis=(S.selKey<0||S.busy);}
+      else show=false;
+      if(!show){if(b.style.display!=='none')b.style.display='none';return;}
+      if(b.style.display==='none')b.style.display='';
+      if(txt&&b.textContent!==txt)b.textContent=txt;
+      if(b.disabled!==dis)b.disabled=dis;
+    }catch(e){}
+  }
+
+  /* ---------- 债券数学 ---------- */
+  const BPROF={steady:['稳健','小跌小涨'],high:['高息','多半亏，涨起来猛'],
+   wild:['狂野','十有九亏，可能翻几倍']};
+  const ERA_NAMES={
+   '收藏热':['藏品信托','拍卖行票据','古董抵押债'],
+   '大萧条':['救济债券','粮食配给券','典当同业债'],
+   '镀金年代':['铁路建设债','钢铁托拉斯票','豪华宅邸债'],
+   '战乱':['军需采购票','避难所债券','抚恤基金券'],
+   '考古热':['发掘基金券','海外考察债','文物修复票'],
+   '复古潮':['旧物回收债','唱片版权券','胶片修复债'],
+   '平淡日子':['市政公债','储蓄存单','商会周转票'],
+   '拍卖狂热':['拍卖保证金','天价担保债','委托竞拍票'],
+   '熔炉时代':['贵金属抵押债','熔炼许可票','矿脉开采债'],
+   '暗市':['过桥债','黑账簿票据','夜航货运券']
+  };
+  const GEN=['市政公债','商号承兑票','货运债券','银号周转券'];
+
+  function offers(){
+    const e=eraIdx(),era=curEra();
+    const pool=ERA_NAMES[era.n]||GEN;
+    const out=[];
+    for(let i=0;i<3;i++){
+      const h=hash('bond'+e+'#'+i);
+      const nm=pool[Math.floor(h*pool.length)%pool.length];
+      const price=Math.round(70+h*1100);
+      let prof='steady';
+      if(h>.63)prof='wild';else if(h>.30)prof='high';
+      out.push({e,name:era.n+'·'+nm,price,prof});
+    }
+    /* 三种风险各来一只的机会更大 */
+    if(out[0].prof===out[1].prof&&out[1].prof===out[2].prof){
+      out[1].prof=out[0].prof==='steady'?'high':'steady';
+    }
+    return out;
+  }
+  function settle2(b){
+    const h=hash('settle'+b.name+b.e);let m;
+    if(b.prof==='steady'){if(h<.55)m=.85+h*.15;else if(h<.90)m=1+h*.15;else m=1.15+h*.2;}
+    else if(b.prof==='high'){if(h<.58)m=.35+h*.45;else if(h<.90)m=.95+h*.5;else m=2+h*2;}
+    else {if(h<.62)m=.10+h*.5;else if(h<.88)m=1+h*1.2;else m=3+h*5;}
+    return Math.round(b.price*m);
+  }
+  function bpath(b){
+    const f=settle2(b),a=[b.price];
+    for(let i=1;i<=10;i++){
+      const t=i/10;
+      const base=b.price+(f-b.price)*t;
+      const noise=(hash(b.name+b.e+'|'+i)-.5)*b.price*.25*Math.sin(Math.PI*t);
+      a.push(Math.max(1,Math.round(base+noise)));
+    }
+    return a;
+  }
+  const bkOf=b=>Math.min(10,Math.max(0,eraIdx()-(b.buyEra||b.e)));
+  const bnow=b=>bpath(b)[bkOf(b)];
+  const sellVal=b=>Math.round(bnow(b)*.9);   /* 现值 90%（内含 10% 手续费） */
+
+  /* ---------- 图表（可拖动） ---------- */
+  function drawChart(cv,arr,cur,hover){
+    const r=cv.getBoundingClientRect();
+    if(r.width<10)return;
+    const dpr=Math.min(devicePixelRatio,2);
+    cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);
+    const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);
+    const W=r.width,H=r.height;x.clearRect(0,0,W,H);
+    const mn=Math.min.apply(null,arr),mx=Math.max.apply(null,arr);
+    const sp=Math.max(1,mx-mn);
+    const X=i=>i*(W/(arr.length-1));
+    const Y=v=>6+(1-(v-mn)/sp)*(H-14);
+    x.strokeStyle='#ffffff10';x.lineWidth=1;
+    [0,.5,1].forEach(k=>{const yy=6+k*(H-14);x.beginPath();x.moveTo(0,yy);x.lineTo(W,yy);x.stroke();});
+    const grad=x.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,'rgba(230,196,127,.16)');grad.addColorStop(1,'rgba(230,196,127,0)');
+    x.beginPath();x.moveTo(X(0),Y(arr[0]));
+    for(let i=1;i<arr.length;i++)x.lineTo(X(i),Y(arr[i]));
+    x.lineTo(W,H);x.lineTo(0,H);x.closePath();x.fillStyle=grad;x.fill();
+    x.beginPath();x.moveTo(X(0),Y(arr[0]));
+    for(let i=1;i<arr.length;i++)x.lineTo(X(i),Y(arr[i]));
+    x.strokeStyle=arr[arr.length-1]>=arr[0]?'#8ef2a8':'#ff9a86';
+    x.lineWidth=1.5;x.lineJoin='round';x.stroke();
+
+    if(hover!=null){
+      const hh=Math.max(0,Math.min(arr.length-1,hover));
+      x.strokeStyle='#e6c47f66';x.lineWidth=1;
+      x.beginPath();x.moveTo(X(hh),4);x.lineTo(X(hh),H-4);x.stroke();
+      x.beginPath();x.arc(X(hh),Y(arr[hh]),3.4,0,Math.PI*2);
+      x.fillStyle='#fff6dd';x.fill();x.strokeStyle='#0a0705';x.lineWidth=1.2;x.stroke();
+      const label=arr[hh]+' 金';
+      x.font='9.5px -apple-system,sans-serif';
+      const tw=x.measureText(label).width;
+      let bx=X(hh)-tw/2-6;bx=Math.max(2,Math.min(W-tw-14,bx));
+      x.fillStyle='#0b0806ee';x.fillRect(bx,0,tw+12,14);
+      x.fillStyle='#e6c47f';x.textAlign='left';x.fillText(label,bx+6,10.5);
+    }
+    /* 当前点 */
+    x.beginPath();x.arc(X(cur),Y(arr[cur]),3,0,Math.PI*2);
+    x.fillStyle='#e6c47f';x.fill();x.strokeStyle='#0a0705';x.lineWidth=1.2;x.stroke();
+  }
+
+  /* ---------- 商店标签页 ---------- */
+  function buildTabs(){
+    const panel=document.getElementById('shopScreen');
+    if(!panel)return false;
+    const body=document.getElementById('shopBody');
+    if(!body)return false;
+    const old=document.getElementById('shopTabs');
+    if(old)old.remove();
+    const oldPane=document.getElementById('bondPane');
+    if(oldPane)oldPane.remove();
+
+    const tabs=document.createElement('div');
+    tabs.id='shopTabs';tabs.className='mrow';tabs.style.margin='0 0 10px';
+    tabs.innerHTML='<button id="tabGoods" class="on">商品</button><button id="tabBond">债券</button>';
+    panel.insertBefore(tabs,body);
+
+    const pane=document.createElement('div');
+    pane.id='bondPane';
+    pane.style.cssText='display:none;flex:1;overflow-y:auto;padding-bottom:20px';
+    panel.appendChild(pane);
+
+    document.getElementById('tabGoods').onclick=()=>{
+      document.getElementById('tabGoods').classList.add('on');
+      document.getElementById('tabBond').classList.remove('on');
+      body.style.display='';pane.style.display='none';
+    };
+    document.getElementById('tabBond').onclick=()=>{
+      document.getElementById('tabBond').classList.add('on');
+      document.getElementById('tabGoods').classList.remove('on');
+      body.style.display='none';pane.style.display='block';
+      renderBonds();
+    };
+    return true;
+  }
+
+  function renderBonds(){
+    if(!buildTabs())return;
+    const pane=document.getElementById('bondPane');
+    const list=loadB(),cur=eraIdx(),off=offers();
+
+    let html='<div style="font-size:11px;color:#7d7266;line-height:1.75;margin-bottom:10px">'+
+      '每周<呃>期发行 3 只 · 买入后 <b style="color:#e6c47f">10 个时代</b> 结算<br>'+
+      '可提前转手，按现值 <b style="color:#e98a76">90%</b> 成交（含 10% 手续费）</div>';
+
+    html+='<div style="font-size:11px;color:#7d7266;margin:0 0 6px">本期发行</div>';
+    off.forEach((o,i)=>{
+      html+='<div style="padding:12px;border:1px solid #e6c47f33;border-radius:12px;'+
+        'background:#16121099;margin-bottom:8px">'+
+        '<div style="display:flex;align-items:center">'+
+         '<div style="flex:1;min-width:0"><div style="font-size:13px;color:#e6c47f">'+o.name+'</div>'+
+         '<div style="font-size:10px;color:#7d7266;margin-top:3px">'+
+          BPROF[o.prof][0]+' · '+BPROF[o.prof][1]+'</div></div>'+
+         '<div style="text-align:right;flex:0 0 auto;margin-left:8px">'+
+          '<div style="font-size:12px;color:#e6c47f">'+o.price+' 金</div>'+
+          '<button data-buy2="'+i+'" style="margin-top:5px;padding:6px 12px;font-size:11.5px;flex:0 0 auto">买入</button>'+
+         '</div></div></div>';
+    });
+
+    html+='<div style="font-size:11px;color:#7d7266;margin:14px 0 6px">持有中（'+list.length+'）</div>';
+    if(!list.length)html+='<div style="font-size:12px;color:#544b40">还没有债券</div>';
+    list.forEach((b,i)=>{
+      const p=bpath(b),k=bkOf(b),left=(b.buyEra||b.e)+10-cur;
+      const now=p[k],diff=now-b.price;
+      html+='<div style="padding:11px 12px;border:1px solid #ffffff12;border-radius:12px;'+
+        'background:#16121099;margin-bottom:9px">'+
+        '<div style="display:flex;align-items:center">'+
+         '<div style="flex:1;font-size:12.5px;color:#c9bda8">'+b.name+'</div>'+
+         '<div style="font-size:11px;color:'+(diff>=0?'#8ef2a8':'#ff9a86')+'">'+
+          (diff>=0?'+':'')+diff+'</div></div>'+
+        '<div style="font-size:10.5px;color:#6f6558;margin:4px 0 6px">'+
+         '现值 '+now+' · 买入 '+b.price+' · '+
+         (left>0?(left+' 个时代后到期'):'已到期，稍后自动结算')+'</div>'+
+        '<canvas class="b2c" data-i="'+i+'" style="width:100%;height:56px;display:block"></canvas>'+
+        '<div style="display:flex;align-items:center;margin-top:7px">'+
+         '<div style="flex:1;font-size:10.5px;color:#7a6a53">转手可得 '+
+          sellVal(b)+' 金</div>'+
+         '<button data-sell="'+i+'" style="flex:0 0 auto;padding:7px 12px;font-size:11.5px">'+
+          '转手</button></div>'+
+        '</div>';
+    });
+    pane.innerHTML=html;
+
+    pane.querySelectorAll('button[data-buy2]').forEach(b=>{
+      b.onclick=()=>{
+        const o=off[+b.getAttribute('data-buy2')];
+        if(S.coins<o.price){toast('金币不够');return;}
+        S.coins-=o.price;save();updateHud();
+        const l=loadB();
+        l.push({name:o.name,price:o.price,prof:o.prof,e:o.e,buyEra:eraIdx()});
+        saveB(l);
+        try{SFX.coin();}catch(e){}
+        toast('买入 <b>'+o.name+'</b>',1400);
+        renderBonds();
+      };
+    });
+
+    pane.querySelectorAll('button[data-sell]').forEach(btn=>{
+      btn.onclick=()=>{
+        const idx=+btn.getAttribute('data-sell');
+        const l=loadB(),b=l[idx];
+        if(!b)return;
+        const v=sellVal(b);
+        if(!confirm('提前转手「'+b.name+'」？\n可得 '+v+' 金（现值 90%，含手续费）'))return;
+        S.coins+=v;
+        l.splice(idx,1);
+        saveB(l);save();updateHud();
+        try{SFX.coin();}catch(e){}
+        toast('已转手 <b>+'+v+' 金</b>',1500);
+        renderBonds();
+      };
+    });
+
+    pane.querySelectorAll('.b2c').forEach(cv=>{
+      const i=+cv.dataset.i,b=list[i];
+      const arr=bpath(b),k=bkOf(b);
+      cv.__arr=arr;cv.__cur=k;cv.__hov=null;
+      drawChart(cv,arr,k,null);
+      const onMove=e=>{
+        const r=cv.getBoundingClientRect();
+        const x=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
+        cv.__hov=Math.round(x*(arr.length-1));
+        drawChart(cv,arr,cv.__cur,cv.__hov);
+      };
+      cv.addEventListener('pointerdown',e=>{e.stopPropagation();onMove(e);});
+      cv.addEventListener('pointermove',e=>{if(e.buttons||e.pointerType==='mouse')onMove(e);});
+      cv.addEventListener('pointerup',e=>{
+        const r=cv.getBoundingClientRect();
+        const x=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
+        drawChart(cv,arr,Math.round(x*(arr.length-1)),null);
+      });
+    });
+  }
+
+  /* ---------- 入口 ---------- */
+  function openShopPanel(){
+    const panel=document.getElementById('shopScreen');
+    if(!panel){toast('商店模块没装上');return;}
+    panel.classList.add('on');
+    const legacy=document.getElementById('btnShop');
+    if(legacy)legacy.click();
+    buildTabs();
+    const g=document.getElementById('tabGoods');
+    if(!g)setTimeout(()=>{buildTabs();},100);
+  }
+  window.__openShopPanel=openShopPanel;
+
+  function ensureTop(){
+    try{
+      const h1=document.querySelector('#hud .h1');
+      const bag=document.getElementById('btnBag');
+      let b=document.getElementById('btnShopTop');
+      if(!b&&h1&&bag){
+        b=document.createElement('button');
+        b.id='btnShopTop';b.textContent='商店';
+        b.style.padding='6px 10px';b.style.fontSize='11px';
+        h1.insertBefore(b,bag);
+      }else if(!b){
+        const r3=document.getElementById('hudRow3');
+        if(r3){
+          b=document.createElement('button');
+          b.id='btnShopTop';b.textContent='商店';
+          r3.appendChild(b);
+        }
+      }
+      if(b)b.onclick=openShopPanel;
+    }catch(e){}
+  }
+
+  /* ---------- 定时任务 ---------- */
+  setInterval(enforce,250);
+  setInterval(()=>{try{updateHud();}catch(e){}},5000);
+  setInterval(()=>{try{localStorage.setItem('keyhole_oil_v1',String(S.oil));}catch(e){}},2000);
+  setInterval(()=>{try{paintFree&&paintFree();}catch(e){}},15000);
+  setInterval(ensureTop,1500);
+  setInterval(()=>{
+    const panel=document.getElementById('shopScreen');
+    const pane=document.getElementById('bondPane');
+    if(panel&&panel.classList.contains('on')&&pane&&pane.style.display==='block')renderBonds();
+  },30000);
+
+  /* 灯油时代补满 */
+  const OS='keyhole_oil_era_v4';
+  const slot=()=>Math.floor(Date.now()/ERA);
+  setInterval(()=>{
+    try{
+      const cur=slot(),last=+(localStorage.getItem(OS)||0);
+      if(last!==cur){
+        localStorage.setItem(OS,String(cur));
+        if(last!==0){S.oil=CFG.oilMax;updateHud();save();
+          try{toast('新时代 · <b>灯油补满</b>',1600);}catch(e){}}
+      }
+    }catch(e){}
+  },10000);
+
+  /* 债券到期自动结算 */
+  setInterval(()=>{
+    try{
+      const cur=eraIdx();let list=loadB(),keep=[],done=[];
+      list.forEach(b=>{
+        if(cur>=(b.buyEra||b.e)+10){
+          const out=settle2(b);S.coins+=out;done.push(b.name+' 到期 '+out+' 金');
+        }else keep.push(b);
+      });
+      if(done.length){
+        saveB(keep);save();updateHud();
+        try{toast('债券结算：<br>'+done.join('<br>'),3200);}catch(e){}
+      }
+    }catch(e){}
+  },20000);
+
+  ensureTop();buildTabs();enforce();updateHud();
+
+})();  
 </script>
 </body>
 </html>

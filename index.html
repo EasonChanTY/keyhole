@@ -8849,78 +8849,7 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   },800);
 
 })();
-/* ===== v137：危险概率 / 箱子涨价（安全版） + 抓流程按钮 ===== */
-(function(){
 
-  /* 1. 百分比危险变少、普通危险变多 */
-  try{
-    MODES.easy.haz+=.02; MODES.hard.haz+=.03;
-    MODES.nightmare.haz+=.04;
-    if(MODES.hell)MODES.hell.haz+=.05;
-  }catch(e){}
-
-  const PCTS=['tax','thief','fire','lawsuit'];
-  try{
-    const _rl=rollLoot;
-    rollLoot=function(tier){
-      const out=_rl.apply(this,arguments);
-      try{
-        for(let i=out.length-1;i>=0;i--){
-          if(out[i]&&out[i].kind==='evt'&&PCTS.indexOf(out[i].ev)>=0){
-            if(Math.random()<.62)out.splice(i,1);
-          }
-        }
-        const hard=(MODE===MODES.nightmare||MODE===MODES.hell);
-        if(hard&&Math.random()<.18&&out.length){
-          const L=['scorpion','sulfur','bomb'];
-          out.splice(Math.min(1,out.length),0,{kind:'evt',ev:L[rnd(3)]});
-        }
-      }catch(e){}
-      return out;
-    };
-  }catch(e){}
-
-  /* 2. 箱子随等级涨价更狠 */
-  try{
-    lvBonus=function(){ return Math.min(1.5,Math.floor((S.lv||1)/5)*0.04); };
-  }catch(e){}
-
-  /* 3. 抓流程源码（点按钮才执行） */
-  const b=document.createElement('div');
-  b.textContent='抓流程';
-  b.style.cssText='position:fixed;top:6px;left:6px;z-index:2147483645;background:#0f0;'+
-    'color:#000;font:12px/1 sans-serif;padding:6px 8px;border-radius:6px;font-weight:700';
-  b.onclick=function(){
-    let d=document.getElementById('__d9');
-    if(!d){
-      d=document.createElement('div');d.id='__d9';
-      d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#0b0b0b;color:#0f0;'+
-        'font:9px/1.3 monospace;padding:8px;white-space:pre-wrap;word-break:break-all;overflow:auto';
-      d.onclick=function(){d.style.display='none';};
-      document.body.appendChild(d);
-    }
-    const out=[];
-    const names=['newRound','startStage','afterOpen','chooseBox','confirmBox','showSummary','takeBag','tapStage'];
-    for(let i=0;i<names.length;i++){
-      try{
-        const f=eval(names[i]);
-        if(typeof f==='function'){
-          out.push('===== '+names[i]+' =====\n'+f.toString());
-        }else{
-          out.push('===== '+names[i]+' ===== 不是函数');
-        }
-      }catch(e){
-        out.push('===== '+names[i]+' ===== 不存在');
-      }
-    }
-    d.textContent=out.join('\n\n');
-    d.style.display='block';
-  };
-  document.body.appendChild(b);
-
-})();
-
-})();  
 </script>
 </body>
 </html>

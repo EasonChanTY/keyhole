@@ -6787,6 +6787,194 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   }
 
 })();  
+/* ===== v117：黑曜石扩充 / 时代榜更多 / 炸弹修复 / 百分比危险 / 瑕疵 / 钥匙涨价 ===== */
+(function(){
+
+  /* ---------- 1. 黑曜石藏品：更多 + 价格区间更大 ---------- */
+  const OBS_ADD=[
+   {id:'obsRing', n:'黑曜石指环', t:5,c:'relic',b:700, uniq:true,d:'内圈磨成镜面，照人能照出两遍。'},
+   {id:'obsKey',  n:'黑曜钥匙',   t:5,c:'relic',b:1100,uniq:true,d:'柄上也有齿，像在咬什么。'},
+   {id:'obsBox',  n:'黑曜匣子',   t:5,c:'relic',b:2600,uniq:true,d:'没有锁孔，却怎么也打不开。'},
+   {id:'obsSkull',n:'黑曜颅骨',   t:5,c:'relic',b:4200,uniq:true,d:'轻得像空的，凑近能听见声音。'},
+   {id:'obsTear', n:'黑曜泪滴',   t:5,c:'relic',b:6800,uniq:true,d:'冷得刺手，在灯下会冒白烟。'},
+   {id:'obsHeart',n:'黑曜之心',   t:5,c:'relic',b:9000,uniq:true,d:'据说每隔十年跳一次。'}
+  ];
+  try{
+    OBS_ADD.forEach(it=>{
+      if(ITEM_BY_ID[it.id])return;
+      ITEMS.push(it);ITEM_BY_ID[it.id]=it;OBS_ITEMS.push(it);
+    });
+  }catch(e){}
+
+  /* 原有黑曜石价格再拉一档 */
+  const OMUL2={obsMask:2.5,obsDagger:3.5,obsBoard:6,obsCup:8,obsEye:12,
+   obsRing:2,obsKey:4,obsBox:7,obsSkull:10,obsTear:15,obsHeart:20};
+  try{
+    OBS_ITEMS.forEach(it=>{
+      if(OMUL2[it.id]&&!it.__m){
+        it.b=Math.round(it.b*OMUL2[it.id]);
+        it.__m=1;
+      }
+    });
+  }catch(e){}
+
+  /* ---------- 2. 时代面板：最贵 8 / 最便宜 5 ---------- */
+  try{
+    openEra=function(){
+      const era=curEra();
+      let html='<div class="ename">'+era.n+'</div><div class="edesc">'+era.d+'</div>';
+      ['junk','curio','antique','gem','relic'].forEach(c=>{
+        const m=era.m[c],pct=Math.round((m-1)*100);
+        const w=Math.max(4,Math.min(100,(m/2.2)*100));
+        html+='<div class="catrow"><span class="cn">'+CAT[c].name+'</span>'+
+          '<span class="cb"><i style="width:'+w+'%"></i></span>'+
+          '<span class="cv '+(pct>=0?'up':'dn')+'">'+(pct>=0?'+':'')+pct+'%</span></div>';
+      });
+      const all=ITEMS.map(it=>({it,p:priceOf(it,1)})).sort((a,b)=>b.p-a.p);
+      html+='<div id="esTop">本 季 最 值 钱 的 八 件</div>';
+      all.slice(0,8).forEach((x,i)=>{
+        html+='<div class="toprow"><span>'+(i+1)+'. '+(x.it.uniq?'◆ ':'')+x.it.n+
+          '</span><b>'+x.p+' 金</b></div>';
+      });
+      html+='<div id="esTop">最 不 值 钱 的 五 件</div>';
+      all.slice(-5).reverse().forEach(x=>{
+        html+='<div class="toprow"><span>'+x.it.n+'</span><b>'+x.p+' 金</b></div>';
+      });
+      html+='<div style="font-size:10.5px;color:#4f463c;margin-top:18px;line-height:1.95">'+
+        '时代每 30 分钟换一次，物品价格每小时还会单独波动。</div>';
+      document.getElementById('esBody').innerHTML=html;
+      document.getElementById('eraScreen').classList.add('on');
+    };
+  }catch(e){}
+
+  /* ---------- 3. 炸弹修复：炸了整箱清零，且不再继续出物品 ---------- */
+  const DMG_BOMB=60;
+  const _res=resolveEvent;
+  resolveEvent=function(insp){
+    try{
+      const ev=insp&&insp.entry&&insp.entry.ev;
+
+      if(ev==='bomb'&&insp&&!insp.resolved){
+        let a=null;
+        try{a=JSON.parse(localStorage.getItem('keyhole_armor_v1')||'null');}catch(e){}
+        if(a&&a.bombProof)return _res.apply(this,arguments);   /* 钻石护甲交给别的逻辑 */
+
+        S.coins=Math.max(0,S.coins-DMG_BOMB);
+        if(S.bag.length>(S.bagStart||0))S.bag.length=S.bagStart;
+        S.collected=0;S.exploded=true;insp.resolved=true;
+        S.loot=[];S.drawIdx=0;
+        try{SFX.boom();haptic([80,50,180]);flash(6);}catch(e){}
+        try{addMk('炸弹 · 本箱全废');toast('轰 —— <b>箱子炸了</b>',2400);}catch(e){}
+        try{updateHud();save();}catch(e){}
+        setTimeout(()=>{try{showSummary(true);}catch(e){}},900);
+        return;
+      }
+
+      /* 新危险：按金库百分比扣钱 */
+      if(ev==='tax'&&insp&&!insp.resolved){
+        const base=S.coins||0;
+        const loss=Math.max(5,Math.round(base*.08));
+        S.coins=Math.max(0,S.coins-loss);
+        insp.resolved=true;
+        try{
+          addMk('税务稽查 −'+loss);
+          toast('<b>税务稽查</b><br>按金库 8% 扣款 −'+loss+' 金',2200);
+        }catch(e){}
+        try{updateHud();save();}catch(e){}
+        return;
+      }
+    }catch(e){}
+    return _res.apply(this,arguments);
+  };
+
+  /* 税务稽查只在噩梦/地狱出现 */
+  try{
+    EVT_NAME.tax='税务稽查';
+    const _mem=makeEventMesh;
+    makeEventMesh=function(ev){ if(ev==='tax')ev='bomb'; return _mem.call(this,ev); };
+
+    const _rl=rollLoot;
+    rollLoot=function(tier){
+      const out=_rl.apply(this,arguments);
+      try{
+        const hard=(MODE===MODES.nightmare||MODE===MODES.hell);
+        if(hard&&Math.random()<.14&&out.length){
+          const pos=Math.min(1,out.length);
+          out.splice(pos,0,{kind:'evt',ev:'tax'});
+        }
+      }catch(e){}
+      return out;
+    };
+  }catch(e){}
+
+  /* ---------- 4. 瑕疵机制完善 ---------- */
+  const FLAW_TXT=['一道细裂','边缘缺口','氧化斑','缺角','表面划痕',
+   '裂纹贯穿','碎边','暗裂','内伤'];
+  try{
+    const _rc=revealCond;
+    revealCond=function(){
+      _rc.apply(this,arguments);
+      try{
+        const insp=S.insp;
+        if(insp&&!insp.isEvt&&!insp.crumbled){
+          if(insp.cond>=2){
+            const k=1-(.03+Math.random()*.09)*(insp.cond-1);
+            insp.realPrice=Math.round(insp.realPrice*k);
+            addMk('瑕疵：'+FLAW_TXT[rnd(FLAW_TXT.length)]);
+            if(typeof refreshTotal==='function')refreshTotal();
+          }
+          insp.insure=Math.random()<.10;   /* 10% 概率是“内伤”，转完才知道 */
+        }
+      }catch(e){}
+    };
+  }catch(e){}
+
+  /* ---------- 5. 每失败一把钥匙，下一把更贵 ---------- */
+  const KEY_STEP=8;
+  const keyPrice=()=>CFG.price+((S.keyFails||0)*KEY_STEP);
+
+  try{
+    const _nr=newRound;
+    newRound=function(){
+      try{S.keyFails=0;}catch(e){}
+      return _nr.apply(this,arguments);
+    };
+  }catch(e){}
+
+  try{
+    const _bk=buyKey;
+    buyKey=function(){
+      const fails=S.keyFails||0;
+      const base=CFG.price;
+      CFG.price=base+fails*KEY_STEP;
+      const r=_bk.apply(this,arguments);
+      CFG.price=base;
+      setTimeout(()=>{
+        try{
+          if(S.phase==='keys'||S.phase==='box'){
+            S.keyFails=(S.keyFails||0)+1;
+          }else{
+            S.keyFails=0;
+          }
+        }catch(e){}
+      },700);
+      return r;
+    };
+  }catch(e){}
+
+  /* 按钮上显示涨价后的价格 */
+  function enforceKey(){
+    try{
+      if(S.phase!=='keys')return;
+      const b=document.getElementById('btnB');
+      if(!b)return;
+      const t='买下并试开 · '+keyPrice()+' 金';
+      if(b.textContent!==t)b.textContent=t;
+    }catch(e){}
+  }
+  setInterval(enforceKey,400);
+
+})();
 </script>
 </body>
 </html>

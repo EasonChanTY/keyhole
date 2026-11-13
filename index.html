@@ -9547,20 +9547,7 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   setTimeout(function(){
     try{ toast('黑曜石价格已更新 <b>'+n+'</b> 件',2200); }catch(e){}
   },1200);
-
-  /* 自检按钮 */
-  const b=document.createElement('div');
-  b.textContent='查黑曜石';
-  b.style.cssText='position:fixed;top:6px;left:96px;z-index:2147483645;background:#0f0;'+
-    'color:#000;font:12px/1 sans-serif;padding:6px 8px;border-radius:6px;font-weight:700';
-  b.onclick=function(){
-    let d=document.getElementById('__dob');
-    if(!d){
-      d=document.createElement('div');d.id='__dob';
-      d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#0b0b0b;color:#0f0;'+
-        'font:10px/1.4 monospace;padding:10px;white-space:pre-wrap;overflow:auto';
-      d.onclick=function(){d.style.display='none';};
-      document.body.appendChild(d);
+  
     }
     let out='';
     try{

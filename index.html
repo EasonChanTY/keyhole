@@ -8849,10 +8849,10 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   },800);
 
 })();
-/* ===== v135：危险概率 / 箱子涨价 / 开箱后不自动刷新 ===== */
+/* ===== v137：危险概率 / 箱子涨价（安全版） + 抓流程按钮 ===== */
 (function(){
 
-  /* ---------- 1. 百分比危险降低，普通危险变多 ---------- */
+  /* 1. 百分比危险变少、普通危险变多 */
   try{
     MODES.easy.haz+=.02; MODES.hard.haz+=.03;
     MODES.nightmare.haz+=.04;
@@ -8865,13 +8865,11 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
     rollLoot=function(tier){
       const out=_rl.apply(this,arguments);
       try{
-        /* 百分比危险：有 62% 概率被拿掉（原来太常见） */
         for(let i=out.length-1;i>=0;i--){
           if(out[i]&&out[i].kind==='evt'&&PCTS.indexOf(out[i].ev)>=0){
             if(Math.random()<.62)out.splice(i,1);
           }
         }
-        /* 噩梦/地狱：普通危险再多来一点 */
         const hard=(MODE===MODES.nightmare||MODE===MODES.hell);
         if(hard&&Math.random()<.18&&out.length){
           const L=['scorpion','sulfur','bomb'];
@@ -8882,147 +8880,45 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
     };
   }catch(e){}
 
-  /* ---------- 2. 箱子价格随等级涨得更狠 ---------- */
+  /* 2. 箱子随等级涨价更狠 */
   try{
-    lvBonus=function(){
-      return Math.min(1.5, Math.floor((S.lv||1)/5)*0.04);
-    };
+    lvBonus=function(){ return Math.min(1.5,Math.floor((S.lv||1)/5)*0.04); };
   }catch(e){}
 
-  /* ---------- 3. 开完一只不自动刷新 ---------- */
-  try{
-    const _cbx=chooseBox;
-    chooseBox=function(i){
+  /* 3. 抓流程源码（点按钮才执行） */
+  const b=document.createElement('div');
+  b.textContent='抓流程';
+  b.style.cssText='position:fixed;top:6px;left:6px;z-index:2147483645;background:#0f0;'+
+    'color:#000;font:12px/1 sans-serif;padding:6px 8px;border-radius:6px;font-weight:700';
+  b.onclick=function(){
+    let d=document.getElementById('__d9');
+    if(!d){
+      d=document.createElement('div');d.id='__d9';
+      d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#0b0b0b;color:#0f0;'+
+        'font:9px/1.3 monospace;padding:8px;white-space:pre-wrap;word-break:break-all;overflow:auto';
+      d.onclick=function(){d.style.display='none';};
+      document.body.appendChild(d);
+    }
+    const out=[];
+    const names=['newRound','startStage','afterOpen','chooseBox','confirmBox','showSummary','takeBag','tapStage'];
+    for(let i=0;i<names.length;i++){
       try{
-        if(S.boxes&&S.boxes[i]&&S.boxes[i].used){
-          toast('这只已经开过了');return;
+        const f=eval(names[i]);
+        if(typeof f==='function'){
+          out.push('===== '+names[i]+' =====\n'+f.toString());
+        }else{
+          out.push('===== '+names[i]+' ===== 不是函数');
         }
-      }catch(e){}
-      return _cbx.apply(this,arguments);
-    };
-  }catch(e){}
-
-  try{
-    const _nr=newRound;
-    newRound=function(){
-      const r=_nr.apply(this,arguments);
-      try{
-        (S.boxes||[]).forEach(b=>{
-          b.used=false;
-          if(b.g)b.g.visible=true;
-        });
-      }catch(e){}
-      return r;
-    };
-  }catch(e){}
-
-  function backToBoxes(){
-    try{
-      const remain=(S.boxes||[]).filter(b=>!b.used).length;
-      if(remain<=0){ newRound(); return; }
-      stSumEl.classList.remove('on');
-      stageEl.classList.remove('on');
-      uiEl.style.display='flex';
-      S.phase='box';
-      S.selBox=-1;
-      msg('这只开完了 · 还剩 '+remain+' 只（也可以换一批）');
-      updateUI();
-    }catch(e){}
-  }
-
-  const take=document.getElementById('btnTake');
-  if(take){
-    take.onclick=function(){
-      try{
-        const i=S.selBox;
-        if(i>=0&&S.boxes[i]){
-          S.boxes[i].used=true;
-          if(S.boxes[i].g)S.boxes[i].g.visible=false;
-        }
-      }catch(e){}
-      backToBoxes();
-    };
-  }
-
-  /* 箱中箱也走同一套 */
-  const nest=document.getElementById('btnNest');
-  if(nest){
-    const oldNest=nest.onclick;
-    nest.onclick=function(){
-      try{
-        const i=S.selBox;
-        if(i>=0&&S.boxes[i]){
-          S.boxes[i].used=true;
-          if(S.boxes[i].g)S.boxes[i].g.visible=false;
-        }
-      }catch(e){}
-      if(oldNest)oldNest.apply(this,arguments);
-    };
-  }
-
-})(); 
-/* ===== v136：回退开箱流程（开完自动换一批，保证不卡） ===== */
-(function(){
-
-  /* 清掉上一版留下的「已开」标记 */
-  try{
-    (S.boxes||[]).forEach(b=>{ b.used=false; if(b.g)b.g.visible=true; });
-  }catch(e){}
-
-  function finishAndRefresh(){
-    try{
-      stSumEl.classList.remove('on');
-      stageEl.classList.remove('on');
-      uiEl.style.display='flex';
-      S.phase='box';
-      S.selBox=-1;
-      document.getElementById('msg').textContent='点开一只箱子';
-    }catch(e){}
-    try{ newRound(); }catch(e){}
-  }
-
-  const take=document.getElementById('btnTake');
-  if(take){
-    take.onclick=function(){
-      finishAndRefresh();
-    };
-  }
-
-  const nest=document.getElementById('btnNest');
-  if(nest){
-    nest.onclick=function(){
-      try{ stSumEl.classList.remove('on'); }catch(e){}
-      try{
-        const t=TIERS[3];
-        startStage({tier:t,loot:rollLoot(t)});
-      }catch(e){}
-    };
-  }
-
-  /* 保证箱子重新可见 */
-  const _nr=newRound;
-  newRound=function(){
-    const r=_nr.apply(this,arguments);
-    try{
-      (S.boxes||[]).forEach(b=>{
-        b.used=false;
-        if(b.g)b.g.visible=true;
-      });
-      stageEl.classList.remove('on');
-      uiEl.style.display='flex';
-    }catch(e){}
-    return r;
-  };
-
-  /* 万一卡在舞台阶段，给个兜底：点空白也能退回 */
-  setInterval(function(){
-    try{
-      if(S.phase==='box'&&stageEl.classList.contains('on')){
-        stageEl.classList.remove('on');
-        uiEl.style.display='flex';
+      }catch(e){
+        out.push('===== '+names[i]+' ===== 不存在');
       }
-    }catch(e){}
-  },800);
+    }
+    d.textContent=out.join('\n\n');
+    d.style.display='block';
+  };
+  document.body.appendChild(b);
+
+})();
 
 })();  
 </script>

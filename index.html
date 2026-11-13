@@ -7953,6 +7953,207 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   },1500);
 
 })();  
+/* ===== v122：彻底接管商店价格 / 杀掉旧换一批 ===== */
+(function(){
+  const ERA=1800000;
+  const eraIdx=()=>Math.floor(Date.now()/ERA);
+  const SHOP_KEY='keyhole_shop_v1';
+  const ARM_KEY='keyhole_armor_v1';
+  const loadArmor=()=>{try{return JSON.parse(localStorage.getItem(ARM_KEY)||'null');}catch(e){return null;}};
+  const saveArmor=a=>{try{a?localStorage.setItem(ARM_KEY,JSON.stringify(a)):
+    localStorage.removeItem(ARM_KEY);}catch(e){}};
+  const rank=()=>{try{return (window.__rankOf&&window.__rankOf())||0;}catch(e){return 0;}};
+
+  const GOODS={
+    bronze:{kind:'armor',name:'青铜护甲',base:30,shield:25,desc:'吸收 25 金伤害'},
+    silver:{kind:'armor',name:'白银护甲',base:90,shield:70,desc:'吸收 70 金伤害'},
+    gold:  {kind:'armor',name:'黄金护甲',base:220,shield:160,desc:'吸收 160 金伤害'},
+    diamond:{kind:'armor',name:'钻石护甲',base:1200,shield:200,bombProof:true,
+      desc:'免疫炸弹 + 吸收 200 金'},
+    omni:{kind:'armor',name:'全能护甲',base:0,dynamic:true,omni:true,needRank:6,
+      desc:'挡一次百分比危险 · 需城里富商'},
+    bw:{kind:'box',name:'盲盒木箱',base:45,tier:0},
+    bs:{kind:'box',name:'盲盒银箱',base:260,tier:2},
+    bg:{kind:'box',name:'盲盒金箱',base:600,tier:3},
+    bd:{kind:'box',name:'盲盒钻石箱',base:3200,tier:5}
+  };
+
+  function mul(id){ return 0.85+hash('shop'+id+eraIdx())*0.45; }
+  function priceOfGoods(id){
+    const g=GOODS[id];if(!g)return 0;
+    if(g.dynamic)return Math.max(200,Math.round((S.coins||0)*0.10));
+    return Math.max(1,Math.round(g.base*mul(id)));
+  }
+
+  /* ---------- 1. 杀掉旧「换一批（10金）」 ---------- */
+  function killOld(){
+    document.querySelectorAll('button,div,span').forEach(el=>{
+      if(el.id==='btnB')return;
+      const t=(el.textContent||'').replace(/\s/g,'');
+      if(/^换一批[（(]10金[）)]$/.test(t)) el.remove();
+    });
+  }
+  setInterval(killOld,300);
+
+  /* 盯住 btnB，任何人改字都立刻纠正 */
+  function watchBtnB(){
+    const b=document.getElementById('btnB');
+    if(!b||b.__w122)return;
+    b.__w122=1;
+    new MutationObserver(()=>{
+      if(S.phase!=='box')return;
+      const t='换一批 · '+((window.__rerollNow&&window.__rerollNow())||10)+' 金';
+      if(b.textContent!==t)b.textContent=t;
+    }).observe(b,{childList:true,characterData:true,subtree:true});
+  }
+
+  /* 窗口级拦截：换一批只走我们的逻辑 */
+  window.addEventListener('click',function(e){
+    let t=e.target,b=null;
+    while(t&&t!==document.body){ if(t.id==='btnB'){b=t;break;} t=t.parentElement; }
+    if(!b||S.phase!=='box')return;
+    e.preventDefault();e.stopPropagation();
+    if(e.stopImmediatePropagation)e.stopImmediatePropagation();
+    const c=(window.__rerollNow&&window.__rerollNow())||10;
+    if(S.coins<c){toast('换一批需要 <b>'+c+'</b> 金');return;}
+    S.coins-=c;save();updateHud();newRound();
+  },true);
+
+  /* ---------- 2. 商店价格同步（data-buy 与 data-buy3 都认） ---------- */
+  function syncShop(){
+    const body=document.getElementById('shopBody');
+    if(!body)return;
+
+    const e=eraIdx();
+    const era=document.getElementById('shopEra');
+    if(era){
+      const t='时代 · '+curEra().n+' · 商品价格随时代浮动（每 30 分钟变一次）';
+      if(era.textContent!==t)era.textContent=t;
+    }
+
+    body.querySelectorAll('button').forEach(btn=>{
+      const id=btn.getAttribute('data-buy3')||btn.getAttribute('data-buy');
+      if(!id||!GOODS[id])return;
+      const g=GOODS[id];
+      const m=mul(id), p=priceOfGoods(id);
+      const row=btn.closest('.catrow');
+      if(!row)continue;
+
+      /* 价格：任何“数字 金”的叶子节点 */
+      [...row.querySelectorAll('*')].forEach(el=>{
+        if(el.children.length)return;
+        const tx=(el.textContent||'').trim();
+        if(/^[\d,]+金$/.test(tx)||/^≈?[\d,]+金$/.test(tx)){
+          const nt=g.dynamic?('≈'+p+' 金（×'+m.toFixed(2)+'）')
+            :(p+' 金（×'+m.toFixed(2)+'）');
+          if(el.textContent!==nt)el.textContent=nt;
+        }
+      });
+
+      /* 描述 */
+      [...row.querySelectorAll('*')].forEach(el=>{
+        if(el.children.length)return;
+        const tx=(el.textContent||'').trim();
+        if(tx.indexOf('吸收')>=0||tx.indexOf('直接开')>=0||tx.indexOf('顶级品质')>=0){
+          if(g.desc&&el.textContent!==g.desc)el.textContent=g.desc;
+        }
+      });
+
+      /* 全能护甲阶级锁 */
+      if(g.needRank!==undefined&&rank()<g.needRank){
+        btn.disabled=true;
+        if(btn.textContent!=='需 城里富商')btn.textContent='需 城里富商';
+      }
+    });
+
+    const omni=document.getElementById('omniRow');
+    if(omni){
+      [...omni.querySelectorAll('*')].forEach(el=>{
+        if(el.children.length)return;
+        const tx=(el.textContent||'').trim();
+        if(/^[\d,]+金$/.test(tx)||/^≈?[\d,]+金$/.test(tx)){
+          const nt='≈'+priceOfGoods('omni')+' 金';
+          if(el.textContent!==nt)el.textContent=nt;
+        }
+      });
+    }
+  }
+  window.__syncShop=syncShop;
+
+  /* ---------- 3. 购买：统一走这里 ---------- */
+  function loadStock(){
+    let d={slot:eraIdx(),stock:{}};
+    try{const r=JSON.parse(localStorage.getItem(SHOP_KEY)||'null');if(r)d=r;}catch(e){}
+    if(d.slot!==eraIdx())d={slot:eraIdx(),stock:{}};
+    Object.keys(GOODS).forEach(k=>{
+      if(d.stock[k]===undefined)d.stock[k]=({bronze:3,silver:3,gold:2,diamond:2,omni:1,
+        bw:5,bs:3,bg:2,bd:1})[k]||1;
+    });
+    return d;
+  }
+  const saveStock=d=>{try{localStorage.setItem(SHOP_KEY,JSON.stringify(d));}catch(e){}};
+
+  function buy(id){
+    const g=GOODS[id];if(!g)return;
+    const d=loadStock();
+    if((d.stock[id]||0)<=0){toast('已售罄');return;}
+    if(g.needRank!==undefined&&rank()<g.needRank){
+      toast('阶级不足 · 需要「城里富商」');return;
+    }
+    if(S.phase==='reveal'||S.phase==='opening'){toast('开箱时不能买');return;}
+    const p=priceOfGoods(id);
+    if(S.coins<p){toast('金币不够 · 需要 '+p+' 金');return;}
+
+    if(g.kind==='armor'){
+      if(loadArmor()){toast('已经穿着一件护甲，用完再买');return;}
+      S.coins-=p;d.stock[id]--;saveStock(d);
+      saveArmor({name:g.name,shield:g.shield||0,bombProof:!!g.bombProof,omni:!!g.omni});
+      try{SFX.coin();}catch(e){}
+      updateHud();save();
+      toast('已装备 <b>'+g.name+'</b><br>−'+p+' 金',1600);
+      syncShop();
+      return;
+    }
+
+    S.coins-=p;d.stock[id]--;saveStock(d);
+    updateHud();save();
+    const tier=TIERS[g.tier];
+    const loot=rollLoot(tier);
+    const panel=document.getElementById('shopScreen');
+    if(panel)panel.classList.remove('on');
+    try{SFX.open();}catch(e){}
+    setTimeout(()=>{try{fadeTo(()=>startStage({tier,loot}));}catch(e){}},120);
+  }
+
+  window.addEventListener('click',function(e){
+    let t=e.target,id=null;
+    while(t&&t!==document.body){
+      const a=t.getAttribute&&(t.getAttribute('data-buy3')||t.getAttribute('data-buy'));
+      if(a){id=a;break;}
+      if(t.id==='omniBuy'){id='omni';break;}
+      t=t.parentElement;
+    }
+    if(!id||!GOODS[id])return;
+    e.preventDefault();e.stopPropagation();
+    if(e.stopImmediatePropagation)e.stopImmediatePropagation();
+    buy(id);
+  },true);
+
+  /* ---------- 4. 常驻同步 ---------- */
+  setInterval(()=>{watchBtnB();syncShop();},900);
+  setInterval(()=>{
+    const p=document.getElementById('shopScreen');
+    if(p&&p.classList.contains('on'))syncShop();
+  },800);
+
+  watchBtnB();syncShop();
+
+  /* 自检：确认补丁跑起来了 */
+  setTimeout(()=>{
+    try{toast('商店价格模块 v122 已启动',1400);}catch(e){}
+  },1200);
+
+})();  
 </script>
 </body>
 </html>

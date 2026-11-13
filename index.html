@@ -6345,6 +6345,448 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   PLAY.forEach(p=>{ if(p[0]!=='pg') seen('play',p[0]); });
 
 })();  
+/* ===== v116 合并版：债券重建 + 阶级重建 + 推理独立成排 ===== */
+(function(){
+
+  /* ================= 公共 ================= */
+  const BK='keyhole_bonds_v1';
+  const ERA=1800000;
+  const eraIdx=()=>Math.floor(Date.now()/ERA);
+  const loadB=()=>{try{return JSON.parse(localStorage.getItem(BK)||'[]');}catch(e){return[];}};
+  const saveB=a=>{try{localStorage.setItem(BK,JSON.stringify(a));}catch(e){}};
+
+  /* ================= 阶级 ================= */
+  const RANKS=[
+   ['桥洞常客',0,'睡了三年桥洞，钥匙串是捡的'],
+   ['咸鱼翻身中',600,'刚有点本钱，还没翻身'],
+   ['城中村租客',1500,'房租勉强交得上'],
+   ['小有积蓄',3500,'开始有人叫你老板'],
+   ['巷口收藏家',8000,'巷口摆摊，识货的都来问你'],
+   ['街区名人',18000,'整条街都认识你'],
+   ['城里富商',40000,'开始有账本，也有了仇家'],
+   ['上流圈边缘',90000,'请柬终于寄到你家'],
+   ['大收藏家',200000,'博物馆馆长亲自来访'],
+   ['传奇寻宝人',500000,'你的名字写进了行价里'],
+   ['齿口之王',1200000,'所有锁芯最后都听你的']
+  ];
+  function worth(){
+    let v=S.coins||0;
+    (S.bag||[]).forEach(it=>{
+      const d=ITEM_BY_ID[it.id];
+      if(d){try{v+=priceOf(d,it.cond);}catch(e){}}
+    });
+    try{loadB().forEach(b=>{v+=(b.price||0);});}catch(e){}
+    return v;
+  }
+  function rankIdx(){
+    const v=worth();let i=0;
+    RANKS.forEach((r,k)=>{if(v>=r[1])i=k;});
+    return i;
+  }
+  window.__rankOf=rankIdx;
+
+  const oldRank=document.getElementById('rank3');
+  if(oldRank)oldRank.remove();
+  const rk=document.createElement('section');
+  rk.id='rank3';rk.className='panel';
+  rk.innerHTML='<div class="phead"><h2>阶 级</h2><div class="sp"></div>'+
+   '<button id="r3Close">关闭</button></div>'+
+   '<div id="r3Body" style="flex:1;overflow-y:auto;padding-bottom:20px"></div>';
+  document.body.appendChild(rk);
+  document.getElementById('r3Close').onclick=()=>rk.classList.remove('on');
+
+  function openRank(){
+    const v=worth(),cur=rankIdx();
+    let html='<div style="font-size:12px;color:#c9bda8;line-height:1.9;margin-bottom:14px">'+
+      '当前身价 <b style="color:#e6c47f;font-size:16px">'+v+'</b> 金<br>'+
+      '<span style="color:#8c7e69;font-size:10.5px">金币 + 背包估价 + 债券本金</span></div>';
+    RANKS.forEach((r,i)=>{
+      const on=i===cur,done=i<=cur;
+      html+='<div style="display:flex;align-items:center;gap:8px;padding:11px 12px;'+
+        'border-radius:11px;margin-bottom:7px;border:1px solid '+
+        (on?'#e6c47f88':'#ffffff12')+';background:'+(on?'#2a2114cc':'#16121099')+'">'+
+        '<div style="flex:1;min-width:0">'+
+          '<div style="font-size:13.5px;color:'+(on?'#e6c47f':'#ddd2c0')+'">'+
+            (on?'▶ ':'')+r[0]+'</div>'+
+          '<div style="font-size:10.5px;color:#8c7e69;margin-top:3px">'+r[2]+'</div>'+
+        '</div>'+
+        '<div style="text-align:right;flex:0 0 auto">'+
+          '<div style="font-size:11.5px;color:'+(done?'#8ef2a8':'#a99c88')+'">'+r[1]+' 金</div>'+
+          '<div style="font-size:9.5px;color:'+(done?'#8c9686':'#6f6558')+'">'+
+            (done?'已达成':'未达成')+'</div>'+
+        '</div></div>';
+    });
+    document.getElementById('r3Body').innerHTML=html;
+    rk.classList.add('on');
+  }
+  window.__openRank=openRank;
+
+  function ensureChip(){
+    try{
+      const h1=document.querySelector('#hud .h1');
+      if(!h1)return;
+      let chip=document.getElementById('rankChip');
+      if(!chip){
+        chip=document.createElement('span');
+        chip.id='rankChip';
+        chip.style.cssText='font-size:9.5px;color:#e6c47f;letter-spacing:.06em;'+
+          'white-space:nowrap;pointer-events:auto;cursor:pointer';
+        const spacer=h1.querySelector('.sp');
+        h1.insertBefore(chip,spacer||null);
+      }
+      chip.style.pointerEvents='auto';
+      chip.onclick=openRank;
+      const t='阶 级 · '+RANKS[rankIdx()][0];
+      if(chip.textContent!==t)chip.textContent=t;
+    }catch(e){}
+  }
+
+  /* ================= 债券 ================= */
+  const BPROF={
+    steady:['稳健','小跌小涨，偶尔小赚'],
+    high:['高息','多半亏，涨起来很猛'],
+    wild:['狂野','十有九亏，但可能翻几倍']
+  };
+  const ERA_NAMES={
+    '收藏热':['藏品信托','拍卖行票据','古董抵押债'],
+    '大萧条':['救济债券','粮食配给券','典当同业债'],
+    '镀金年代':['铁路建设债','钢铁托拉斯票','豪华宅邸债'],
+    '战乱':['军需采购票','避难所债券','抚恤基金券'],
+    '考古热':['发掘基金券','海外考察债','文物修复票'],
+    '复古潮':['旧物回收债','唱片版权券','胶片修复债'],
+    '平淡日子':['市政公债','储蓄存单','商会周转票'],
+    '拍卖狂热':['拍卖保证金','天价担保债','委托竞拍票'],
+    '熔炉时代':['贵金属抵押债','熔炼许可票','矿脉开采债'],
+    '暗市':['过桥债','黑账簿票据','夜航货运券']
+  };
+  const GEN=['市政公债','商号承兑票','货运债券','银号周转券'];
+
+  function offers(){
+    const e=eraIdx(),era=curEra();
+    const pool=ERA_NAMES[era.n]||GEN;
+    const out=[];
+    for(let i=0;i<3;i++){
+      const h=hash('bond'+e+'#'+i);
+      const nm=pool[Math.floor(h*pool.length)%pool.length];
+      const price=Math.round(70+h*1100);
+      let prof='steady';
+      if(h>.63)prof='wild';else if(h>.30)prof='high';
+      out.push({e,name:era.n+'·'+nm,price,prof});
+    }
+    return out;
+  }
+  function settle2(b){
+    const h=hash('settle'+b.name+b.e);let m;
+    if(b.prof==='steady'){if(h<.55)m=.85+h*.15;else if(h<.90)m=1+h*.15;else m=1.15+h*.2;}
+    else if(b.prof==='high'){if(h<.58)m=.35+h*.45;else if(h<.90)m=.95+h*.5;else m=2+h*2;}
+    else {if(h<.62)m=.10+h*.5;else if(h<.88)m=1+h*1.2;else m=3+h*5;}
+    return Math.round(b.price*m);
+  }
+  function bpath(b){
+    const f=settle2(b),a=[b.price];
+    for(let i=1;i<=10;i++){
+      const t=i/10;
+      const base=b.price+(f-b.price)*t;
+      const noise=(hash(b.name+b.e+'|'+i)-.5)*b.price*.25*Math.sin(Math.PI*t);
+      a.push(Math.max(1,Math.round(base+noise)));
+    }
+    return a;
+  }
+  const bkOf=b=>Math.min(10,Math.max(0,eraIdx()-(b.buyEra||b.e)));
+  const bnow=b=>bpath(b)[bkOf(b)];
+  const sellVal=b=>Math.round(bnow(b)*.9);
+
+  function drawChart(cv,arr,cur,hover){
+    const r=cv.getBoundingClientRect();
+    if(r.width<10)return;
+    const dpr=Math.min(devicePixelRatio,2);
+    cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);
+    const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);
+    const W=r.width,H=r.height;x.clearRect(0,0,W,H);
+    const mn=Math.min.apply(null,arr),mx=Math.max.apply(null,arr);
+    const sp=Math.max(1,mx-mn);
+    const X=i=>i*(W/(arr.length-1));
+    const Y=v=>7+(1-(v-mn)/sp)*(H-16);
+
+    x.strokeStyle='#ffffff14';x.lineWidth=1;
+    [0,.5,1].forEach(k=>{const yy=7+k*(H-16);x.beginPath();x.moveTo(0,yy);x.lineTo(W,yy);x.stroke();});
+
+    const g=x.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,'rgba(230,196,127,.18)');g.addColorStop(1,'rgba(230,196,127,0)');
+    x.beginPath();x.moveTo(X(0),Y(arr[0]));
+    for(let i=1;i<arr.length;i++)x.lineTo(X(i),Y(arr[i]));
+    x.lineTo(W,H);x.lineTo(0,H);x.closePath();x.fillStyle=g;x.fill();
+
+    x.beginPath();x.moveTo(X(0),Y(arr[0]));
+    for(let i=1;i<arr.length;i++)x.lineTo(X(i),Y(arr[i]));
+    x.strokeStyle=arr[arr.length-1]>=arr[0]?'#8ef2a8':'#ff9a86';
+    x.lineWidth=1.6;x.lineJoin='round';x.stroke();
+
+    if(hover!=null){
+      const hh=Math.max(0,Math.min(arr.length-1,hover));
+      x.strokeStyle='#e6c47f88';x.lineWidth=1;
+      x.beginPath();x.moveTo(X(hh),4);x.lineTo(X(hh),H-4);x.stroke();
+      x.beginPath();x.arc(X(hh),Y(arr[hh]),3.6,0,Math.PI*2);
+      x.fillStyle='#fff6dd';x.fill();x.strokeStyle='#0a0705';x.lineWidth=1.2;x.stroke();
+      const label=arr[hh]+' 金';
+      x.font='10px -apple-system,sans-serif';
+      const tw=x.measureText(label).width;
+      let bx=X(hh)-tw/2-7;bx=Math.max(2,Math.min(W-tw-16,bx));
+      x.fillStyle='#0b0806ee';x.fillRect(bx,0,tw+14,15);
+      x.fillStyle='#e6c47f';x.textAlign='left';x.fillText(label,bx+7,11);
+    }
+    x.beginPath();x.arc(X(cur),Y(arr[cur]),3.2,0,Math.PI*2);
+    x.fillStyle='#e6c47f';x.fill();x.strokeStyle='#0a0705';x.lineWidth=1.2;x.stroke();
+  }
+
+  function renderBonds(){
+    const pane=document.getElementById('bondPane');
+    if(!pane)return;
+    const list=loadB(),cur=eraIdx(),off=offers();
+
+    let html='<div style="font-size:11px;color:#a99c88;line-height:1.8;margin-bottom:10px">'+
+      '每 30 分钟发行 3 只 · 买入后 <b style="color:#e6c47f">10 个时代</b> 结算<br>'+
+      '提前转手按现值 <b style="color:#ff9a86">90%</b> 成交（含 10% 手续费）</div>';
+
+    off.forEach((o,i)=>{
+      html+='<div style="padding:12px;border:1px solid #e6c47f44;border-radius:12px;'+
+        'background:#1b1510;margin-bottom:8px">'+
+        '<div style="display:flex;align-items:center">'+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-size:13px;color:#e6c47f">'+o.name+'</div>'+
+            '<div style="font-size:10px;color:#a99c88;margin-top:3px">'+
+              BPROF[o.prof][0]+' · '+BPROF[o.prof][1]+'</div></div>'+
+          '<div style="text-align:right;flex:0 0 auto;margin-left:8px">'+
+            '<div style="font-size:12.5px;color:#e6c47f">'+o.price+' 金</div>'+
+            '<button data-buy4="'+i+'" style="margin-top:5px;padding:6px 13px;font-size:11.5px;'+
+              'flex:0 0 auto;color:#efe6d6">买入</button>'+
+          '</div></div></div>';
+    });
+
+    html+='<div style="font-size:11px;color:#a99c88;margin:14px 0 6px">持有中（'+list.length+'）</div>';
+    if(!list.length)html+='<div style="font-size:12px;color:#8c7e69;padding:8px 2px">还没有债券</div>';
+
+    list.forEach((b,i)=>{
+      const p=bpath(b),k=bkOf(b),left=(b.buyEra||b.e)+10-cur;
+      const now=p[k],diff=now-b.price;
+      html+='<div style="padding:11px 12px;border:1px solid #ffffff16;border-radius:12px;'+
+        'background:#1b1510;margin-bottom:9px">'+
+        '<div style="display:flex;align-items:center">'+
+          '<div style="flex:1;font-size:12.5px;color:#ddd2c0">'+b.name+'</div>'+
+          '<div style="font-size:11.5px;color:'+(diff>=0?'#8ef2a8':'#ff9a86')+'">'+
+            (diff>=0?'+':'')+diff+'</div></div>'+
+        '<div style="font-size:10.5px;color:#a99c88;margin:4px 0 6px">'+
+          '现值 '+now+' · 买入 '+b.price+' · '+
+          (left>0?(left+' 个时代后到期'):'已到期，稍后自动结算')+'</div>'+
+        '<canvas class="b4c" data-i="'+i+'" style="width:100%;height:58px;display:block"></canvas>'+
+        '<div style="display:flex;align-items:center;margin-top:7px">'+
+          '<div style="flex:1;font-size:10.5px;color:#a99c88">转手可得 '+
+            '<b style="color:#e6c47f">'+sellVal(b)+'</b> 金</div>'+
+          '<button data-sell4="'+i+'" style="flex:0 0 auto;padding:7px 13px;font-size:11.5px;'+
+            'color:#e2a390;background:#2a1411;border:1px solid #c0563a55">转手</button>'+
+        '</div></div>';
+    });
+    pane.innerHTML=html;
+
+    pane.querySelectorAll('button[data-buy4]').forEach(bt=>{
+      bt.onclick=()=>{
+        const o=off[+bt.getAttribute('data-buy4')];
+        if(S.coins<o.price){toast('金币不够');return;}
+        S.coins-=o.price;save();updateHud();
+        const l=loadB();
+        l.push({name:o.name,price:o.price,prof:o.prof,e:o.e,buyEra:eraIdx()});
+        saveB(l);
+        try{SFX.coin();}catch(e){}
+        toast('买入 <b>'+o.name+'</b>',1400);
+        renderBonds();
+      };
+    });
+
+    pane.querySelectorAll('button[data-sell4]').forEach(bt=>{
+      bt.onclick=()=>{
+        const idx=+bt.getAttribute('data-sell4');
+        const l=loadB(),b=l[idx];
+        if(!b)return;
+        const v=sellVal(b);
+        if(!confirm('提前转手「'+b.name+'」？\n可得 '+v+' 金（现值 90%，含手续费）'))return;
+        S.coins+=v;l.splice(idx,1);
+        saveB(l);save();updateHud();
+        try{SFX.coin();}catch(e){}
+        toast('已转手 <b>+'+v+' 金</b>',1500);
+        renderBonds();
+      };
+    });
+
+    pane.querySelectorAll('.b4c').forEach(cv=>{
+      const i=+cv.dataset.i,b=list[i];
+      const arr=bpath(b),k=bkOf(b);
+      drawChart(cv,arr,k,null);
+      const move=e=>{
+        const r=cv.getBoundingClientRect();
+        const x=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
+        drawChart(cv,arr,k,Math.round(x*(arr.length-1)));
+      };
+      cv.addEventListener('pointerdown',e=>{e.stopPropagation();move(e);});
+      cv.addEventListener('pointermove',e=>{if(e.buttons||e.pointerType==='mouse')move(e);});
+      cv.addEventListener('pointerup',e=>{
+        const r=cv.getBoundingClientRect();
+        const x=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
+        drawChart(cv,arr,Math.round(x*(arr.length-1)),null);
+      });
+    });
+  }
+  window.__renderBonds=renderBonds;
+
+  /* ---------- 标签绑定 ---------- */
+  function bindTabs(){
+    const tg=document.getElementById('tabGoods');
+    const tb=document.getElementById('tabBond');
+    const pane=document.getElementById('bondPane');
+    const body=document.getElementById('shopBody');
+    if(!tg||!tb||!pane||!body)return;
+    tb.onclick=()=>{
+      tb.classList.add('on');tg.classList.remove('on');
+      body.style.display='none';
+      pane.style.display='block';
+      renderBonds();
+    };
+    tg.onclick=()=>{
+      tg.classList.add('on');tb.classList.remove('on');
+      pane.style.display='none';
+      body.style.display='';
+      if(typeof window.__renderGoods==='function')window.__renderGoods();
+    };
+  }
+
+  /* ================= 推理独立成排 ================= */
+  const LB=['简单','困难','噩梦','地狱'];
+  const T=b=>((b.textContent||'').replace(/\s+/g,''));
+
+  try{ if(!MODES.easy)MODES.easy={name:'简单',teeth:4,step:.05,peek:5000,keys:4,obs:0,haz:.02}; }catch(e){}
+  try{ if(!MODES.hard)MODES.hard={name:'困难',teeth:5,step:.042,peek:3600,keys:5,obs:1,haz:.05}; }catch(e){}
+  try{ if(!MODES.nightmare)MODES.nightmare={name:'噩梦',teeth:6,step:.036,peek:2400,keys:6,obs:2,haz:.085}; }catch(e){}
+  try{ if(!MODES.hell)MODES.hell={name:'地狱',teeth:9,step:.03,peek:1800,keys:8,obs:4,haz:.12,hell:true}; }catch(e){}
+  try{ if(!MODES.logic)MODES.logic={name:'推理',teeth:4,step:.05,peek:0,keys:6,obs:0,haz:0,logic:true}; }catch(e){}
+
+  function fixModeRow(){
+    const mr=document.getElementById('modeRow');
+    if(!mr)return;
+    [...mr.querySelectorAll('button')].forEach(b=>{ if(T(b)==='推理')b.remove(); });
+    if(!mr.querySelector('button[data-model="hell"]')){
+      const b=document.createElement('button');
+      b.textContent='地狱';b.setAttribute('data-model','hell');
+      mr.appendChild(b);
+    }
+    [...mr.querySelectorAll('button')].forEach(b=>{
+      let key=b.getAttribute('data-model');
+      if(!key){
+        const t=T(b);
+        key = t==='简单'?'easy':t==='困难'?'hard':t==='噩梦'?'nightmare':t==='地狱'?'hell':null;
+        if(key)b.setAttribute('data-model',key);
+      }
+      if(!key)return;
+      b.onclick=()=>{
+        if(!MODES[key])return;
+        MODE=MODES[key];
+        try{SFX.tap();haptic(8);}catch(e){}
+        paint();
+        try{toast('难度已切换为 <b>'+MODE.name+'</b><br>下一局生效',1500);}catch(e){}
+      };
+    });
+  }
+
+  function fixLogicRow(){
+    let lr=document.getElementById('logicRow');
+    const mr=document.getElementById('modeRow');
+    if(!lr){
+      if(!mr||!mr.parentElement)return;
+      const lab=document.createElement('div');
+      lab.className='lab';lab.textContent='推 理 模 式（下局生效）';
+      lr=document.createElement('div');
+      lr.id='logicRow';lr.className='mrow';
+      mr.parentElement.insertBefore(lab,mr.nextSibling);
+      mr.parentElement.insertBefore(lr,lab.nextSibling);
+    }
+    const bs=[...lr.querySelectorAll('button')];
+    if(bs.length!==4||bs.some((b,i)=>T(b)!==LB[i])){
+      lr.innerHTML='';
+      LB.forEach((n,i)=>{
+        const b=document.createElement('button');
+        b.textContent=n;b.setAttribute('data-l',String(i));
+        lr.appendChild(b);
+      });
+    }
+    [...lr.querySelectorAll('button')].forEach(b=>{
+      const i=+(b.getAttribute('data-l')||0);
+      b.onclick=()=>{
+        try{LOGIC_LV=i;MODE=MODES.logic;}catch(e){}
+        try{SFX.tap();haptic(8);}catch(e){}
+        paint();
+        try{toast('推理模式 · <b>'+LB[i]+'</b><br>下一局生效',1500);}catch(e){}
+      };
+    });
+    const prev=lr.previousElementSibling;
+    if(prev&&prev.className&&prev.className.indexOf('lab')>=0&&
+      (prev.textContent||'').indexOf('推理')>=0){
+      prev.textContent='推 理 模 式（下局生效）';
+    }
+  }
+
+  function paint(){
+    const mr=document.getElementById('modeRow');
+    const lr=document.getElementById('logicRow');
+    if(!mr||!lr)return;
+    let key='nightmare';
+    try{
+      key = MODE===MODES.easy?'easy':MODE===MODES.hard?'hard':
+        MODE===MODES.hell?'hell':'nightmare';
+    }catch(e){}
+    [...mr.querySelectorAll('button')].forEach(b=>{
+      b.classList.toggle('on',!(MODE&&MODE.logic)&&b.getAttribute('data-model')===key);
+    });
+    [...lr.querySelectorAll('button')].forEach(b=>{
+      b.classList.toggle('on',!!(MODE&&MODE.logic)&&+b.getAttribute('data-l')===LOGIC_LV);
+    });
+  }
+
+  function watch(){
+    const mr=document.getElementById('modeRow');
+    if(mr&&!mr.__w116){
+      mr.__w116=1;
+      new MutationObserver(()=>fixModeRow()).observe(mr,{childList:true,subtree:true});
+    }
+    const lr=document.getElementById('logicRow');
+    if(lr&&!lr.__w116){
+      lr.__w116=1;
+      new MutationObserver(()=>fixLogicRow()).observe(lr,{childList:true,subtree:true});
+    }
+  }
+
+  function runModes(){
+    try{fixModeRow();fixLogicRow();watch();paint();}catch(e){}
+  }
+
+  /* ================= 启动 ================= */
+  bindTabs();ensureChip();runModes();
+
+  setInterval(()=>{try{ensureChip();bindTabs();}catch(e){}},1500);
+  setInterval(runModes,1200);
+  setInterval(()=>{
+    const p=document.getElementById('shopScreen');
+    const pane=document.getElementById('bondPane');
+    if(p&&p.classList.contains('on')&&pane&&pane.style.display==='block')renderBonds();
+  },30000);
+
+  const btnSet=document.getElementById('btnSet');
+  if(btnSet){
+    const old=btnSet.onclick;
+    btnSet.onclick=function(){
+      if(old)old.apply(this,arguments);
+      setTimeout(runModes,60);
+    };
+  }
+
+})();  
 </script>
 </body>
 </html>

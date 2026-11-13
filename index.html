@@ -9513,57 +9513,19 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   },300);
 
 })();  
-/* ===== v152：黑曜石按 id 提价 + 自检 ===== */
+/* v154 黑曜石提价（无按钮） */
 (function(){
-
   const PRICE={
-    obsRing:   12000,
-    obsMask:   26000,
-    obsKey:    38000,
-    obsDagger: 55000,
-    obsBox:    80000,
-    obsBoard:  120000,
-    obsCup:    180000,
-    obsSkull:  260000,
-    obsTear:   380000,
-    obsEye:    520000,
-    obsHeart:  1000000
+    obsRing:12000, obsMask:26000, obsKey:38000, obsDagger:55000,
+    obsBox:80000, obsBoard:120000, obsCup:180000, obsSkull:260000,
+    obsTear:380000, obsEye:520000, obsHeart:1000000
   };
-
-  let n=0;
   try{
     ITEMS.forEach(function(it){
-      if(PRICE[it.id]){ it.b=PRICE[it.id]; n++; }
+      if(PRICE[it.id]) it.b = PRICE[it.id];
     });
   }catch(e){}
-  try{
-    if(window.OBS_ITEMS){
-      OBS_ITEMS.forEach(function(it){
-        if(PRICE[it.id]) it.b=PRICE[it.id];
-      });
-    }
-  }catch(e){}
-
-  setTimeout(function(){
-    try{ toast('黑曜石价格已更新 <b>'+n+'</b> 件',2200); }catch(e){}
-  },1200);
-  
-    }
-    let out='';
-    try{
-      ITEMS.forEach(function(it){
-        if(it.uniq||/^obs/.test(it.id)){
-          out+=it.id+' | '+it.n+' | 基础价 '+it.b+' | 当前估价 '+priceOf(it,1)+'\n';
-        }
-      });
-    }catch(e){ out+='读取失败: '+e.message+'\n'; }
-    out+='\nOBS_ITEMS：'+((window.OBS_ITEMS&&window.OBS_ITEMS.length)||'不存在');
-    d.textContent=out;
-    d.style.display='block';
-  };
-  document.body.appendChild(b);
-
-})();  
+})();
 </script>
 </body>
 </html>

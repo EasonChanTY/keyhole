@@ -8776,96 +8776,79 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   setTimeout(fixLvText,800);
 
 })();  
-/* ===== v133：独立等级系统（180 级，经验可见） ===== */
+/* ===== v134：等级 180（只改 Lv. 与设置等级，不碰灯油） ===== */
 (function(){
-  if(window.__lvSys)return;
-  window.__lvSys=1;
+  if(window.__lv2)return;
+  window.__lv2=1;
 
-  const KEY='keyhole_lv_v1';
   const MAX=180;
   const need=lv=>Math.round(18*Math.pow(lv,1.4));
   const bonus=()=>Math.min(.6,Math.floor((S.lv||1)/5)*.02);
   const fh=()=>Math.max(4,24-(S.lv||1)*.12);
+  const KEY='keyhole_lv_v1';
 
-  /* 读存档 */
   try{
     const d=JSON.parse(localStorage.getItem(KEY)||'null');
-    if(d){ S.lv=d.lv||1; S.xp=d.xp||0; }
+    if(d){ if(d.lv)S.lv=d.lv; if(typeof d.xp==='number')S.xp=d.xp; }
   }catch(e){}
   if(typeof S.lv!=='number'||S.lv<1)S.lv=1;
   if(typeof S.xp!=='number'||S.xp<0)S.xp=0;
-  if(S.lv>MAX)S.lv=MAX;
 
-  function saveLv(){ try{localStorage.setItem(KEY,JSON.stringify({lv:S.lv,xp:S.xp}));}catch(e){} }
+  const saveLv=()=>{try{localStorage.setItem(KEY,JSON.stringify({lv:S.lv,xp:S.xp}));}catch(e){}};
 
-  function levelUpCheck(){
+  function add(n){
+    if(!n||n<=0||S.lv>=MAX)return;
+    S.xp+=Math.round(n);
     let up=false;
     while(S.lv<MAX&&S.xp>=need(S.lv)){ S.xp-=need(S.lv); S.lv++; up=true; }
     if(up){
-      try{SFX.cheer();haptic([20,30,60]);}catch(e){}
-      try{toast('升 级 了 ！<b>Lv.'+S.lv+'</b><br>箱子价格 +'+Math.round(bonus()*100)+'%',2000);}catch(e){}
+      try{SFX.cheer();haptic([20,30,60]);
+        toast('升 级 了 ！<b>Lv.'+S.lv+'</b>',1800);}catch(e){}
     }
-    return up;
-  }
-
-  function addXp(n){
-    if(!n||n<=0||S.lv>=MAX)return;
-    S.xp+=Math.round(n);
-    levelUpCheck();
     saveLv();
     paint();
   }
-  window.__addXp=addXp;
-  try{gainXp=function(n){addXp(n);};}catch(e){}
+  window.__addXp2=add;
+  try{ gainXp=function(n){ add(n); }; }catch(e){}
 
-  /* 界面：直接改文字，不依赖原函数 */
+  /* 只改「Lv. xx」和「等级 xx / …」两种文本 */
   function paint(){
     try{
-      const all=document.querySelectorAll('div,span,b,small,em');
-      for(let i=0;i<all.length;i++){
-        const el=all[i];
-        if(el.children.length)continue;
+      const els=document.querySelectorAll('div,span,b,small,em');
+      for(let i=0;i<els.length;i++){
+        const el=els[i];
         const t=(el.textContent||'').trim();
 
         if(/^Lv\.?\s*\d+$/i.test(t)){
           el.textContent='Lv. '+S.lv;
           continue;
         }
-        if(t.indexOf('等级')>=0&&t.indexOf('/')>=0){
+        if(t.indexOf('等级')>=0 && t.indexOf('/')>=0 && t.length<80){
           el.textContent='等级 '+S.lv+' / '+MAX+'　经验 '+S.xp+
             ' · 箱子价格 +'+Math.round(bonus()*100)+'%'+
             ' · 免费箱 '+fh().toFixed(1)+' 小时';
-          continue;
-        }
-        if(/\/\s*30\b/.test(t)){
-          el.textContent=t.replace(/\/\s*30\b/g,'/ '+MAX);
         }
       }
     }catch(e){}
   }
 
-  /* 赚钱就给经验（金币变多时按 60% 折算） */
-  let lastCoins=(S.coins||0);
+  /* 金币变多 → 给经验（卖出等收入） */
+  let last=(typeof S.coins==='number')?S.coins:0;
   setInterval(function(){
     const c=S.coins||0;
-    if(c>lastCoins){
-      addXp((c-lastCoins)*0.6);
-    }
-    lastCoins=c;
+    if(c>last)add((c-last)*0.6);
+    last=c;
     paint();
   },600);
 
-  /* 启动 */
-  saveLv();
   paint();
-  setInterval(paint,1500);
+  saveLv();
 
-  /* 开局提示一次 */
   setTimeout(function(){
-    try{toast('等级系统已接管 · 当前 <b>Lv.'+S.lv+' / '+MAX+'</b>',2200);}catch(e){}
-  },900);
+    try{toast('等级上限已设为 <b>180</b>',1800);}catch(e){}
+  },800);
 
-})();  
+})();
 </script>
 </body>
 </html>

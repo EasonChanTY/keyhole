@@ -9869,31 +9869,63 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
 
 })();
 })();  
-/* ===== v158：债券 3.0（独立面板 / 阶级决定数量 / 阶梯波动） ===== */
+/* ===== v160：债券重做（商店内） + 时代恢复 30 分钟 ===== */
 (function(){
-  if(window.__bondV3) return;
-  window.__bondV3=1;
+  if(window.__bondShop) return;
+  window.__bondShop=1;
 
-  const KEY='keyhole_bonds_v3';
-  const ERA=1200000;
-  const eraIdx=()=>Math.floor(Date.now()/ERA);
-  const load=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'[]');}catch(e){return[];}};
-  const saveB=a=>{try{localStorage.setItem(KEY,JSON.stringify(a));}catch(e){}};
-
-  /* 清掉旧债券，避免旧逻辑再弹提示 */
+  /* ---------- 1. 时代恢复 30 分钟 ---------- */
   try{
-    localStorage.removeItem('keyhole_bonds_v1');
-    localStorage.removeItem('keyhole_bonds_v2');
+    const WA=ERAS.map(function(e){ return e.n==='战乱'?0.35:1; });
+    let TOT=0; WA.forEach(function(w){TOT+=w;});
+
+    function raw(slot){
+      const h=hash('era'+slot);
+      let r=h*TOT,a=0;
+      for(let i=0;i<ERAS.length;i++){ a+=WA[i]; if(r<a)return ERAS[i]; }
+      return ERAS[0];
+    }
+    eraAt=function(ep){
+      const slot=Math.round(ep*2);         /* 每小时 2 格 = 30 分钟 */
+      const cur=raw(slot), prev=raw(slot-1);
+      if(prev&&cur.n===prev.n){
+        const i=ERAS.indexOf(cur);
+        return ERAS[(i+1)%ERAS.length];
+      }
+      return cur;
+    };
   }catch(e){}
 
-  /* 隐藏商店里的旧债券标签 */
-  function hideOldTab(){
-    try{
-      const tb=document.getElementById('tabBond');
-      if(tb) tb.style.display='none';
-    }catch(e){}
-  }
-  setInterval(hideOldTab,800);
+  try{
+    const _uh=updateHud;
+    updateHud=function(){
+      const r=_uh.apply(this,arguments);
+      try{
+        const ms=1800000-(Date.now()%1800000);
+        hLeft.textContent='时代 '+Math.ceil(ms/60000)+' 分后变';
+      }catch(e){}
+      return r;
+    };
+  }catch(e){}
+
+  /* ---------- 2. 清掉旧债券的一切 ---------- */
+  ['keyhole_bonds_v1','keyhole_bonds_v2','keyhole_bonds_v3'].forEach(function(k){
+    try{ localStorage.removeItem(k); }catch(e){}
+  });
+  ['btnBond3','btnBondFloat','btnBondTop','btnBond'].forEach(function(id){
+    const e=document.getElementById(id); if(e)e.remove();
+  });
+  (function(){
+    const old=document.getElementById('bondScreen3');
+    if(old)old.remove();
+  })();
+
+  /* ---------- 3. 数据 ---------- */
+  const KEY='keyhole_bonds_v4';
+  const ERA=1800000;
+  const eraIdx=()=>Math.floor(Date.now()/ERA);
+  const loadB=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'[]');}catch(e){return[];}};
+  const saveB=a=>{try{localStorage.setItem(KEY,JSON.stringify(a));}catch(e){}};
 
   function h32(s){
     let h=2166136261;
@@ -9909,66 +9941,42 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
     calm:  {label:'平稳',base:360, vol:.10, bank:.010, jack:.020, jmul:2.0},
     wild:  {label:'刺激',base:780, vol:.26, bank:.050, jack:.045, jmul:4.0}
   };
-
-  /* 阶级越高，可选债券越多：3 → 10 */
-  function offerCount(){
-    const r=rank();
-    return Math.max(3, Math.min(10, 3 + Math.floor(r*0.7)));
-  }
-
   const NAMES=['信托','票据','抵押债','基金券','承兑票','过桥债','货运券','开发票','兑换券','特别债'];
+
+  function offerCount(){ return Math.max(3,Math.min(10,3+Math.floor(rank()*0.7))); }
 
   function offers(){
     const e=eraIdx();
     const era=(typeof curEra==='function')?curEra().n:'平淡日子';
-    const n=offerCount();
-    const out=[];
-    const order=['steady','calm','wild'];
+    const n=offerCount(), out=[], order=['steady','calm','wild'];
     for(let i=0;i<n;i++){
       const t=order[i%3];
-      const price=Math.round(TYPES[t].base*(0.85+h32('p'+e+i+t)*0.45));
-      out.push({e:e, idx:i, type:t, name:era+'·'+NAMES[i%NAMES.length], price:price});
+      out.push({
+        e:e,type:t,name:era+'·'+NAMES[i%NAMES.length],
+        price:Math.round(TYPES[t].base*(0.85+h32('p'+e+i+t)*0.45))
+      });
     }
     return out;
   }
 
-  /* 只算已过去的时代 */
   function history(b){
-    const n=Math.min(10, Math.max(0, eraIdx()-b.buyStep));
+    const n=Math.min(10,Math.max(0,eraIdx()-b.buyStep));
     const cfg=TYPES[b.type]||TYPES.calm;
     const arr=[b.price];
     let v=b.price, dead=false;
-
     for(let i=1;i<=n;i++){
       if(dead){arr.push(0);continue;}
       const r=h32(b.seed+'|'+i);
-      const span=cfg.vol;
-      let mult=1+(r-0.5)*2*span;
-
       if(h32(b.seed+'|bk|'+i)<cfg.bank){dead=true;v=0;arr.push(0);continue;}
-
-      v*=mult;
+      v*= (1+(r-0.5)*2*cfg.vol);
       if(h32(b.seed+'|jp|'+i)<cfg.jack) v*=cfg.jmul;
-
       v=Math.max(0,Math.round(v));
       arr.push(v);
     }
     return {arr:arr,n:n,dead:dead,cur:v};
   }
 
-  /* ------------------ 面板 ------------------ */
-  let panel=document.getElementById('bondScreen3');
-  if(!panel){
-    panel=document.createElement('section');
-    panel.id='bondScreen3';
-    panel.className='panel';
-    panel.innerHTML='<div class="phead"><h2>债 券</h2><div class="sp"></div>'+
-      '<button id="b3Close">关闭</button></div>'+
-      '<div id="b3Body" style="flex:1;overflow-y:auto;padding-bottom:24px"></div>';
-    document.body.appendChild(panel);
-    document.getElementById('b3Close').onclick=function(){panel.classList.remove('on');};
-  }
-
+  /* ---------- 4. 图表 ---------- */
   function draw(cv,arr,n,dead){
     const r=cv.getBoundingClientRect();
     if(r.width<10)return;
@@ -9978,9 +9986,8 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
     const W=r.width,H=r.height;x.clearRect(0,0,W,H);
 
     let mx=1;
-    for(let i=0;i<arr.length;i++) if(arr[i]>mx) mx=arr[i];
-    const X=i=>i*(W/10);
-    const Y=v=>8+(1-v/mx)*(H-18);
+    for(let i=0;i<arr.length;i++) if(arr[i]>mx)mx=arr[i];
+    const X=i=>i*(W/10), Y=v=>8+(1-v/mx)*(H-18);
 
     x.strokeStyle='#ffffff10';x.lineWidth=1;
     for(let i=0;i<=10;i++){x.beginPath();x.moveTo(X(i),4);x.lineTo(X(i),H-4);x.stroke();}
@@ -9999,14 +10006,15 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
     x.fillStyle='#e6c47f';x.fill();x.strokeStyle='#0a0705';x.lineWidth=1.2;x.stroke();
   }
 
-  function render(){
-    const body=document.getElementById('b3Body');
-    if(!body)return;
-    const list=load(),off=offers();
+  /* ---------- 5. 商店内标签 ---------- */
+  function renderBonds(){
+    const pane=document.getElementById('bondPane');
+    if(!pane)return;
+    const list=loadB(),off=offers();
 
     let html='<div style="font-size:11px;color:#a99c88;line-height:1.8;margin-bottom:10px">'+
       '当前阶级：<b style="color:#e6c47f">'+rankName[rank()]+'</b> · 可选 '+off.length+' 只<br>'+
-      '价格每个时代才走一格，未来不会提前显示</div>';
+      '每 30 分钟走一格，未来不会提前显示</div>';
 
     off.forEach(function(o,i){
       html+='<div style="padding:12px;border:1px solid #e6c47f44;border-radius:12px;'+
@@ -10014,11 +10022,11 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
         '<div style="display:flex;align-items:center">'+
           '<div style="flex:1"><div style="font-size:13px;color:#e6c47f">'+o.name+'</div>'+
           '<div style="font-size:10px;color:#a99c88;margin-top:3px">'+
-            TYPES[o.type].label+' · 波动 '+(TYPES[o.type].vol*100).toFixed(0)+'%'+
-            ' · 归零 '+(TYPES[o.type].bank*100).toFixed(1)+'%</div></div>'+
+            TYPES[o.type].label+' · 波动 '+(TYPES[o.type].vol*100).toFixed(0)+
+            '% · 归零 '+(TYPES[o.type].bank*100).toFixed(1)+'%</div></div>'+
           '<div style="text-align:right;margin-left:8px">'+
             '<div style="font-size:12.5px;color:#e6c47f">'+o.price+' 金</div>'+
-            '<button data-b3buy="'+i+'" style="margin-top:5px;padding:6px 13px;'+
+            '<button data-b4buy="'+i+'" style="margin-top:5px;padding:6px 13px;'+
               'font-size:11.5px;flex:0 0 auto">买入</button></div>'+
         '</div></div>';
     });
@@ -10041,57 +10049,97 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
             (h.dead?'清零':((diff>=0?'+':'')+diff))+'</div></div>'+
         '<div style="font-size:10.5px;color:#a99c88;margin:4px 0 6px">'+
           '现值 '+(h.dead?0:val)+' · 买入 '+b.price+' · 第 '+h.n+'/10 时代</div>'+
-        '<canvas data-b3c="'+i+'" style="width:100%;height:60px;display:block"></canvas>'+
+        '<canvas data-b4c="'+i+'" style="width:100%;height:60px;display:block"></canvas>'+
         '<div style="display:flex;align-items:center;margin-top:7px">'+
-          '<div style="flex:1;font-size:10.5px;color:#a99c88">现在转手可得 '+
+          '<div style="flex:1;font-size:10.5px;color:#a99c88">现在转手 '+
             '<b style="color:#e6c47f">'+sell+'</b> 金（70%~90%）</div>'+
-          '<button data-b3sell="'+i+'" style="flex:0 0 auto;padding:7px 13px;font-size:11.5px;'+
+          '<button data-b4sell="'+i+'" style="flex:0 0 auto;padding:7px 13px;font-size:11.5px;'+
             'color:#e2a390;background:#2a1411;border:1px solid #c0563a55">转手</button>'+
         '</div></div>';
     });
-    body.innerHTML=html;
+    pane.innerHTML=html;
 
-    body.querySelectorAll('button[data-b3buy]').forEach(function(btn){
+    pane.querySelectorAll('button[data-b4buy]').forEach(function(btn){
       btn.onclick=function(){
-        const o=off[+btn.getAttribute('data-b3buy')];
+        const o=off[+btn.getAttribute('data-b4buy')];
         if(S.coins<o.price){toast('金币不够');return;}
         S.coins-=o.price;save();updateHud();
-        const l=load();
+        const l=loadB();
         l.push({name:o.name,type:o.type,price:o.price,
-          buyStep:eraIdx(),seed:'b'+Math.floor(Math.random()*1e9)});
+          buyStep:eraIdx(),seed:'c'+Math.floor(Math.random()*1e9)});
         saveB(l);
         try{SFX.coin();}catch(e){}
         toast('买入 <b>'+o.name+'</b>',1400);
-        render();
+        renderBonds();
       };
     });
 
-    body.querySelectorAll('button[data-b3sell]').forEach(function(btn){
+    pane.querySelectorAll('button[data-b4sell]').forEach(function(btn){
       btn.onclick=function(){
-        const i=+btn.getAttribute('data-b3sell');
-        const l=load(),b=l[i];if(!b)return;
+        const i=+btn.getAttribute('data-b4sell');
+        const l=loadB(),b=l[i];if(!b)return;
         const h=history(b);
         const v=Math.round(h.arr[h.n]*(0.70+h32(b.seed+'|sv'+h.n)*0.20));
         if(!confirm('提前转手「'+b.name+'」？\n可得 '+v+' 金（70%~90%）'))return;
         S.coins+=v;l.splice(i,1);saveB(l);save();updateHud();
         try{SFX.coin();}catch(e){}
         toast('已转手 <b>+'+v+' 金</b>',1400);
-        render();
+        renderBonds();
       };
     });
 
-    body.querySelectorAll('canvas[data-b3c]').forEach(function(cv){
-      const b=list[+cv.getAttribute('data-b3c')];
+    pane.querySelectorAll('canvas[data-b4c]').forEach(function(cv){
+      const b=list[+cv.getAttribute('data-b4c')];
       const h=history(b);
       draw(cv,h.arr,h.n,h.dead);
     });
   }
-  window.__bond3Render=render;
+  window.__bond4Render=renderBonds;
 
-  /* ------------------ 结算 ------------------ */
+  function rebuildTabs(){
+    const panel=document.getElementById('shopScreen');
+    const body=document.getElementById('shopBody');
+    if(!panel||!body)return;
+    if(document.getElementById('tabBond2'))return;
+
+    const old=document.getElementById('shopTabs');
+    if(old)old.remove();
+    const oldPane=document.getElementById('bondPane');
+    if(oldPane)oldPane.remove();
+
+    const tabs=document.createElement('div');
+    tabs.id='shopTabs';
+    tabs.className='mrow';
+    tabs.style.margin='0 0 10px';
+    tabs.innerHTML='<button id="tabGoods2" class="on">商品</button>'+
+      '<button id="tabBond2">债券</button>';
+    panel.insertBefore(tabs,body);
+
+    const pane=document.createElement('div');
+    pane.id='bondPane';
+    pane.style.cssText='display:none;flex:1;overflow-y:auto;padding-bottom:20px';
+    panel.appendChild(pane);
+
+    document.getElementById('tabGoods2').onclick=function(){
+      document.getElementById('tabGoods2').classList.add('on');
+      document.getElementById('tabBond2').classList.remove('on');
+      body.style.display='';
+      pane.style.display='none';
+      if(typeof window.__renderGoods==='function')window.__renderGoods();
+    };
+    document.getElementById('tabBond2').onclick=function(){
+      document.getElementById('tabBond2').classList.add('on');
+      document.getElementById('tabGoods2').classList.remove('on');
+      body.style.display='none';
+      pane.style.display='block';
+      renderBonds();
+    };
+  }
+
+  /* ---------- 6. 结算 ---------- */
   function settle(){
     try{
-      const l=load(),keep=[],done=[];
+      const l=loadB(),keep=[],done=[];
       l.forEach(function(b){
         if(eraIdx()-b.buyStep>=10){
           const h=history(b);
@@ -10107,31 +10155,25 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
     }catch(e){}
   }
 
-  /* ------------------ 入口 ------------------ */
-  function addBtn(){
-    try{
-      let b=document.getElementById('btnBond3');
-      if(b)return;
-      const h1=document.querySelector('#hud .h1');
-      const bag=document.getElementById('btnBag');
-      if(h1&&bag){
-        b=document.createElement('button');
-        b.id='btnBond3';b.textContent='债券';
-        b.style.padding='6px 10px';b.style.fontSize='11px';
-        b.onclick=function(){render();panel.classList.add('on');};
-        h1.insertBefore(b,bag);
-      }
-    }catch(e){}
-  }
-  addBtn();
-  setInterval(addBtn,1500);
-
+  rebuildTabs();
+  setInterval(rebuildTabs,1500);
   setInterval(function(){
-    if(panel.classList.contains('on'))render();
+    const p=document.getElementById('shopScreen');
+    const pane=document.getElementById('bondPane');
+    if(p&&p.classList.contains('on')&&pane&&pane.style.display==='block')renderBonds();
   },15000);
   setInterval(settle,15000);
 
-})();  
+  /* 顺手删掉旧债券按钮，防止再冒出来 */
+  setInterval(function(){
+    ['btnBond3','btnBondFloat','btnBondTop'].forEach(function(id){
+      const e=document.getElementById(id); if(e)e.remove();
+    });
+    const old=document.getElementById('bondScreen3');
+    if(old)old.remove();
+  },800);
+
+})();
 </script>
 </body>
 </html>

@@ -11037,6 +11037,130 @@ setInterval(function(){
   }catch(e){}
 })();
 /* ===== v165 结束 ===== */  
+/* ===== v166：齿口之王之上再加 3 个阶级（独立扩展，不动旧 rank 系统） ===== */
+(function(){
+  if(window.__RKX__) return; window.__RKX__=true;
+
+  var T=[0,600,1500,3500,8000,18000,40000,90000,200000,500000,1200000,5000000,20000000,80000000];
+  var N=['桥洞常客','咸鱼翻身中','城中村租客','小有积蓄','巷口收藏家','街区名人','城里富商','上流圈边缘','大收藏家','传奇寻宝人','齿口之王','万钥之主','无锁之境','齿口之神'];
+  var D=['睡了三年桥洞，钥匙串是捡的','刚有点本钱，还没翻身','房租勉强交得上','开始有人叫你老板','巷口摆摊，识货的都来问你','整条街都认识你','开始有账本，也有了仇家','请柬终于寄到你家','博物馆馆长亲自来访','你的名字写进了行价里','所有锁芯最后都听你的','一柜子钥匙，没有一把是别人的','你走过的门，锁都自己开了','传说里那个把锁芯当乐器的人'];
+
+  function worth(){
+    var v=0;
+    try{ v=S.coins||0; }catch(e){ v=0; }
+    try{
+      (S.bag||[]).forEach(function(it){
+        try{
+          if(typeof it.v==='number'){ v+=it.v; return; }
+          var d=ITEM_BY_ID[it.id||it.k];
+          if(d) v+=priceOf(d,it.cond||1);
+        }catch(e){}
+      });
+    }catch(e){}
+    try{
+      var b=JSON.parse(localStorage.getItem('keyhole_bond_v9')||'null');
+      if(b&&b.list) b.list.forEach(function(x){ v+=(x.val||0); });
+    }catch(e){}
+    return v;
+  }
+  function rankEx(){
+    var v=worth(),i=0;
+    for(var k=0;k<T.length;k++){ if(v>=T[k]) i=k; }
+    return i;
+  }
+  window.__rankEx=rankEx;
+
+  /* ---------- 阶级面板（重建，id 不变） ---------- */
+  function buildPanel(){
+    var old=document.getElementById('rank3');
+    if(old&&old.parentNode) old.parentNode.removeChild(old);
+    var rk=document.createElement('section');
+    rk.id='rank3'; rk.className='panel';
+    rk.innerHTML='<div class="phead"><h2>阶 级</h2><div class="sp"></div>'+
+      '<button id="r3Close">关闭</button></div>'+
+      '<div id="r3Body" style="flex:1;overflow-y:auto;padding-bottom:20px"></div>';
+    document.body.appendChild(rk);
+    document.getElementById('r3Close').onclick=function(){ rk.classList.remove('on'); };
+    return rk;
+  }
+  function renderPanel(){
+    var body=document.getElementById('r3Body'); if(!body) return;
+    var v=worth(), cur=rankEx();
+    var html='<div style="font-size:12px;color:#c9bda8;line-height:1.9;margin-bottom:14px">'+
+      '当前身价 <b style="color:#e6c47f;font-size:16px">'+Math.round(v).toLocaleString()+'</b> 金<br>'+
+      '<span style="color:#8c7e69;font-size:10.5px">金币 + 背包估价 + 债券现值</span></div>';
+    for(var i=0;i<N.length;i++){
+      if(i===11) html+='<div style="text-align:center;font-size:10.5px;color:#6f6558;letter-spacing:2px;margin:10px 0 8px">—— 齿 口 之 王 之 上 ——</div>';
+      var on=(i===cur), done=(i<=cur);
+      html+='<div style="display:flex;align-items:center;gap:8px;padding:11px 12px;border-radius:11px;margin-bottom:7px;border:1px solid '+
+        (on?'#e6c47f88':'#ffffff12')+';background:'+(on?'#2a2114cc':'#16121099')+'">'+
+        '<div style="flex:1;min-width:0">'+
+          '<div style="font-size:13.5px;color:'+(on?'#e6c47f':'#ddd2c0')+'">'+(on?'▶ ':'')+N[i]+'</div>'+
+          '<div style="font-size:10.5px;color:#8c7e69;margin-top:3px">'+D[i]+'</div>'+
+        '</div>'+
+        '<div style="text-align:right;flex:0 0 auto">'+
+          '<div style="font-size:11.5px;color:'+(done?'#8ef2a8':'#a99c88')+'">'+T[i].toLocaleString()+' 金</div>'+
+          '<div style="font-size:9.5px;color:'+(done?'#8c9686':'#6f6558')+'">'+(done?'已达成':'未达成')+'</div>'+
+        '</div></div>';
+    }
+    body.innerHTML=html;
+  }
+  function openMine(){
+    var rk=document.getElementById('rank3')||buildPanel();
+    renderPanel(); rk.classList.add('on');
+  }
+  window.__openRank=openMine;
+
+  /* ---------- 顶栏阶级标签 ---------- */
+  var DESC=Object.getOwnPropertyDescriptor(Node.prototype,'textContent');
+  function label(){ return '阶 级 · '+N[rankEx()]; }
+  function chipHook(){
+    try{
+      var chip=document.getElementById('rankChip'); if(!chip) return;
+      if(!chip.__kx){
+        chip.__kx=1;
+        Object.defineProperty(chip,'textContent',{configurable:true,
+          get:function(){ return DESC.get.call(this); },
+          set:function(){ DESC.set.call(this,label()); }});
+        Object.defineProperty(chip,'onclick',{configurable:true,
+          get:function(){ return openMine; }, set:function(){}});
+      }
+      DESC.set.call(chip,label());
+    }catch(e){}
+  }
+  setInterval(chipHook,1000);
+
+  /* ---------- 特权：顶级阶级危险扣款返还 5%/级（最多 15%） ---------- */
+  try{
+    var _res=resolveEvent;
+    resolveEvent=function(){
+      var before=0; try{ before=S.coins||0; }catch(e){}
+      var r=_res.apply(this,arguments);
+      try{
+        var rx=rankEx();
+        if(rx>10){
+          var spent=before-(S.coins||0);
+          if(spent>0){
+            var back=Math.round(spent*0.05*(rx-10));
+            if(back>0){
+              S.coins=(S.coins||0)+back;
+              try{ addMk('顶级特权 · 返还 '+back,'#8ef2a8'); }catch(e){}
+              try{ save(); updateHud(); }catch(e){}
+            }
+          }
+        }
+      }catch(e){}
+      return r;
+    };
+  }catch(e){}
+
+  /* 启动时刷新一次 */
+  setTimeout(function(){ chipHook(); if(document.getElementById('rank3')) renderPanel(); },1500);
+  setInterval(function(){
+    try{ if(document.getElementById('rank3')&&document.getElementById('rank3').classList.contains('on')) renderPanel(); }catch(e){}
+  },2500);
+})();
+/* ===== v166 结束 ===== */  
 </script>
 </body>
 </html>

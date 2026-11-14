@@ -9340,180 +9340,6 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   setInterval(injectWarBox,1200);
 
 })(); 
-/* ===== v150：保管费 / 阶级维持费 / 查税风暴 ===== */
-(function(){
-  const FEE_SLOT='keyhole_fee_slot_v1';
-  const ERA=1200000;                 /* 20 分钟 */
-  const FLOOR=200;                   /* 金币保底 */
-  const slot=()=>Math.floor(Date.now()/ERA);
-
-  function bagVal(){
-    let v=0;
-    (S.bag||[]).forEach(function(it){
-      const d=ITEM_BY_ID[it.id];
-      if(d){ try{ v+=priceOf(d,it.cond); }catch(e){} }
-    });
-    return v;
-  }
-  function assets(){ return (S.coins||0)+bagVal(); }
-
-  const MAINT=[0,0,0,0,0,200,800,2500,8000,25000,80000];
-  function rankIdx(){
-    try{ if(window.__rankOf) return window.__rankOf(); }catch(e){}
-    const t=[0,600,1500,3500,8000,18000,40000,90000,200000,500000,1200000];
-    const v=assets(); let i=0;
-    t.forEach(function(x,k){ if(v>=x) i=k; });
-    return i;
-  }
-
-  /* 扣钱：不低于 200 */
-  function charge(n){
-    const before=S.coins||0;
-    S.coins=Math.max(FLOOR,before-n);
-    return before-S.coins;
-  }
-
-  /* ---------- 每次时代切换结算一次 ---------- */
-  function settleFees(){
-    try{
-      const cur=slot();
-      const last=+(localStorage.getItem(FEE_SLOT)||0);
-      if(last===cur) return;                  /* 本时代已结算 */
-      localStorage.setItem(FEE_SLOT,String(cur));
-      if(last===0) return;                    /* 第一次不扣 */
-      if(S.phase==='title') return;
-
-      const a=assets();
-      const custody=Math.min(3000,Math.round(a*0.004));
-      const maint=MAINT[rankIdx()]||0;
-
-      let lost=0;
-      if(maint>0) lost+=charge(maint);
-      if(custody>0) lost+=charge(custody);
-
-      try{save();updateHud();}catch(e){}
-
-      if(lost>0){
-        const parts=[];
-        if(maint>0)parts.push('阶级维持 −'+maint);
-        if(custody>0)parts.push('仓库保管 −'+custody);
-        try{toast('新时代结算<br>'+parts.join(' · ')+'<br>共支出 '+lost+' 金',2600);}catch(e){}
-      }
-    }catch(e){}
-  }
-
-  setInterval(settleFees,8000);
-  settleFees();
-
-  /* ---------- 查税风暴：噩梦/地狱、金币>2万、3% ---------- */
-  try{
-    const _cb=confirmBox;
-    confirmBox=function(){
-      const r=_cb.apply(this,arguments);
-      try{
-        const hard=(MODE===MODES.nightmare||MODE===MODES.hell);
-        if(hard && (S.coins||0)>20000 && Math.random()<0.03){
-          const pct=0.25+Math.random()*0.15;          /* 25%~40% */
-          const want=Math.round((S.coins||0)*pct);
-          const lost=charge(want);
-          try{
-            toast('⚠ <b>查税风暴</b><br>被扣 '+lost+' 金（'+Math.round(pct*100)+'%）',3000);
-            try{haptic([80,60,160]);flash(5);}catch(e){}
-          }catch(e){}
-          try{save();updateHud();}catch(e){}
-        }
-      }catch(e){}
-      return r;
-    };
-  }catch(e){}
-
-})();  
-/* ===== v151：保管费/维持费（立刻可见）+ 查税风暴（监听买箱） ===== */
-(function(){
-  const FEE_SLOT='keyhole_fee_slot_v2';
-  const ERA=1200000, FLOOR=200;
-  const slot=()=>Math.floor(Date.now()/ERA);
-
-  function bagVal(){
-    let v=0;
-    (S.bag||[]).forEach(function(it){
-      const d=ITEM_BY_ID[it.id];
-      if(d){try{v+=priceOf(d,it.cond);}catch(e){}}
-    });
-    return v;
-  }
-  const assets=()=>(S.coins||0)+bagVal();
-
-  const MAINT=[0,0,0,0,0,200,800,2500,8000,25000,80000];
-  function rankIdx(){
-    try{ if(typeof window.__rankOf==='function')return window.__rankOf(); }catch(e){}
-    const t=[0,600,1500,3500,8000,18000,40000,90000,200000,500000,1200000];
-    const v=assets(); let i=0;
-    t.forEach(function(x,k){ if(v>=x)i=k; });
-    return i;
-  }
-
-  function charge(n){
-    const before=S.coins||0;
-    S.coins=Math.max(FLOOR,before-n);
-    return before-S.coins;
-  }
-
-  function settle(){
-    try{
-      const cur=slot();
-      const last=+(localStorage.getItem(FEE_SLOT)||0);
-      if(last===cur) return;
-
-      localStorage.setItem(FEE_SLOT,String(cur));
-
-      const a=assets();
-      const custody=Math.min(3000,Math.round(a*0.004));
-      const maint=MAINT[rankIdx()]||0;
-
-      let lost=0;
-      if(maint>0) lost+=charge(maint);
-      if(custody>0) lost+=charge(custody);
-
-      try{save();updateHud();}catch(e){}
-
-      if(lost>0){
-        const p=[];
-        if(maint>0)p.push('阶级维持 −'+maint);
-        if(custody>0)p.push('仓库保管 −'+custody);
-        try{toast('时代结算<br>'+p.join(' · ')+'<br>共支出 '+lost+' 金',2800);}catch(e){}
-      }else{
-        try{toast('时代结算：身价较低，本期无支出',2000);}catch(e){}
-      }
-    }catch(e){}
-  }
-
-  /* 打开后 1.5 秒先结算一次，之后每 8 秒检查是否到了新时代 */
-  setTimeout(settle,1500);
-  setInterval(settle,8000);
-
-  /* ---------- 查税风暴：监听「买箱」动作（box → lock） ---------- */
-  let prevPhase=S.phase;
-  setInterval(function(){
-    try{
-      if(prevPhase==='box' && S.phase==='lock'){
-        const hard=(MODE===MODES.nightmare||MODE===MODES.hell);
-        if(hard && (S.coins||0)>20000 && Math.random()<0.03){
-          const pct=0.25+Math.random()*0.15;
-          const lost=charge(Math.round((S.coins||0)*pct));
-          try{
-            haptic([80,60,160]);flash(5);
-            toast('⚠ <b>查税风暴</b><br>被扣 '+lost+' 金（'+Math.round(pct*100)+'%）',3000);
-          }catch(e){}
-          try{save();updateHud();}catch(e){}
-        }
-      }
-      prevPhase=S.phase;
-    }catch(e){}
-  },300);
-
-})();  
-/* v154 黑曜石提价（无按钮） */
 (function(){
   const PRICE={
     obsRing:12000, obsMask:26000, obsKey:38000, obsDagger:55000,
@@ -10933,6 +10759,150 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 else init();
 })();
 /* ===== 债券 v9 结束 ===== */
+/* ===== v164：危险率-30% · 瑕疵率↑ · 转完才揭瑕疵 · 查税改为 5~7 时代一次 ===== */
+(function(){
+/* ---------- ① 危险物出现率整体 −30% ---------- */
+var HZ={scorpion:1,sulfur:1,bomb:1,tax:1,thief:1,fire:1,lawsuit:1,rads:1,raid:1,spike:1,acid:1,rat:1};
+try{
+  var _rl=rollLoot;
+  rollLoot=function(tier){
+    var out=_rl.apply(this,arguments);
+    try{
+      if(out&&out.length){
+        for(var i=out.length-1;i>=0;i--){
+          var e=out[i];
+          if(e&&e.kind==='evt'&&HZ[e.ev]&&Math.random()<0.30) out.splice(i,1);
+        }
+      }
+    }catch(e){}
+    return out;
+  };
+}catch(e){}
+
+/* ---------- ② 瑕疵率↑ / 碎裂率↑ ---------- */
+try{
+  var _rc=rollCond;
+  rollCond=function(tier){
+    var c=_rc.apply(this,arguments);
+    if(tier<=1) return c;
+    var r=Math.random();
+    if(c===1){ if(r<0.10) c=(Math.random()<0.7?2:3); }
+    else if(c===3){ if(r<0.06) c=4; }
+    else if(c===4){ if(r<0.12) c=5; }
+    return c;
+  };
+}catch(e){}
+
+/* ---------- ③ 转完才算完，转了才揭瑕疵 ---------- */
+try{
+  var _rev=revealCond;
+  revealCond=function(){
+    try{
+      var ins=S.insp;
+      if(ins&&!ins.revealed&&!ins.isEvt&&!ins.crumbled&&ins.turn<1.45){ ins.__pend=true; return; }
+    }catch(e){}
+    return _rev.apply(this,arguments);
+  };
+  setInterval(function(){
+    try{
+      var ins=S.insp;
+      if(ins&&ins.__pend&&!ins.revealed&&ins.turn>=1.45){ ins.__pend=false; _rev(); }
+    }catch(e){}
+  },120);
+  document.addEventListener('pointerdown',function(){
+    try{ var ins=S.insp; if(ins&&ins.__pend&&ins.turn>=1.45){ ins.__pend=false; _rev(); } }catch(e){}
+  },true);
+}catch(e){}
+
+/* ---------- ④ 保管费 + 阶级维持费（每时代一次） ---------- */
+var FEE_SLOT='keyhole_fee_slot_v3', FLOOR=200;
+var ES=(typeof SLOT!=='undefined'?SLOT:1800000);
+function slotNow(){ return Math.floor(Date.now()/ES); }
+function bagVal(){
+  var v=0;
+  try{
+    (S.bag||[]).forEach(function(it){
+      try{
+        if(it&&typeof it==='object'){
+          if(typeof it.v==='number'){ v+=it.v; return; }
+          var d=ITEM_BY_ID[it.id||it.k];
+          if(d) v+=priceOf(d,it.cond||1);
+        }
+      }catch(e){}
+    });
+  }catch(e){}
+  return v;
+}
+function assets(){ return (S.coins||0)+bagVal(); }
+var MAINT=[0,0,0,0,0,200,800,2500,8000,25000,80000];
+var RANK_T=[0,600,1500,3500,8000,18000,40000,90000,200000,500000,1200000];
+function rankIdx(){
+  try{ if(typeof S.rank==='number') return Math.max(0,Math.min(10,S.rank)); }catch(e){}
+  var v=assets(),i=0;
+  for(var k=0;k<RANK_T.length;k++){ if(v>=RANK_T[k]) i=k; }
+  return i;
+}
+function charge(n){
+  var b=S.coins||0;
+  S.coins=Math.max(FLOOR,b-n);
+  return b-S.coins;
+}
+function settleFees(){
+  try{
+    var cur=slotNow(), last=+(localStorage.getItem(FEE_SLOT)||0);
+    if(last===cur) return;
+    localStorage.setItem(FEE_SLOT,String(cur));
+    if(!last) return;
+    if(S.phase==='title') return;
+    var custody=Math.min(3000,Math.round(assets()*0.004));
+    var maint=MAINT[rankIdx()]||0;
+    var lost=0;
+    if(maint>0) lost+=charge(maint);
+    if(custody>0) lost+=charge(custody);
+    try{ save(); updateHud(); }catch(e){}
+    if(lost>0){
+      var p=[];
+      if(maint>0) p.push('阶级维持 −'+maint);
+      if(custody>0) p.push('仓库保管 −'+custody);
+      try{ toast('时代结算<br>'+p.join(' · ')+'<br>共支出 '+lost+' 金',2600); }catch(e){}
+    }
+  }catch(e){}
+}
+setInterval(settleFees,8000);
+settleFees();
+
+/* ---------- ⑤ 查税风暴：随机 5~7 个时代一次 ---------- */
+var AKEY='keyhole_audit_v1';
+var A={n:0,target:5+Math.floor(Math.random()*3),era:''};
+try{
+  var o=JSON.parse(localStorage.getItem(AKEY)||'null');
+  if(o&&typeof o.n==='number'){ A.n=o.n; A.target=o.target||5; A.era=o.era||''; }
+}catch(e){}
+function saveA(){ try{ localStorage.setItem(AKEY,JSON.stringify(A)); }catch(e){} }
+function eraNow(){ try{ return curEra().n; }catch(e){ return ''; } }
+function audit(){
+  var hard=(MODE===MODES.nightmare||MODE===MODES.hell);
+  if(!hard) return false;
+  if((S.coins||0)<=20000) return false;
+  var pct=0.25+Math.random()*0.15;
+  var lost=charge(Math.round((S.coins||0)*pct));
+  try{ save(); updateHud(); }catch(e){}
+  try{ toast('<b>⚠ 查税风暴</b><br>被扣 '+lost+' 金（'+Math.round(pct*100)+'%）',3200); }catch(e){}
+  try{ haptic([80,60,160]); flash(5); }catch(e){}
+  return true;
+}
+setInterval(function(){
+  try{
+    var nm=eraNow();
+    if(!A.era){ A.era=nm; saveA(); return; }
+    if(nm&&nm!==A.era){ A.era=nm; A.n++; saveA(); }
+    if(A.n>=A.target){
+      if(audit()){ A.n=0; A.target=5+Math.floor(Math.random()*3); saveA(); }
+    }
+  }catch(e){}
+},5000);
+})();
+/* ===== v164 结束 ===== */  
 </script>
 </body>
 </html>

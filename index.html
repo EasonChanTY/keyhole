@@ -10923,6 +10923,120 @@ setInterval(function(){
 },5000);
 })();
 /* ===== v164 结束 ===== */  
+/* ===== v165：新增百分比危险 · 高阶级危险扣款按比例加重 ===== */
+(function(){
+  /* 新增 5 种按金库百分比扣款的危险 */
+  var PCTX={
+    fine:  {n:'天价罚单', p:0.06},
+    debt:  {n:'债务追讨', p:0.09},
+    scam:  {n:'连环骗局', p:0.07},
+    ransom:{n:'绑架赎金', p:0.15},
+    butler:{n:'管家卷款', p:0.18}
+  };
+  var FLAT={scorpion:1,sulfur:1,bomb:1,spike:1,acid:1,rat:1,rads:1,raid:1};
+  var ARM='keyhole_armor_v1';
+  function armor(){try{return JSON.parse(localStorage.getItem(ARM)||'null');}catch(e){return null;}}
+  function armorClear(){try{localStorage.removeItem(ARM);}catch(e){}}
+  function coins(){try{return S.coins||0;}catch(e){return 0;}}
+  function bagVal(){
+    var v=0;
+    try{(S.bag||[]).forEach(function(it){try{
+      if(typeof it.v==='number'){v+=it.v;return;}
+      var d=ITEM_BY_ID[it.id||it.k]; if(d)v+=priceOf(d,it.cond||1);
+    }catch(e){}});}catch(e){}
+    return v;
+  }
+  function rankNow(){
+    var T=[0,600,1500,3500,8000,18000,40000,90000,200000,500000,1200000];
+    var v=coins()+bagVal(),i=0;
+    for(var k=0;k<T.length;k++) if(v>=T[k]) i=k;
+    return i;
+  }
+  function saveAll(){try{save();updateHud();}catch(e){}}
+
+  /* ① 名称 + 建模 */
+  try{ Object.keys(PCTX).forEach(function(k){ EVT_NAME[k]=PCTX[k].n; }); }catch(e){}
+  try{
+    var _mem=makeEventMesh;
+    makeEventMesh=function(ev){ if(PCTX[ev]) ev='bomb'; return _mem.call(this,ev); };
+  }catch(e){}
+
+  /* ② 掉落：各难度都会出现，噩梦/地狱更多 */
+  try{
+    var _rl=rollLoot;
+    rollLoot=function(tier){
+      var out=_rl.apply(this,arguments);
+      try{
+        var p=0.04;
+        if(MODE===MODES.nightmare||MODE===MODES.hell) p=0.10;
+        else if(MODE===MODES.hard) p=0.07;
+        if(out&&out.length&&Math.random()<p){
+          var ks=Object.keys(PCTX);
+          out.splice(Math.min(1,out.length),0,{kind:'evt',ev:ks[Math.floor(Math.random()*ks.length)]});
+        }
+      }catch(e){}
+      return out;
+    };
+  }catch(e){}
+
+  /* ③ 结算新百分比危险（含全能护甲抵挡） */
+  try{
+    var _res1=resolveEvent;
+    resolveEvent=function(insp){
+      var r=_res1.apply(this,arguments);
+      try{
+        var ev=insp&&insp.entry&&insp.entry.ev;
+        if(ev&&PCTX[ev]&&!insp.__pctX){
+          insp.__pctX=1;
+          var a=armor();
+          if(a&&a.omni){
+            armorClear(); insp.resolved=true;
+            try{addMk('全能护甲 · 挡下'+PCTX[ev].n,'#8ef2a8');
+              toast('全能护甲挡下了<b>'+PCTX[ev].n+'</b>（已消耗）',2200);}catch(e){}
+            saveAll(); return r;
+          }
+          var pct=PCTX[ev].p;
+          if(ev==='ransom'||ev==='butler') pct*=(1+rankNow()*0.05);
+          var loss=Math.max(5,Math.round(coins()*pct));
+          S.coins=Math.max(0,coins()-loss); insp.resolved=true;
+          try{addMk(PCTX[ev].n+' −'+loss);
+            toast('<b>'+PCTX[ev].n+'</b><br>金库 −'+loss+' 金（'+Math.round(pct*100)+'%）',2400);}catch(e){}
+          try{haptic([40,30,90]);flash(3);}catch(e){}
+          saveAll();
+        }
+      }catch(e){}
+      return r;
+    };
+  }catch(e){}
+
+  /* ④ 普通危险：按阶级额外加罚 */
+  try{
+    var _res2=resolveEvent;
+    resolveEvent=function(insp){
+      var before=coins();
+      var r=_res2.apply(this,arguments);
+      try{
+        var ev=insp&&insp.entry&&insp.entry.ev;
+        var spent=Math.max(0,before-coins());
+        if(ev&&FLAT[ev]&&spent>0&&!insp.__flatX){
+          insp.__flatX=1;
+          var rk=rankNow();
+          var extra=Math.round(spent*rk*1.2);
+          if(rk>=4){ var fl=Math.round(coins()*0.004*rk); if(fl>extra) extra=fl; }
+          var cap=Math.round(coins()*0.15); if(extra>cap) extra=cap;
+          if(extra>0){
+            S.coins=Math.max(0,coins()-extra);
+            try{addMk('阶级加罚 −'+extra,'#ff9a86');
+              toast('高阶级加罚 <b>−'+extra+' 金</b>',1900);}catch(e){}
+            saveAll();
+          }
+        }
+      }catch(e){}
+      return r;
+    };
+  }catch(e){}
+})();
+/* ===== v165 结束 ===== */  
 </script>
 </body>
 </html>

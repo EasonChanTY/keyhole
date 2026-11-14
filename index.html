@@ -11717,6 +11717,343 @@ setInterval(function(){
   }catch(e){}
 })();
 /* ===== v171 结束 ===== */
+/* ===== v172：平衡重做（黑天鹅危险 / 轻阶级加罚 / 仓库管理费 / 碎片建模） ===== */
+(function(){
+  if(window.__V172__) return; window.__V172__=true;
+
+  function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+  function coins(){ try{ return S.coins||0; }catch(e){ return 0; } }
+
+  /* ---------- 0. 黑曜石碎片：物品 + 建模 ---------- */
+  var SH={id:'obsShard',n:'黑曜石碎片',t:3,c:'gem',b:160,
+    d:'黑曜石剥落的一角。集满 10 片可在左下角「碎片」按钮里合成一件完整黑曜石藏品。'};
+  try{ if(!ITEM_BY_ID[SH.id]){ ITEMS.push(SH); ITEM_BY_ID[SH.id]=SH; } }catch(e){}
+  try{
+    if(window.__ITEM_BUILD && !window.__ITEM_BUILD['obsShard']){
+      window.__ITEM_BUILD['obsShard']=function(){
+        var g=new THREE.Group();
+        var m=new THREE.MeshStandardMaterial({color:0x1a1622,roughness:0.2,metalness:0.9,emissive:0x4a2fa8,emissiveIntensity:0.45});
+        var a=new THREE.Mesh(new THREE.ConeGeometry(0.032,0.095,5),m);
+        a.position.set(0,0.048,0); a.rotation.z=0.12; g.add(a);
+        var b=new THREE.Mesh(new THREE.ConeGeometry(0.018,0.052,4),m);
+        b.position.set(0.03,0.028,0.008); b.rotation.set(0.35,0.9,0.2); g.add(b);
+        var c=new THREE.Mesh(new THREE.OctahedronGeometry(0.015,0),m);
+        c.position.set(-0.027,0.022,-0.006); c.rotation.set(0.4,0.6,0.3); g.add(c);
+        return g;
+      };
+    }
+  }catch(e){}
+
+  var PCTK={tax:1,thief:1,fire:1,lawsuit:1,fine:1,debt:1,scam:1,ransom:1,butler:1};
+  var FLAT={scorpion:1,sulfur:1,bomb:1,spike:1,acid:1,rat:1,rads:1,raid:1};
+
+  /* ---------- 1. 掉落：百分比危险 0.3%（黑天鹅）· 碎片再 +10% ---------- */
+  try{
+    var _rl=rollLoot;
+    rollLoot=function(tier){
+      var out=_rl.apply(this,arguments);
+      try{
+        if(!out||!out.length) return out;
+        for(var i=out.length-1;i>=0;i--){
+          var e=out[i];
+          if(e&&e.kind==='evt'&&PCTK[e.ev]) out.splice(i,1);
+        }
+        if(tier&&tier.special==='obsidian'){
+          if(Math.random()<0.10) out.push({kind:'item',item:SH,cond:1});
+        }
+        if(Math.random()<0.003){
+          var ks=Object.keys(PCTK);
+          out.push({kind:'evt',ev:ks[Math.floor(Math.random()*ks.length)]});
+        }
+      }catch(e){}
+      return out;
+    };
+  }catch(e){}
+
+  /* ---------- 2. 结算：百分比危险封顶 0.5%~3% · 阶级加罚调轻 ---------- */
+  try{
+    var _res=resolveEvent;
+    resolveEvent=function(insp){
+      try{ if(insp) insp.__flatX=1; }catch(e){}   /* 关掉旧版高额阶级加罚 */
+      var before=coins();
+      var r=_res.apply(this,arguments);
+      try{
+        var ev=insp&&insp.entry&&insp.entry.ev;
+        var spent=Math.max(0, before-coins());
+        if(spent>0 && ev && PCTK[ev]){
+          var want=Math.max(5, Math.round(before*(0.005+Math.random()*0.025)));
+          var back=spent-want;
+          if(back>0){ S.coins=(S.coins||0)+back; try{ save(); updateHud(); }catch(e){} }
+        }else if(spent>0 && ev && FLAT[ev]){
+          var rk=0;
+          try{ rk=(typeof window.__rankEx==='function')?window.__rankEx():0; }catch(e){ rk=0; }
+          if(rk>0){
+            var extra=Math.max(Math.round(spent*rk*0.25), Math.round(coins()*0.0004*rk));
+            var cap=Math.round(coins()*0.03);
+            if(extra>cap) extra=cap;
+            if(extra>0){
+              S.coins=Math.max(0, coins()-extra);
+              try{ addMk('阶级加罚 −'+extra,'#ff9a86'); }catch(e){}
+              try{ save(); updateHud(); }catch(e){}
+            }
+          }
+        }
+      }catch(e){}
+      return r;
+    };
+  }catch(e){}
+
+  /* ---------- 3. 停用旧的保管费/阶级维持费 ---------- */
+  try{
+    var _get=Storage.prototype.getItem;
+    Storage.prototype.getItem=function(k){
+      try{ if(k==='keyhole_fee_slot_v3') return String(Math.floor(Date.now()/1800000)); }catch(e){}
+      return _get.call(this,k);
+    };
+  }catch(e){}
+
+  /* ---------- 4. 仓库管理费（按仓库藏品总值阶梯） ---------- */
+  var WSLOT='keyhole_whfee_slot_v1';
+  function bagValue(){
+    var v=0;
+    try{
+      (S.bag||[]).forEach(function(it){
+        try{ var d=ITEM_BY_ID[it.id]; if(d) v+=priceAt(d,it.cond||1,Math.floor(Date.now()/3600000)); }catch(e){}
+      });
+    }catch(e){}
+    return v;
+  }
+  function feeOf(V){
+    var br=[50000,200000,1000000,1e18], rt=[0.005,0.010,0.018,0.025];
+    var f=0, prev=0;
+    for(var i=0;i<br.length;i++){
+      var seg=Math.min(V,br[i])-prev;
+      if(seg>0) f+=seg*rt[i];
+      prev=br[i];
+      if(V<=br[i]) break;
+    }
+    return Math.round(f);
+  }
+  function settleWH(){
+    try{
+      var cur=Math.floor(Date.now()/1800000);
+      var last=+(localStorage.getItem(WSLOT)||0);
+      if(last===cur) return;
+      localStorage.setItem(WSLOT,String(cur));
+      if(!last) return;
+      if(S.phase==='title') return;
+      var V=bagValue(); if(V<=0) return;
+      var fee=feeOf(V); if(fee<=0) return;
+      var lost=Math.min(fee, coins());
+      S.coins=Math.max(0, coins()-lost);
+      try{ save(); updateHud(); }catch(e){}
+      try{ toast('<b>仓库管理费</b><br>仓库估值 '+fmt(V)+' 金<br>时代结算 −'+fmt(lost)+' 金',2600); }catch(e){}
+    }catch(e){}
+  }
+  setInterval(settleWH,8000);
+  settleWH();
+
+  /* ---------- 5. 时代简介里写出费用说明 ---------- */
+  try{
+    var _oe=openEra;
+    openEra=function(){
+      try{ _oe.apply(this,arguments); }catch(e){}
+      try{
+        var b=document.getElementById('esBody'); if(!b) return;
+        var V=bagValue(), fee=feeOf(V);
+        b.insertAdjacentHTML('beforeend',
+          '<div style="margin:20px 16px 30px;padding:14px;border-radius:14px;background:#16132099;border:1px solid #3a2f5555;">'+
+            '<div style="font-size:12.5px;color:#b57aff;letter-spacing:2px;margin-bottom:8px;">仓 库 管 理 费</div>'+
+            '<div style="font-size:11.5px;color:#b9b2cf;line-height:2;">每过一个时代结算一次，按仓库内藏品总值阶梯收费：<br>'+
+              '0 ~ 5 万 → <b>0.5%</b><br>'+
+              '5 万 ~ 20 万 → <b>1.0%</b>（超出部分）<br>'+
+              '20 万 ~ 100 万 → <b>1.8%</b>（超出部分）<br>'+
+              '100 万以上 → <b>2.5%</b>（超出部分）<br>'+
+              '<span style="color:#8c7e69">藏品越贵、压得越久，抽得越狠；压几轮贵货很可能倒亏。</span></div>'+
+            '<div style="margin-top:10px;font-size:12px;color:#cfc4b2;">当前仓库估值 <b style="color:#e6c47f">'+fmt(V)+'</b> 金 → 本时代管理费 <b style="color:#ff9d9d">−'+fmt(fee)+'</b> 金</div>'+
+            '<div style="margin-top:12px;font-size:11.5px;color:#8c7e69;line-height:1.95;">'+
+              '★ <b>税务稽查</b>：每 5~7 个时代随机一次，扣 5%~35%，躲不掉。<br>'+
+              '★ <b>箱内百分比危险</b>：已改成黑天鹅事件，约 0.3% 才遇到，单次只扣 0.5%~3%。</div>'+
+          '</div>');
+      }catch(e){}
+    };
+  }catch(e){}
+
+})();
+/* ===== v172 结束 ===== */
+/* ===== v173：时代简介 · 每个时代独立视觉主题 ===== */
+(function(){
+  if(window.__V173__) return; window.__V173__=true;
+
+  function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+
+  /* 每个时代一套皮肤：a=主色 b=底色 e=纹样 t=一句话气质 */
+  var TH={
+    '收藏热':  {a:'#f2b45a', b:'#3a2410', e:'🏺', t:'全城鉴宝，旧物翻身'},
+    '大萧条':  {a:'#b9a58c', b:'#2e2a25', e:'🥫', t:'面包比宝石好使'},
+    '镀金年代':{a:'#e9c96b', b:'#3d2f10', e:'🥂', t:'越闪越值钱'},
+    '战乱':    {a:'#e06a5a', b:'#3a1a16', e:'⚔️', t:'值钱的都成了累赘'},
+    '考古热':  {a:'#dbb273', b:'#3a2e1a', e:'🏛️', t:'越旧越贵'},
+    '复古潮':  {a:'#6fd0c6', b:'#14302e', e:'📻', t:'旧东西又香了'},
+    '平淡日子':{a:'#a8bda1', b:'#242a22', e:'🍃', t:'一切按常理出价'},
+    '拍卖狂热':{a:'#c08bff', b:'#2a1a44', e:'🔨', t:'落槌之前，谁都不服'},
+    '熔炉时代':{a:'#ff9c5a', b:'#421c0c', e:'🔥', t:'铁水比黄金烫手'},
+    '暗市':    {a:'#9b7bff', b:'#1a1230', e:'🌑', t:'灯下不谈价'}
+  };
+  var DEF={a:'#e6c47f', b:'#2a2216', e:'🗝️', t:'一切照旧'};
+
+  var CATS=[
+    {k:'relic',  t:'传 世',    c:'#ffcf5c'},
+    {k:'antique',t:'古 物',    c:'#4f9dff'},
+    {k:'gem',    t:'珠 宝',    c:'#b57aff'},
+    {k:'obs',    t:'黑曜石',   c:'#a78bfa'},
+    {k:'dark',   t:'黑暗物件', c:'#8b5cf6'},
+    {k:'junk',   t:'垃 圾',    c:'#8d7c66'}
+  ];
+  var MULT=[{k:'junk',n:'垃圾'},{k:'curio',n:'古董'},{k:'antique',n:'古物'},{k:'gem',n:'珠宝'},{k:'relic',n:'传世'}];
+
+  function pool(k){
+    if(k==='obs'){ try{ return (typeof OBS_ITEMS!=='undefined'?OBS_ITEMS:[]).slice(); }catch(e){ return []; } }
+    try{ return (typeof ITEMS!=='undefined'?ITEMS:[]).filter(function(it){ return it&&it.c===k&&!it.uniq; }); }
+    catch(e){ return []; }
+  }
+  function pOf(it){
+    try{ return priceAt(it,1,Math.floor(Date.now()/3600000)); }
+    catch(e){ return it.b||0; }
+  }
+  function bagValue(){
+    var v=0;
+    try{ (S.bag||[]).forEach(function(it){ try{ var d=ITEM_BY_ID[it.id]; if(d) v+=priceAt(d,it.cond||1,Math.floor(Date.now()/3600000)); }catch(e){} }); }catch(e){}
+    return v;
+  }
+  function feeOf(V){
+    var br=[50000,200000,1000000,1e18], rt=[0.005,0.010,0.018,0.025], f=0, prev=0;
+    for(var i=0;i<br.length;i++){
+      var seg=Math.min(V,br[i])-prev;
+      if(seg>0) f+=seg*rt[i];
+      prev=br[i];
+      if(V<=br[i]) break;
+    }
+    return Math.round(f);
+  }
+  function eraList(){ try{ return (typeof ERAS!=='undefined')?ERAS:[]; }catch(e){ return []; } }
+  function eraDesc(nm){ var a=eraList(); for(var i=0;i<a.length;i++) if(a[i].n===nm) return a[i].d||''; return ''; }
+  function eraMul(nm){ var a=eraList(); for(var i=0;i<a.length;i++) if(a[i].n===nm) return a[i].m||{}; return {}; }
+  function eraIdx(nm){ var a=eraList(); for(var i=0;i<a.length;i++) if(a[i].n===nm) return i; return -1; }
+
+  /* 一次性注入样式 */
+  if(!document.getElementById('er173css')){
+    var st=document.createElement('style'); st.id='er173css';
+    st.textContent=
+      '@keyframes erIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}'+
+      '@keyframes erPulse{0%,100%{opacity:.55}50%{opacity:1}}'+
+      '.er-wrap{animation:erIn .38s ease both}'+
+      '.er-card{animation:erIn .45s ease both}'+
+      '.er-bar{height:5px;border-radius:3px;background:#ffffff12;overflow:hidden}'+
+      '.er-bar i{display:block;height:100%;border-radius:3px;transition:width .5s cubic-bezier(.2,.8,.2,1)}';
+    document.head.appendChild(st);
+  }
+
+  function rows(list,acc){
+    var s='';
+    for(var i=0;i<list.length;i++){
+      s+='<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #ffffff08;">'+
+        '<span style="color:#d7cbb8;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+list[i].n+'</span>'+
+        '<span style="color:'+acc+';font-size:12px;flex:0 0 auto">'+fmt(list[i].p)+'</span></div>';
+    }
+    return s;
+  }
+
+  function render(){
+    var nm='—';
+    try{ nm=curEra().n; }catch(e){}
+    var th=TH[nm]||DEF;
+    var mins=0;
+    try{ mins=Math.max(0,Math.ceil((1800000-(Date.now()%1800000))/60000)); }catch(e){}
+    var pct=Math.max(0,Math.min(100,((1800000-(Date.now()%1800000))/1800000)*100));
+    var idx=eraIdx(nm), total=eraList().length||10;
+    var mul=eraMul(nm), desc=eraDesc(nm)||th.t;
+
+    var h='<div class="er-wrap" style="position:relative;overflow:hidden;background:'+th.b+'22;">';
+    /* 顶部主视觉 */
+    h+='<div style="position:relative;overflow:hidden;padding:22px 20px 18px;background:radial-gradient(140% 120% at 50% -10%,'+th.a+'33 0%,'+th.b+'55 45%,#0d0b14 78%);border-bottom:1px solid '+th.a+'22;">'+
+        '<div style="position:absolute;right:-18px;top:-26px;font-size:130px;line-height:1;opacity:.09;filter:grayscale(.2)">'+th.e+'</div>'+
+        '<div style="font-size:10.5px;letter-spacing:4px;color:'+th.a+'aa;position:relative">第 '+(idx>=0?idx+1:'—')+' / '+total+' 个时代</div>'+
+        '<div style="font-size:30px;font-weight:200;letter-spacing:6px;margin:8px 0 6px;color:'+th.a+';text-shadow:0 0 26px '+th.a+'66;position:relative">'+nm+'</div>'+
+        '<div style="font-size:12px;color:#b6a892;line-height:1.9;position:relative">'+desc+'</div>'+
+        '<div style="margin-top:14px;position:relative">'+
+          '<div style="display:flex;justify-content:space-between;font-size:10.5px;color:#8c7e69;margin-bottom:5px;">'+
+            '<span>还剩 <b style="color:'+th.a+'">'+mins+'</b> 分钟换时代</span><span style="opacity:.6">'+th.t+'</span></div>'+
+          '<div class="er-bar"><i style="width:'+pct+'%;background:linear-gradient(90deg,'+th.a+','+th.a+'88)"></i></div>'+
+        '</div>'+
+      '</div>';
+
+    /* 本期行情 */
+    h+='<div style="padding:16px 16px 2px;font-size:11px;letter-spacing:3px;color:'+th.a+'cc">本 期 行 情</div>';
+    h+='<div style="margin:0 16px;padding:12px 14px;border-radius:14px;background:#ffffff06;border:1px solid '+th.a+'22">';
+    for(var i=0;i<MULT.length;i++){
+      var m=mul[MULT[i].k]; if(typeof m!=='number') m=1;
+      var w=Math.max(4,Math.min(100,(m/2.4)*100));
+      var col=m>=1.25?'#7ee2ae':(m<=0.8?'#ff9d9d':th.a);
+      h+='<div style="display:flex;align-items:center;gap:9px;margin:7px 0;">'+
+          '<span style="width:42px;font-size:11.5px;color:#b9b2cf">'+MULT[i].n+'</span>'+
+          '<div class="er-bar" style="flex:1"><i style="width:'+w+'%;background:'+col+'"></i></div>'+
+          '<span style="width:44px;text-align:right;font-size:11.5px;color:'+col+'">×'+m.toFixed(2)+'</span></div>';
+    }
+    h+='<div style="font-size:10.5px;color:#6f6558;margin-top:6px;line-height:1.8">绿色＝这个时代更值钱，红色＝更不值钱。</div></div>';
+
+    /* 六个品类榜 */
+    h+='<div style="padding:18px 16px 2px;font-size:11px;letter-spacing:3px;color:'+th.a+'cc">品 类 榜</div>';
+    for(var c=0;c<CATS.length;c++){
+      var ct=CATS[c];
+      var arr=pool(ct.k).map(function(it){ return {n:it.n,p:pOf(it)}; });
+      if(!arr.length) continue;
+      arr.sort(function(x,y){ return y.p-x.p; });
+      var top=arr.slice(0,2);
+      var low=arr.slice(-2).sort(function(x,y){ return x.p-y.p; });
+      h+='<div class="er-card" style="margin:8px 16px;padding:12px 14px;border-radius:14px;background:#ffffff05;border:1px solid '+ct.c+'22;">'+
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'+
+            '<span style="width:6px;height:14px;border-radius:2px;background:'+ct.c+'"></span>'+
+            '<span style="font-size:12.5px;letter-spacing:2px;color:'+ct.c+'">'+ct.t+'</span></div>'+
+          '<div style="font-size:10px;color:#6f6558;margin-bottom:2px">最贵</div>'+rows(top,ct.c)+
+          '<div style="font-size:10px;color:#6f6558;margin-top:6px;margin-bottom:2px">最便宜</div>'+rows(low,ct.c)+
+        '</div>';
+    }
+
+    /* 仓库管理费说明 */
+    var V=bagValue(), fee=feeOf(V);
+    h+='<div class="er-card" style="margin:16px 16px 30px;padding:14px;border-radius:14px;background:'+th.b+'55;border:1px solid '+th.a+'33">'+
+        '<div style="font-size:11.5px;letter-spacing:3px;color:'+th.a+'">仓 库 管 理 费</div>'+
+        '<div style="font-size:11.5px;color:#b9b2cf;line-height:2;margin-top:8px;">每过一个时代结算一次，按仓库藏品总值阶梯收取：<br>'+
+          '0 ~ 5 万 → <b>0.5%</b><br>5 万 ~ 20 万 → <b>1.0%</b>（超出部分）<br>20 万 ~ 100 万 → <b>1.8%</b>（超出部分）<br>100 万以上 → <b>2.5%</b>（超出部分）<br>'+
+          '<span style="color:#8c7e69">藏品越贵、压得越久，抽得越狠；压几轮贵货很可能倒亏。</span></div>'+
+        '<div style="margin-top:10px;font-size:12px;color:#cfc4b2;">当前仓库估值 <b style="color:'+th.a+'">'+fmt(V)+'</b> 金 → 本时代管理费 <b style="color:#ff9d9d">−'+fmt(fee)+'</b> 金</div>'+
+        '<div style="margin-top:12px;font-size:11px;color:#8c7e69;line-height:1.95;">'+
+          '★ <b>税务稽查</b>：每 5~7 个时代随机一次，扣 5%~35%，躲不掉。<br>'+
+          '★ <b>箱内百分比危险</b>：约 0.3% 才遇到，单次只扣 0.5%~3%。</div>'+
+      '</div>';
+
+    h+='</div>';
+
+    var body=document.getElementById('esBody'); if(body) body.innerHTML=h;
+    var p=document.getElementById('eraScreen');
+    if(p){
+      p.style.background='linear-gradient(180deg,'+th.b+'66 0%,#0d0b14 46%)';
+      p.style.boxShadow='0 -20px 60px '+th.a+'22';
+    }
+    var head=p?p.querySelector('.phead h2'):null;
+    if(head) head.style.color=th.a;
+  }
+
+  try{
+    var _oe=openEra;
+    openEra=function(){
+      try{ _oe.apply(this,arguments); }catch(e){}
+      try{ render(); }catch(e){}
+    };
+  }catch(e){}
+})();
+/* ===== v173 结束 ===== */  
 </script>
 </body>
 </html>

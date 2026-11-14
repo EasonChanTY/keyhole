@@ -9778,7 +9778,96 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
     if(p&&p.classList.contains('on')&&pane&&pane.style.display==='block')render();
   },20000);
   setInterval(settleAll,20000);
+/* ===== v157：时代数值（大胆版）+ 不重复 + 熔炉黑曜石增多 ===== */
+(function(){
 
+  /* ---------- 1. 时代倍率 ---------- */
+  const M={
+    '收藏热':  {junk:.30, curio:1.0, antique:4.0, gem:2.0, relic:3.0},
+    '大萧条':  {junk:5.0, curio:.5,  antique:.20, gem:.10, relic:.25},
+    '镀金年代':{junk:.40, curio:1.2, antique:1.0, gem:4.5, relic:1.5},
+    '战乱':    {junk:9.0, curio:.5,  antique:.15, gem:.10, relic:.25},
+    '考古热':  {junk:.40, curio:1.0, antique:5.0, gem:1.0, relic:4.0},
+    '复古潮':  {junk:2.0, curio:4.0, antique:.6,  gem:.5,  relic:1.0},
+    '平淡日子':{junk:.35, curio:.35, antique:.35, gem:.35, relic:.35},
+    '拍卖狂热':{junk:.5,  curio:1.0, antique:2.0, gem:3.5, relic:6.0},
+    '熔炉时代':{junk:.30, curio:.15, antique:.10, gem:.12, relic:.20},
+    '暗市':    {junk:.4,  curio:1.0, antique:1.5, gem:3.0, relic:5.0}
+  };
+  try{
+    ERAS.forEach(function(e){ if(M[e.n]) e.m=Object.assign({},M[e.n]); });
+  }catch(e){}
+
+  /* ---------- 2. 时代不连续重复（战乱仍然稀有） ---------- */
+  try{
+    const WA=ERAS.map(function(e){ return e.n==='战乱'?0.35:1; });
+    let TOT=0; WA.forEach(function(w){TOT+=w;});
+
+    function raw(slot){
+      const h=hash('era'+slot);
+      let r=h*TOT,a=0;
+      for(let i=0;i<ERAS.length;i++){
+        a+=WA[i];
+        if(r<a)return ERAS[i];
+      }
+      return ERAS[0];
+    }
+
+    eraAt=function(ep){
+      const slot=Math.round(ep*3);
+      const cur=raw(slot);
+      const prev=raw(slot-1);
+      if(prev && cur.n===prev.n){
+        const i=ERAS.indexOf(cur);
+        return ERAS[(i+1)%ERAS.length];
+      }
+      return cur;
+    };
+  }catch(e){}
+
+  /* ---------- 3. 熔炉时代：黑曜石箱出现率提高 ---------- */
+  try{
+    const _pt=pickTier;
+    pickTier=function(){
+      try{
+        if(curEra().n==='熔炉时代' && Math.random()<0.12){
+          for(let i=0;i<TIERS.length;i++){
+            if(TIERS[i].special==='obsidian') return TIERS[i];
+          }
+        }
+      }catch(e){}
+      return _pt.apply(this,arguments);
+    };
+  }catch(e){}
+
+  /* ---------- 4. 单品暴涨 ---------- */
+  try{
+    const _pa=priceAt;
+    priceAt=function(item,cond,ep){
+      const v=_pa.apply(this,arguments);
+      try{
+        if(!item||v<=0)return v;
+        const era=eraAt(ep);
+        let chance=0.03;
+        if(era.n==='拍卖狂热')chance=0.08;
+        else if(era.n==='考古热')chance=0.07;
+        else if(era.n==='收藏热')chance=0.06;
+        else if(era.n==='暗市')chance=0.05;
+        else if(era.n==='熔炉时代')chance=0.012;
+
+        if(hash(item.id+'|spike|'+ep)<chance){
+          let mul=3+hash(item.id+'|spk2|'+ep)*17;
+          if(item.c==='relic') mul*=1.8;
+          return Math.round(v*mul);
+        }
+      }catch(e){}
+      return v;
+    };
+  }catch(e){}
+
+  try{ updateHud(); }catch(e){}
+
+})();
 })();  
 </script>
 </body>

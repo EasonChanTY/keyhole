@@ -10449,8 +10449,8 @@ function minsLeft(){var SL=(typeof SLOT!=='undefined')?SLOT:1800000;return Math.
 function names(){return BANK[D.eraName]||FALL;}
 function bondName(i){return (D.eraName||eraNow()||'筹备期')+'·'+names()[i%10];}
 function priceAt(i){return Math.round(280*Math.pow(1.52,i)*(1+rank()*0.85)/10)*10;}
-function volAt(i){return 0.03+i*0.024;}
-function driftAt(i){return 0.012+i*0.007;}
+function volAt(i){return 0.045+i*0.042;}
+function driftAt(i){return 0.015+i*0.012;}
 function sellRate(b){
   var s=0,str=String(b.id)+'_'+D.era;
   for(var i=0;i<str.length;i++)s=(s*37+str.charCodeAt(i))%99991;
@@ -10497,10 +10497,30 @@ function check(){
 }
 function eraTick(nm){
   var before=total();
+   var live=[];
   for(var i=0;i<D.list.length;i++){
-    var b=D.list[i], r=(Math.random()*2-1)*volAt(b.i)+driftAt(b.i);
-    b.val=Math.max(10,Math.round(b.val*(1+r))); b.h.push(b.val);
+    var b=D.list[i];
+    var r=(Math.random()*2-1)*volAt(b.i)+driftAt(b.i);
+    var dice=Math.random();
+    if(dice<0.018+(b.i>=6?0.012:0)){
+      b.val=0; b.h.push(0); b.wiped=true;                 /* 违约清零 */
+    }else if(dice<0.048){
+      r+=1.0+Math.random()*1.8;                            /* 突然起飞 */
+      b.val=Math.max(10,Math.round(b.val*(1+r))); b.h.push(b.val);
+    }else if(dice<0.085){
+      r-=0.5+Math.random()*0.4;                            /* 突然坠落 */
+      b.val=Math.max(10,Math.round(b.val*(1+r))); b.h.push(b.val);
+    }else{
+      b.val=Math.max(10,Math.round(b.val*(1+r))); b.h.push(b.val);
+    }
+    if(!b.wiped) live.push(b);
   }
+  if(live.length!==D.list.length){
+    var _nm=[];
+    for(var w=0;w<D.list.length;w++){ if(D.list[w].wiped) _nm.push(D.list[w].name); }
+    D.list=live;
+    try{ say('💥 债券违约清零：'+_nm.join('、')); }catch(e){}
+  } 
   var keep=[],due=[];
   for(var j=0;j<D.list.length;j++){ if(D.era-D.list[j].era>=TERM)due.push(D.list[j]); else keep.push(D.list[j]); }
   var paid=0;

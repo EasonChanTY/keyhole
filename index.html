@@ -10283,6 +10283,286 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   }catch(e){}
 
 })();  
+/* ===== v162：商店限量库存 + 债券按金库定价 ===== */
+(function(){
+
+  /* ---------------- 商店库存 ---------------- */
+  const SK='keyhole_stock_v2';
+  const SLOT=1800000;
+  const slot=()=>Math.floor(Date.now()/SLOT);
+
+  const MAX={bronze:3,silver:3,gold:2,diamond:2,omni:1,
+    bw:5,bs:3,bg:2,bd:1,warBox:2};
+  const BASE={bronze:30,silver:90,gold:220,diamond:1200,omni:0,
+    bw:45,bs:260,bg:600,bd:3200,warBox:1800};
+  const BOX={bw:0,bs:2,bg:3,bd:5};
+  const ARMOR={
+    bronze:{name:'青铜护甲',shield:25},
+    silver:{name:'白银护甲',shield:70},
+    gold:{name:'黄金护甲',shield:160},
+    diamond:{name:'钻石护甲',shield:200,bombProof:true},
+    omni:{name:'全能护甲',shield:0,omni:true}
+  };
+  const eraMul=()=>0.85+hash('shop'+slot())*0.45;
+
+  function loadStock(){
+    let d={slot:slot(),map:{}};
+    try{
+      const r=JSON.parse(localStorage.getItem(SK)||'null');
+      if(r)d=r;
+    }catch(e){}
+    if(d.slot!==slot())d={slot:slot(),map:{}};
+    Object.keys(MAX).forEach(k=>{
+      if(d.map[k]===undefined)d.map[k]=MAX[k];
+    });
+    return d;
+  }
+  const saveStock=d=>{try{localStorage.setItem(SK,JSON.stringify(d));}catch(e){}};
+
+  function priceOfShop(id){
+    if(id==='omni')return Math.max(200,Math.round((S.coins||0)*0.10));
+    return Math.round((BASE[id]||0)*eraMul());
+  }
+
+  window.__shopPrice=priceOfShop;
+
+  /* 用克隆按钮彻底清掉旧监听 */
+  function bindButton(btn,handler){
+    if(!btn||btn.__b162)return;
+    const clone=btn.cloneNode(true);
+    clone.__b162=1;
+    clone.onclick=function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      handler(clone);
+    };
+    btn.parentNode.replaceChild(clone,btn);
+  }
+
+  function syncShop(){
+    const body=document.getElementById('shopBody');
+    if(!body)return;
+    const d=loadStock();
+    const btns=body.querySelectorAll('button');
+    for(let i=0;i<btns.length;i++){
+      const btn=btns[i];
+      const id=btn.getAttribute('data-buy3')||btn.getAttribute('data-buy');
+      let key=id;
+      if(btn.id==='omniBuy')key='omni';
+      if(btn.id==='warBoxBuy')key='warBox';
+      if(!key||MAX[key]===undefined)continue;
+
+      const left=d.map[key]||0;
+
+      /* 改库存文字 */
+      const row=btn.closest('.catrow');
+      if(row){
+        const els=row.querySelectorAll('div,span,small');
+        for(let j=0;j<els.length;j++){
+          const el=els[j];
+          if(el.children.length)continue;
+          const t=(el.textContent||'').trim();
+          if(t.indexOf('剩')===0||t==='已售罄'){
+            const nt=left>0?('剩 '+left):'已售罄';
+            if(el.textContent!==nt)el.textContent=nt;
+          }
+          if(/^\d+\s*金/.test(t)){
+            const p=priceOfShop(key);
+            if(el.textContent.indexOf('×')>=0){
+              const nt=p+' 金 ×'+eraMul().toFixed(2);
+              if(el.textContent!==nt)el.textContent=nt;
+            }else{
+              const nt=p+' 金';
+              if(el.textContent!==nt)el.textContent=nt;
+            }
+          }
+        }
+      }
+
+      if(left<=0){ btn.disabled=true; }
+      else if(key!=='omni'){ btn.disabled=false; }
+
+      bindButton(btn,buyShop);
+    }
+  }
+
+  function buyShop(btn){
+    const body=document.getElementById('shopBody');
+    let key=btn.getAttribute('data-buy3')||btn.getAttribute('data-buy');
+    if(btn.id==='omniBuy')key='omni';
+    if(btn.id==='warBoxBuy')key='warBox';
+    if(!key||MAX[key]===undefined)return;
+
+    const d=loadStock();
+    if((d.map[key]||0)<=0){toast('已售罄');return;}
+    const p=priceOfShop(key);
+    if((S.coins||0)<p){toast('金币不够 · 需要 '+p);return;}
+
+    S.coins-=p;d.map[key]--;saveStock(d);
+    try{save();updateHud();}catch(e){}
+
+    if(ARMOR[key]){
+      let cur=null;
+      try{cur=JSON.parse(localStorage.getItem('keyhole_armor_v1')||'null');}catch(e){}
+      if(cur){S.coins+=p;updateHud();toast('已经穿着一件护甲');return;}
+      try{
+        localStorage.setItem('keyhole_armor_v1',JSON.stringify({
+          name:ARMOR[key].name,shield:ARMOR[key].shield,
+          bombProof:!!ARMOR[key].bombProof,omni:!!ARMOR[key].omni
+        }));
+      }catch(e){}
+      try{SFX.coin();}catch(e){}
+      toast('已装备 <b>'+ARMOR[key].name+'</b>',1500);
+      syncShop();
+      return;
+    }
+
+    /* 箱子类：直接开 */
+    if(key==='warBox'){
+      const evs=['rads','raid','bomb'];
+      const loot=(Math.random()<0.5)
+        ? [{kind:'item',item:(window.__pickWar?window.__pickWar():ITEMS[0]),cond:1+Math.floor(Math.random()*3)}]
+        : [{kind:'evt',ev:evs[Math.floor(Math.random()*evs.length)]}];
+      const panel=document.getElementById('shopScreen');
+      if(panel)panel.classList.remove('on');
+      setTimeout(function(){try{fadeTo(()=>startStage({tier:TIERS[0],loot:loot}));}catch(e){}},120);
+      return;
+    }
+
+    const tier=TIERS[BOX[key]];
+    const loot=rollLoot(tier);
+    const panel=document.getElementById('shopScreen');
+    if(panel)panel.classList.remove('on');
+    setTimeout(function(){try{fadeTo(()=>startStage({tier:tier,loot:loot}));}catch(e){}},120);
+  }
+
+  /* ---------------- 债券按金库定价 ---------------- */
+  const BOND_KEY='keyhole_bonds_v4';
+  const BOND_BASE=[180,360,780];
+  const BOND_TYPE=['steady','calm','wild'];
+
+  function bondPriceAt(i){
+    const base=BOND_BASE[i%3];
+    const coins=S.coins||0;
+    const f=Math.max(0.55,Math.min(12,coins/15000));
+    let p=Math.round(base*(0.9+(i%7)*0.06)*f);
+    if(i===0) p=Math.min(p,Math.max(150,Math.round(coins*0.12)));
+    return Math.max(60,p);
+  }
+  window.__bondPriceAt=bondPriceAt;
+
+  function syncBonds(){
+    const pane=document.getElementById('bondPane');
+    if(!pane||pane.style.display==='none')return;
+    const btns=pane.querySelectorAll('button[data-b4buy]');
+    for(let i=0;i<btns.length;i++){
+      const btn=btns[i];
+      const idx=+btn.getAttribute('data-b4buy');
+      const p=bondPriceAt(idx);
+
+      const row=btn.closest('div[style*="border"]')||btn.parentElement;
+      if(row){
+        const els=row.querySelectorAll('div');
+        for(let j=0;j<els.length;j++){
+          const el=els[j];
+          if(el.children.length)continue;
+          if(/^\d+\s*金$/.test((el.textContent||'').trim())){
+            const nt=p+' 金';
+            if(el.textContent!==nt)el.textContent=nt;
+          }
+        }
+      }
+
+      if(!btn.__b162b){
+        const clone=btn.cloneNode(true);
+        clone.__b162b=1;
+        clone.onclick=function(e){
+          e.preventDefault();e.stopPropagation();
+          buyBondAt(+clone.getAttribute('data-b4buy'),clone);
+        };
+        btn.parentNode.replaceChild(clone,btn);
+      }
+    }
+  }
+
+  function buyBondAt(idx,btn){
+    const p=bondPriceAt(idx);
+    if((S.coins||0)<p){toast('金币不够 · 需要 '+p);return;}
+
+    let name='债券';
+    try{
+      const row=btn.closest('div[style*="border"]')||btn.parentElement;
+      const first=row.querySelector('div');
+      if(first)name=first.textContent.trim();
+    }catch(e){}
+
+    S.coins-=p;
+    try{save();updateHud();}catch(e){}
+
+    let l=[];
+    try{l=JSON.parse(localStorage.getItem(BOND_KEY)||'[]');}catch(e){}
+    l.push({
+      name:name,type:BOND_TYPE[idx%3],price:p,
+      buyStep:Math.floor(Date.now()/SLOT),
+      seed:'d'+Math.floor(Math.random()*1e9)
+    });
+    try{localStorage.setItem(BOND_KEY,JSON.stringify(l));}catch(e){}
+
+    try{SFX.coin();}catch(e){}
+    toast('买入 <b>'+name+'</b><br>'+p+' 金',1500);
+
+    try{ if(window.__bond4Render)window.__bond4Render(); }catch(e){}
+    setTimeout(syncBonds,200);
+  }
+
+  /* ---------------- 定时同步 ---------------- */
+  setInterval(function(){try{syncShop();}catch(e){}},1000);
+  setInterval(function(){try{syncBonds();}catch(e){}},1000);
+  setInterval(function(){
+    try{
+      const p=document.getElementById('shopScreen');
+      if(p&&p.classList.contains('on')){syncShop();syncBonds();}
+    }catch(e){}
+  },1500);
+
+})();
+/* ===== v163：危险物概率上调（百分比危险更明显） ===== */
+(function(){
+
+  /* 1. 各难度基础危险率提高 */
+  try{
+    MODES.easy.haz      = .05;
+    MODES.hard.haz      = .10;
+    MODES.nightmare.haz = .16;
+    if(MODES.hell) MODES.hell.haz = .22;
+  }catch(e){}
+
+  /* 2. 额外塞危险物：百分比危险为主 */
+  if(!rollLoot.__v163){
+    const _rl=rollLoot;
+    rollLoot=function(tier){
+      const out=_rl.apply(this,arguments);
+      try{
+        const hard=(MODE===MODES.nightmare||MODE===MODES.hell);
+        const pctChance  = hard ? .22 : .10;   /* 税务/盗匪/失火/纠纷 */
+        const normChance = hard ? .28 : .16;   /* 蝎子/硫磺/炸弹 */
+
+        if(Math.random()<pctChance && out.length){
+          const L=['tax','thief','fire','lawsuit'];
+          out.splice(Math.min(1,out.length),0,{kind:'evt',ev:L[rnd(L.length)]});
+        }else if(Math.random()<normChance && out.length){
+          const L=['scorpion','sulfur','bomb'];
+          out.splice(Math.min(1,out.length),0,{kind:'evt',ev:L[rnd(L.length)]});
+        }
+      }catch(e){}
+      return out;
+    };
+    rollLoot.__v163=1;
+  }
+
+  try{ updateHud(); }catch(e){}
+
+})();
 </script>
 </body>
 </html>

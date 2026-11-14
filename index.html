@@ -10174,6 +10174,115 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   },800);
 
 })();
+/* ===== v161：时代自动切换 / 掉落下调 / 新遮挡物 ===== */
+(function(){
+
+  /* ---------- 1. 时代到点自动变（每秒检查） ---------- */
+  let lastEra='';
+  try{ lastEra=curEra().n; }catch(e){}
+
+  setInterval(function(){
+    try{
+      const n=curEra().n;
+      if(n===lastEra)return;
+      lastEra=n;
+
+      try{ updateHud(); }catch(e){}
+      try{ btnEra.textContent='时代 · '+n+' ›'; }catch(e){}
+      try{
+        toast('新时代 · <b>'+n+'</b><br>物品价格已重新计算',2400);
+        haptic([10,20,10]);
+      }catch(e){}
+    }catch(e){}
+  },1000);
+
+  /* 顶部倒计时也每 5 秒刷新一次 */
+  setInterval(function(){
+    try{
+      const ms=1800000-(Date.now()%1800000);
+      hLeft.textContent='时代 '+Math.ceil(ms/60000)+' 分后变';
+    }catch(e){}
+  },5000);
+
+  /* ---------- 2. 传世/珠宝掉落下调 ---------- */
+  try{
+    const W={
+      '木箱':   [.45,.32,.16,.07,0],
+      '铜箱':   [.38,.32,.20,.09,.01],
+      '银箱':   [.28,.32,.25,.12,.03],
+      '金箱':   [.20,.28,.28,.18,.06],
+      '至尊箱': [.15,.24,.27,.22,.12],
+      '钻石箱': [.02,.12,.26,.34,.26],
+      '黑曜石箱':[1,0,0,0,0]
+    };
+    TIERS.forEach(function(t){
+      if(W[t.name]) t.w=W[t.name].slice();
+    });
+  }catch(e){}
+
+  /* ---------- 3. 新遮挡物 ---------- */
+  try{
+    const NEW=['sand','tape','leaf','knot'];
+    NEW.forEach(function(k){
+      if(OB_LIST.indexOf(k)<0)OB_LIST.push(k);
+    });
+    if(typeof OB_NAME==='object'){
+      OB_NAME.sand='沙粒';
+      OB_NAME.tape='胶带';
+      OB_NAME.leaf='枯叶';
+      OB_NAME.knot='绳结';
+    }
+  }catch(e){}
+
+  try{
+    const _ob=obAdd;
+    obAdd=function(kind){
+      try{
+        if(kind==='sand'){
+          const cv=document.createElement('canvas');cv.width=cv.height=128;
+          const x=cv.getContext('2d');
+          for(let i=0;i<500;i++){
+            x.fillStyle='rgba(190,160,110,'+(0.1+Math.random()*0.35)+')';
+            x.fillRect(Math.random()*128,Math.random()*128,1.5,1.5);
+          }
+          const pl=new THREE.Mesh(new THREE.PlaneGeometry(.34,.3),
+            new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),
+              transparent:true,opacity:.85,depthWrite:false}));
+          pl.position.set(0,-.06,-.03);obRoot.add(pl);
+          return;
+        }
+        if(kind==='tape'){
+          [[-.09,.02,.06],[.07,-.04,-.07]].forEach(function(a){
+            const t=new THREE.Mesh(new THREE.PlaneGeometry(.2,.028),
+              new THREE.MeshStandardMaterial({color:0xd8cfae,roughness:.9,
+                transparent:true,opacity:.85,side:THREE.DoubleSide}));
+            t.position.set(a[0],a[1],-.02);t.rotation.z=a[2];obRoot.add(t);
+          });
+          return;
+        }
+        if(kind==='leaf'){
+          const shape=new THREE.Shape();
+          shape.moveTo(0,0);
+          shape.bezierCurveTo(.03,.05,.03,.11,0,.15);
+          shape.bezierCurveTo(-.03,.11,-.03,.05,0,0);
+          const geo=new THREE.ShapeGeometry(shape);
+          const lf=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({
+            color:0x6a5a32,roughness:.9,side:THREE.DoubleSide}));
+          lf.position.set(.02,-.06,-.02);lf.rotation.z=.6;obRoot.add(lf);
+          return;
+        }
+        if(kind==='knot'){
+          const k=new THREE.Mesh(new THREE.TorusKnotGeometry(.035,.008,40,6),
+            new THREE.MeshStandardMaterial({color:0x8a7a5a,roughness:.95}));
+          k.position.set(0,.03,-.02);k.rotation.z=.4;obRoot.add(k);
+          return;
+        }
+      }catch(e){}
+      return _ob.apply(this,arguments);
+    };
+  }catch(e){}
+
+})();  
 </script>
 </body>
 </html>

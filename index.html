@@ -11161,6 +11161,287 @@ setInterval(function(){
   },2500);
 })();
 /* ===== v166 结束 ===== */  
+/* ===== v167：黑曜石藏品 3% · 百分比危险减半 · 碎片 6% + 合成 ===== */
+(function(){
+  if(window.__OBF__) return; window.__OBF__=true;
+
+  /* ① 黑曜石碎片 */
+  var SHARD={id:'obsShard',n:'黑曜石碎片',t:3,c:'gem',b:160,
+    d:'黑曜石剥落的一角，边缘锋利得能割破纸。集满 10 片可在仓库合成一件完整藏品。'};
+  try{
+    if(!ITEM_BY_ID[SHARD.id]){ ITEMS.push(SHARD); ITEM_BY_ID[SHARD.id]=SHARD; }
+  }catch(e){}
+
+  var PCTK={fine:1,debt:1,scam:1,ransom:1,butler:1,tax:1,thief:1,fire:1,lawsuit:1};
+
+  /* ② 掉落规则 */
+  try{
+    var _rl=rollLoot;
+    rollLoot=function(tier){
+      var out=_rl.apply(this,arguments);
+      try{
+        if(!out||!out.length) return out;
+
+        /* 百分比危险：出现率打 5 折 */
+        for(var i=out.length-1;i>=0;i--){
+          var e=out[i];
+          if(e&&e.kind==='evt'&&PCTK[e.ev]&&Math.random()<0.50) out.splice(i,1);
+        }
+
+        /* 黑曜石箱：藏品固定 3% · 碎片 6% */
+        if(tier&&tier.special==='obsidian'){
+          try{ localStorage.setItem('keyhole_obs_pity_v1','0'); }catch(e){}
+          for(var k=0;k<out.length;k++){
+            var o=out[k];
+            if(o&&o.kind==='item'&&o.item&&o.item.uniq){
+              out[k]={kind:'item',item:POOL[1][rnd(POOL[1].length)],cond:1};
+            }
+          }
+          if(Math.random()<0.03){
+            out[out.length-1]={kind:'item',item:OBS_ITEMS[rnd(OBS_ITEMS.length)],cond:1};
+          }
+          if(Math.random()<0.06){
+            out.push({kind:'item',item:SHARD,cond:1});
+          }
+        }
+      }catch(e){}
+      return out;
+    };
+  }catch(e){}
+
+  /* ③ 碎片面板 */
+  var btn=null, scr=null;
+  function count(){
+    var n=0;
+    try{ (S.bag||[]).forEach(function(it){ if(it.id==='obsShard') n++; }); }catch(e){}
+    return n;
+  }
+  function build(){
+    if(scr) return;
+    scr=document.createElement('div');
+    scr.id='obsFragScreen';
+    scr.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:99984;background:#000000b8;display:none;align-items:center;justify-content:center;padding:24px;';
+    scr.innerHTML='<div style="width:100%;max-width:330px;background:#141122;border:1px solid #3a2f55;border-radius:16px;padding:20px;color:#e8e6f0;font-family:system-ui,-apple-system,sans-serif;">'+
+      '<div style="font-size:15px;font-weight:700;color:#b57aff;letter-spacing:1px;margin-bottom:8px;">黑 曜 石 碎 片</div>'+
+      '<div id="ofBody" style="font-size:12.5px;color:#a99fc4;line-height:1.9;margin-bottom:16px;"></div>'+
+      '<div style="display:flex;gap:10px;">'+
+        '<button id="ofNo" style="flex:1;padding:11px;border-radius:11px;border:1px solid #3a3358;background:#241f3a;color:#cfc9e6;font-size:14px;">关闭</button>'+
+        '<button id="ofGo" style="flex:1.4;padding:11px;border-radius:11px;border:1px solid #b57aff66;background:#2a1e4d;color:#c9a8ff;font-size:14px;font-weight:700;">合 成</button>'+
+      '</div></div>';
+    document.body.appendChild(scr);
+    document.getElementById('ofNo').onclick=function(){ scr.style.display='none'; };
+    document.getElementById('ofGo').onclick=combine;
+    scr.addEventListener('click',function(ev){ if(ev.target===scr) scr.style.display='none'; });
+  }
+  function refresh(){
+    try{ if(btn) btn.textContent='碎片 '+count(); }catch(e){}
+    var b=document.getElementById('ofBody');
+    if(b){
+      var n=count();
+      b.innerHTML='当前持有 <b style="color:#b57aff;font-size:18px">'+n+'</b> 片<br>'+
+        '集满 <b style="color:#ffcf5c">10 片</b> 可合成 1 件随机黑曜石藏品。<br>'+
+        '<span style="color:#6f6688">卖掉也能换钱，但卖了就不够合成了。</span>';
+      var g=document.getElementById('ofGo');
+      if(g) g.style.opacity=(n>=10?'1':'.4');
+    }
+  }
+  function combine(){
+    var n=count();
+    if(n<10){ try{toast('碎片不足，还差 '+(10-n)+' 片',2000);}catch(e){alert('碎片不足，还差 '+(10-n)+' 片');} return; }
+    var rm=0;
+    try{
+      S.bag=S.bag.filter(function(it){ if(rm<10&&it.id==='obsShard'){ rm++; return false; } return true; });
+    }catch(e){}
+    var it=OBS_ITEMS[rnd(OBS_ITEMS.length)];
+    try{ S.bag.push({id:it.id,cond:1,fav:false,t:Date.now()}); }catch(e){}
+    try{ save(); updateHud(); if(typeof renderBag==='function') renderBag(); }catch(e){}
+    try{ toast('合成成功：<b>'+it.n+'</b>',3000); }catch(e){}
+    try{ haptic([30,40,90]); }catch(e){}
+    refresh();
+  }
+  function open(){ build(); refresh(); scr.style.display='flex'; }
+
+  /* ④ 左下角入口 */
+  function place(){
+    if(btn) return;
+    btn=document.createElement('button');
+    btn.id='obsFragBtn';
+    btn.textContent='碎片 0';
+    btn.style.cssText='position:fixed;left:12px;bottom:162px;z-index:9500;padding:9px 12px;border-radius:12px;border:1px solid #b57aff55;background:linear-gradient(180deg,#241a3d,#161028);color:#c9a8ff;font-size:12.5px;font-weight:700;letter-spacing:1px;box-shadow:0 6px 18px #0008;';
+    btn.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation(); open(); });
+    document.body.appendChild(btn);
+    refresh();
+  }
+  window.__openFrag=open;
+  setTimeout(place,1800);
+  setInterval(refresh,2500);
+})();
+/* ===== v167 结束 ===== */
+/* ===== v169：税务改为按时代搜查(5%~35%) · 钻石甲/全能甲重做（纯追加） ===== */
+(function(){
+  if(window.__V169__) return; window.__V169__=true;
+
+  /* ---------- A. 箱子里彻底不再出「税务稽查」 ---------- */
+  try{
+    var _rl=rollLoot;
+    rollLoot=function(tier){
+      var out=_rl.apply(this,arguments);
+      try{
+        if(out&&out.length){
+          for(var i=out.length-1;i>=0;i--){
+            var e=out[i];
+            if(e&&e.kind==='evt'&&e.ev==='tax') out.splice(i,1);
+          }
+        }
+      }catch(e){}
+      return out;
+    };
+  }catch(e){}
+
+  /* ---------- B. 税务搜查：每 5~7 个时代一次，扣 5%~35% ---------- */
+  var AKEY='keyhole_audit2_v1', own=false, lastAudit=0;
+  var A={n:0,target:5+Math.floor(Math.random()*3),era:'',t:0};
+  try{ var o=JSON.parse(localStorage.getItem(AKEY)||'null'); if(o&&typeof o.n==='number')A=o; }catch(e){}
+  function saveA(){ try{ localStorage.setItem(AKEY,JSON.stringify(A)); }catch(e){} }
+  function eraNm(){ try{ return curEra().n; }catch(e){ return ''; } }
+  function runAudit(){
+    try{
+      if((S.coins||0)<=20000) return false;
+      var pct=0.05+Math.random()*0.30;
+      var lost=Math.max(5,Math.round((S.coins||0)*pct));
+      own=true;
+      S.coins=Math.max(0,(S.coins||0)-lost);
+      try{ save(); updateHud(); }catch(e){}
+      try{ toast('<b>⚠ 税务搜查</b><br>被扣 '+lost+' 金（'+Math.round(pct*100)+'%）',3200); }catch(e){}
+      try{ haptic([80,60,160]); flash(5); }catch(e){}
+      lastAudit=Date.now();
+      return true;
+    }catch(e){ return false; }
+  }
+
+  /* 把任何旧的「查税/税务」扣款统一规范到 5%~35%（兼容老补丁） */
+  try{
+    var _t=toast;
+    toast=function(h,ms){
+      try{
+        if(typeof h==='string' && h.indexOf('被扣')>=0 && /查税|税务/.test(h)){
+          var m=h.match(/被扣\s*([\d,]+)\s*金/);
+          if(m){
+            var lost=+m[1].replace(/,/g,'');
+            var before=(S.coins||0)+lost;
+            if(!own){
+              var want=Math.max(5,Math.round(before*(0.05+Math.random()*0.30)));
+              var diff=lost-want;
+              if(diff!==0){ S.coins=Math.max(0,(S.coins||0)+diff); try{ save(); updateHud(); }catch(e){} }
+              h=h.replace(/被扣\s*[\d,]+\s*金（[^）]*）/,'被扣 '+want+' 金（'+Math.round(want/before*100)+'%）');
+            }
+            lastAudit=Date.now();
+          }
+        }
+      }catch(e){}
+      own=false;
+      return _t.call(this,h,ms);
+    };
+  }catch(e){}
+
+  setInterval(function(){
+    try{
+      var nm=eraNm();
+      if(!A.era){ A.era=nm; A.t=Date.now(); saveA(); return; }
+      if(nm&&nm!==A.era){ A.era=nm; A.n++; A.t=Date.now(); saveA(); }
+      if(A.n>=A.target){
+        if(A.t && Date.now()-A.t<8000) return;              /* 等 8 秒，让旧系统先跑 */
+        if(Date.now()-lastAudit<60000){ A.n=0; A.target=5+Math.floor(Math.random()*3); saveA(); return; }
+        if(runAudit()){ A.n=0; A.target=5+Math.floor(Math.random()*3); saveA(); }
+      }
+    }catch(e){}
+  },5000);
+
+  /* ---------- C. 钻石甲 900 吸收 + 减伤 35% / 全能甲 吸收 200 ---------- */
+  function hasD(v){ return typeof v==='string' && v.indexOf('钻石护甲')>=0; }
+  function hasO(v){ return typeof v==='string' && v.indexOf('全能护甲')>=0; }
+
+  var _set=Storage.prototype.setItem, _get=Storage.prototype.getItem;
+  Storage.prototype.setItem=function(k,v){
+    try{
+      if(k==='keyhole_armor_v1'&&typeof v==='string'){
+        if(hasD(v)){
+          var a=JSON.parse(v); a.shield=900; a.bombProof=true; a.pctReduce=0.35; a.name='钻石护甲'; v=JSON.stringify(a);
+          try{
+            var e=Math.floor(Date.now()/1800000), h=hash('shopdiamond'+e);
+            var paid=Math.max(1,Math.round(1200*(0.85+h*0.45)));
+            var want=Math.max(1,Math.round(1600*(0.85+h*0.45)));
+            var extra=want-paid;
+            if(extra>0) S.coins=Math.max(0,(S.coins||0)-extra);   /* 价格补到 1600 档 */
+          }catch(e){}
+        }else if(hasO(v)){
+          var b=JSON.parse(v); b.shield=200; v=JSON.stringify(b);
+        }
+      }
+    }catch(e){}
+    return _set.call(this,k,v);
+  };
+  Storage.prototype.getItem=function(k){
+    var v=_get.call(this,k);
+    try{
+      if(k==='keyhole_armor_v1'&&typeof v==='string'){
+        if(hasD(v)){ var a=JSON.parse(v); a.shield=900; a.bombProof=true; v=JSON.stringify(a); }
+        else if(hasO(v)){ var b=JSON.parse(v); b.shield=200; v=JSON.stringify(b); }
+      }
+    }catch(e){}
+    return v;
+  };
+
+  /* 商店里同步显示新价格和新描述 */
+  setInterval(function(){
+    try{
+      var shop=document.getElementById('shopScreen'); if(!shop) return;
+      var all=shop.querySelectorAll('*'), nameEl=null;
+      for(var i=0;i<all.length;i++){
+        if(all[i].children.length===0 && (all[i].textContent||'').trim()==='钻石护甲'){ nameEl=all[i]; break; }
+      }
+      if(!nameEl) return;
+      var box=nameEl.parentElement; if(box&&box.parentElement) box=box.parentElement;
+      var e=Math.floor(Date.now()/1800000);
+      var want=Math.max(1,Math.round(1600*(0.85+hash('shopdiamond'+e)*0.45)));
+      var lv=box.querySelectorAll('*');
+      for(var j=0;j<lv.length;j++){
+        if(lv[j].children.length) continue;
+        var t=(lv[j].textContent||'').trim();
+        if(/^[\d,]+ ?金$/.test(t)) lv[j].textContent=want+' 金';
+        else if(t.indexOf('免疫炸弹')>=0) lv[j].textContent='免疫炸弹 · 吸收 900 金伤害 · 百分比危险减伤 35%';
+      }
+    }catch(e){}
+  },500);
+
+  /* 钻石甲：百分比危险减伤 35% */
+  var PCTS={tax:1,thief:1,fire:1,lawsuit:1,fine:1,debt:1,scam:1,ransom:1,butler:1};
+  try{
+    var _res=resolveEvent;
+    resolveEvent=function(insp){
+      var before=0; try{ before=S.coins||0; }catch(e){}
+      var r=_res.apply(this,arguments);
+      try{
+        var ev=insp&&insp.entry&&insp.entry.ev;
+        var a=null;
+        try{ a=JSON.parse(localStorage.getItem('keyhole_armor_v1')||'null'); }catch(e){}
+        if(a&&a.name==='钻石护甲'&&ev&&PCTS[ev]){
+          var spent=before-(S.coins||0);
+          if(spent>0){
+            var back=Math.round(spent*0.35);
+            if(back>0){
+              S.coins=(S.coins||0)+back;
+              try{ addMk('钻石护甲 · 减伤 '+back,'#7fe3ff'); }catch(e){}
+              try{ save(); updateHud(); }catch(e){}
+            }
+          }
+        }
+      }catch(e){}
+      return r;
+    };
+  }catch(e){}
+})();
+/* ===== v169 结束 ===== */  
 </script>
 </body>
 </html>

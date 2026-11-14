@@ -10563,27 +10563,49 @@ setTimeout(function(){ try{ paintModes(); }catch(e){} }, 600);
   try{ updateHud(); }catch(e){}
 
 })();
-/* ===== 齿口 · 债券 v8（独立纪年 · 主题债种 · 走势图 · 通知）===== */
+/* ===== 齿口 · 债券 v9（跟随游戏时代 · 修好 30 分钟换时代） ===== */
 (function(){
-if(window.__KB8__)return; window.__KB8__=true;
+if(window.__KB9__)return; window.__KB9__=true;
 
-var KEY='keyhole_bond_v8', OLDK='keyhole_bond_v7', TERM=10, RMIN=0.5, RMAX=0.9, GAP=22*60*1000;
-var BANKS=[
- {t:'大萧条',k:['萧条','衰退','危机','贫困'],n:['救济信托','失业票据','典当抵押债','清仓基金券','国库承兑票','黑市票据','粮仓收益券','互助会债','贫民救济票','破产清算债']},
- {t:'战乱',k:['战','乱','烽','军'],n:['军械公债','战地补给票','军工信托','烽火债券','难民救济券','弹药期票','前线汇兑券','黑市军票','占领区债券','战略物资债']},
- {t:'熔炉',k:['熔炉','工业','钢','铁','煤'],n:['钢锭期票','炉火债券','重工信托','煤炭基金','机械抵押债','铁轨承兑票','锻造公债','矿脉收益券','蒸汽机债','炉渣投机券']},
- {t:'蒸汽',k:['蒸汽','铁路','殖民'],n:['铁路股票','蒸汽机公债','殖民地债券','运河信托','煤港基金','机车间期票','远洋运费券','枕木抵押债','锅炉收益券','工棚互助债']},
- {t:'电气',k:['电气','电'],n:['电力公债','电报信托','电车股票','铜线期票','照明基金券','无线电报债','电厂抵押债','蓄电池收益券','电网扩建债','专利投机券']},
- {t:'镀金泡沫',k:['泡沫','投机','繁荣','黄金','盛','镀金'],n:['蓝筹信托','地产泡沫债','运河投机券','铁路蓝筹股','银行承兑票','郁金香期票','新股认购券','信托收益债','纸面财富券','杠杆基金债']},
- {t:'瘟疫',k:['瘟疫','疫','病','黑死'],n:['防疫公债','药材信托','隔离区票据','医师公会债','墓地抵押券','消毒基金债','救济粥棚票','血清投机券','丧葬收益债','封城期票']},
- {t:'大航海',k:['航海','发现','贸易','海','香料'],n:['远洋贸易债','香料信托','船队股份','港口税券','探险基金券','保险期票','货船舵股债','东印度票据','罗盘收益券','海难投机券']},
- {t:'禁酒令',k:['禁酒','黑帮','走私','地下'],n:['私酒信托','地下钱庄票','赌场收益债','走私期票','保护费债券','黑市基金券','酒吧抵押债','枪手保险票','秘密账户债','洗钱承兑票']},
- {t:'赛博',k:['赛博','数据','网络','未来','数码','信息'],n:['数据信托','算力公债','芯片期票','量子基金券','神经网络债','链上资产票','虚拟地产债','算法收益券','云矿抵押债','零知识投机券']}
-];
+/* ---------- ① 修「时代不换」：改用真实时间，30 分钟一格 ---------- */
+try{
+  if(typeof ERAS!=='undefined' && typeof eraAt!=='undefined'){
+    var _W=[],_TOT=0;
+    for(var _i=0;_i<ERAS.length;_i++){ var _w=(ERAS[_i].n==='战乱'?0.35:1); _W.push(_w); _TOT+=_w; }
+    var _raw=function(slot){
+      var h=hash('era'+slot), r=h*_TOT, a=0;
+      for(var k=0;k<ERAS.length;k++){ a+=_W[k]; if(r<a) return ERAS[k]; }
+      return ERAS[0];
+    };
+    eraAt=function(ep){
+      var nowH=Date.now()/HOUR, curH=Math.floor(nowH);
+      if(Math.abs(ep-curH)<1e-9) ep=nowH;        /* 只有「当前时刻」用真实时间，历史价格不变 */
+      var slot=Math.floor(ep*2);                 /* 每 30 分钟一格 */
+      if(slot%6===0) return ERAS[9];             /* 每 3 小时暗市 */
+      var cur=_raw(slot), prev=_raw(slot-1);
+      if(prev && cur.n===prev.n){ var ix=ERAS.indexOf(cur); return ERAS[(ix+1)%ERAS.length]; }
+      return cur;
+    };
+  }
+}catch(e){}
+
+/* ---------- ② 债券本体 ---------- */
+var KEY='keyhole_bond_v9', OLDK='keyhole_bond_v8', TERM=10, RMIN=0.5, RMAX=0.9;
+var BANK={
+ '收藏热':['藏品信托','邮票抵押债','古董质押票','拍卖预支券','藏品基金券','珍本过桥债','签名收益券','私藏承兑票','藏品保险债','天价投机券'],
+ '大萧条':['救济信托','失业票据','典当抵押债','清仓基金券','国库承兑票','黑市票据','粮仓收益券','互助会债','贫民救济票','破产清算债'],
+ '镀金年代':['蓝筹信托','铁路蓝筹股','银行承兑票','钢铁公债','豪宅抵押债','新股认购券','信托收益债','纸面财富券','杠杆基金债','镀金投机券'],
+ '战乱':['军械公债','战地补给票','军工信托','烽火债券','难民救济券','弹药期票','前线汇兑券','黑市军票','占领区债券','战略物资债'],
+ '考古热':['遗迹开发债','墓葬勘探票','文物信托','出土质押券','考古基金券','断代收益票','藏品修复债','探险过桥券','拓片承兑票','神庙投机券'],
+ '复古潮':['老物件信托','复刻基金券','旧货抵押债','怀旧收益票','老唱片过桥券','老相机质押债','古董服饰券','旧书承兑票','复古投机券','老字号公债'],
+ '平淡日子':['稳当信托','米铺票据','小铺抵押债','安稳基金券','街坊互助债','粮油承兑票','集市收益券','小额过桥票','储蓄公债','日用投机券'],
+ '拍卖狂热':['落槌信托','竞价抵押债','号牌收益券','拍卖过桥票','保证金基金券','流拍保险债','专场承兑票','藏品杠杆券','举牌投机债','佣金收益券'],
+ '熔炉时代':['钢锭期票','炉火债券','重工信托','煤炭基金','机械抵押债','铁轨承兑票','锻造公债','矿脉收益券','蒸汽机债','炉渣投机券'],
+ '暗市':['私货信托','地下钱庄票','赌场收益债','走私期票','保护费债券','黑市基金券','黑账抵押债','暗桩保险票','秘密账户债','洗钱承兑票']
+};
 var FALL=['信托','票据','抵押债','基金券','承兑票','期票','公债','收益券','互助债','投机券'];
-
-var D={era:0,last:'',lastAt:0,bi:-1,theme:'',list:[],hist:[],earned:0};
-var inited=false,busy=false,sel=null,cur=-1,geo=null,askCb=null;
+var D={era:0,last:'',list:[],hist:[],earned:0};
+var busy=false,sel=null,cur=-1,geo=null,askCb=null;
 
 function $(id){return document.getElementById(id);}
 function say(t){try{if(typeof toast==='function'){toast(t,3000);return;}}catch(e){}alert(t);}
@@ -10596,43 +10618,10 @@ function cap(){return Math.max(4,Math.min(14,4+rank()));}
 function total(){var s=0;for(var i=0;i<D.list.length;i++)s+=D.list[i].val;return s;}
 function findBond(id){for(var i=0;i<D.list.length;i++)if(D.list[i].id===id)return D.list[i];return null;}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(D));}catch(e){}}
-function load(){
-  try{var r=localStorage.getItem(KEY); if(!r) r=localStorage.getItem(OLDK);
-      if(r){var o=JSON.parse(r); if(o&&o.list instanceof Array){o.era=o.era||0; D=o;}}}catch(e){}
-  if(!(D.list instanceof Array))D.list=[];
-  if(!(D.hist instanceof Array))D.hist=[];
-  if(typeof D.era!=='number')D.era=0;
-  if(typeof D.earned!=='number')D.earned=0;
-  if(typeof D.bi!=='number')D.bi=-1;
-  if(typeof D.lastAt!=='number')D.lastAt=0;
-  if(!D.theme)D.theme='筹备期';
-  try{localStorage.removeItem(OLDK);localStorage.removeItem('keyhole_bond_v6');localStorage.removeItem('keyhole_bond_v5');}catch(e){}
-  if(!D.hist.length)D.hist.push({e:D.era,v:total()});
-  if(!D.lastAt)D.lastAt=Date.now();
-  save();
-}
-function pay(n){
-  try{if(typeof S==='undefined'||!S)return false; if((S.coins||0)<n)return false;
-    S.coins-=n; if(typeof save==='function')save(); if(typeof updateHud==='function')updateHud(); if(typeof updateUI==='function')updateUI(); return true;}catch(e){return false;}
-}
-function gain(n){
-  try{if(typeof S==='undefined'||!S)return; S.coins=(S.coins||0)+n;
-    if(typeof save==='function')save(); if(typeof updateHud==='function')updateHud(); if(typeof updateUI==='function')updateUI();}catch(e){}
-}
-
-/* ---------- 主题 ---------- */
-function eraName(){
-  var b=$('btnEra'), t=b?(b.textContent||'').trim():'';
-  return t.replace(/\s+/g,'').replace(/时代/g,'').replace(/[·・:：()（）\[\]]/g,'');
-}
-function themeMatch(en){
-  if(!en) return -1;
-  for(var i=0;i<BANKS.length;i++){var k=BANKS[i].k;
-    for(var j=0;j<k.length;j++){if(en.indexOf(k[j])>=0)return i;}}
-  return -1;
-}
-function bankNames(){return D.bi>=0?BANKS[D.bi].n:FALL;}
-function bondName(i){return (D.theme||'筹备期')+'·'+bankNames()[i%10];}
+function eraNow(){try{return curEra().n;}catch(e){return '';}}
+function minsLeft(){var SL=(typeof SLOT!=='undefined')?SLOT:1800000;return Math.max(0,Math.ceil((SL-(Date.now()%SL))/60000));}
+function names(){return BANK[D.eraName]||FALL;}
+function bondName(i){return (D.eraName||eraNow()||'筹备期')+'·'+names()[i%10];}
 function priceAt(i){return Math.round(280*Math.pow(1.52,i)*(1+rank()*0.85)/10)*10;}
 function volAt(i){return 0.03+i*0.024;}
 function driftAt(i){return 0.012+i*0.007;}
@@ -10642,8 +10631,45 @@ function sellRate(b){
   return RMIN+(s%401)/1000;
 }
 
-/* ---------- 推进一期 ---------- */
-function advance(bi,themeName){
+function load(){
+  try{
+    var r=localStorage.getItem(KEY);
+    if(!r){
+      var o0=JSON.parse(localStorage.getItem(OLDK)||'null');
+      if(o0 && o0.list instanceof Array){
+        D.list=o0.list.map(function(b){b.era=0;b.h=[b.val];return b;});
+        D.earned=o0.earned||0; D.era=0; D.hist=[];
+      }
+    }else{
+      var o=JSON.parse(r); if(o&&o.list instanceof Array) D=o;
+    }
+  }catch(e){}
+  if(!(D.list instanceof Array))D.list=[];
+  if(!(D.hist instanceof Array))D.hist=[];
+  if(typeof D.era!=='number')D.era=0;
+  if(typeof D.earned!=='number')D.earned=0;
+  D.eraName=D.eraName||eraNow()||'';
+  try{localStorage.removeItem(OLDK);localStorage.removeItem('keyhole_bond_v7');localStorage.removeItem('keyhole_bond_v6');localStorage.removeItem('keyhole_bond_v5');}catch(e){}
+  if(!D.hist.length)D.hist.push({e:D.era,n:D.eraName,v:total()});
+  D.last=eraNow()||D.last||'';
+  save();
+}
+function pay(n){
+  try{if(typeof S==='undefined'||!S)return false;if((S.coins||0)<n)return false;
+    S.coins-=n;if(typeof save==='function')save();if(typeof updateHud==='function')updateHud();if(typeof updateUI==='function')updateUI();return true;}catch(e){return false;}
+}
+function gain(n){
+  try{if(typeof S==='undefined'||!S)return;S.coins=(S.coins||0)+n;
+    if(typeof save==='function')save();if(typeof updateHud==='function')updateHud();if(typeof updateUI==='function')updateUI();}catch(e){}
+}
+
+/* ---------- 跟随游戏时代 ---------- */
+function check(){
+  var nm=eraNow(); if(!nm) return;
+  if(!D.last){ D.last=nm; D.eraName=nm; save(); return; }
+  if(nm!==D.last){ D.last=nm; D.era++; eraTick(nm); }
+}
+function eraTick(nm){
   var before=total();
   for(var i=0;i<D.list.length;i++){
     var b=D.list[i], r=(Math.random()*2-1)*volAt(b.i)+driftAt(b.i);
@@ -10652,33 +10678,18 @@ function advance(bi,themeName){
   var keep=[],due=[];
   for(var j=0;j<D.list.length;j++){ if(D.era-D.list[j].era>=TERM)due.push(D.list[j]); else keep.push(D.list[j]); }
   var paid=0;
-  if(due.length){for(var k=0;k<due.length;k++)paid+=due[k].val; D.list=keep; gain(paid);}
-  D.era++; D.bi=bi; D.theme=themeName; D.lastAt=Date.now();
+  if(due.length){for(var k=0;k<due.length;k++)paid+=due[k].val;D.list=keep;gain(paid);}
+  D.eraName=nm;
   var after=total();
-  D.hist.push({e:D.era,v:after}); if(D.hist.length>40)D.hist.shift();
-  cur=-1; save(); notify(before,after,paid);
-  if($('kb8Screen')&&$('kb8Screen').style.display==='flex')render();
+  D.hist.push({e:D.era,n:nm,v:after}); if(D.hist.length>40)D.hist.shift();
+  cur=-1; save(); notify(nm,before,after,paid);
+  if($('kb9Screen')&&$('kb9Screen').style.display==='flex')render();
 }
-function syncEra(){
-  var nm=eraName(), now=Date.now();
-  if(nm && !D.last){ D.last=nm; var m=themeMatch(nm);
-    if(m>=0){D.bi=m;D.theme=BANKS[m].t;} else {D.bi=-1;D.theme=nm;}
-    D.lastAt=now; save(); return; }
-  if(nm && nm!==D.last){
-    D.last=nm; var m2=themeMatch(nm);
-    if(m2>=0) advance(m2,BANKS[m2].t); else advance(-1,nm);
-    return;
-  }
-  if(now-(D.lastAt||now)>GAP){
-    var nx=(D.bi+1)%BANKS.length;
-    advance(nx,BANKS[nx].t);
-  }
-}
-function notify(before,after,paid){
-  var d=after-before, pct=before?d/before*100:0;
-  var s='【债券·第'+D.era+'期】'+D.theme+'　估值 '+fmt(after)+' 金（'+(d>=0?'+':'')+fmt(d)+'，'+(pct>=0?'+':'')+pct.toFixed(1)+'%）';
+function notify(nm,before,after,paid){
+  var d=after-before,pct=before?d/before*100:0;
+  var s='【债券】新时代 · '+nm+'　估值 '+fmt(after)+' 金（'+(d>=0?'+':'')+fmt(d)+'，'+(pct>=0?'+':'')+pct.toFixed(1)+'%）';
   if(paid>0)s+='　到期兑付 +'+fmt(paid);
-  try{ if(typeof toast==='function') toast(s,3400); }catch(e){}
+  try{if(typeof toast==='function')toast(s,3400);}catch(e){}
   banner(s);
 }
 function banner(txt){
@@ -10692,42 +10703,41 @@ function banner(txt){
 
 /* ---------- 走势图 ---------- */
 function drawChart(){
-  var cv=$('kb8Cv'); if(!cv)return;
-  var w=cv.clientWidth; if(!w)return;
+  var cv=$('kb9Cv');if(!cv)return;
+  var w=cv.clientWidth;if(!w)return;
   var H=170,dpr=window.devicePixelRatio||1;
-  cv.width=Math.round(w*dpr); cv.height=Math.round(H*dpr); cv.style.height=H+'px';
-  var g=cv.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,H);
+  cv.width=Math.round(w*dpr);cv.height=Math.round(H*dpr);cv.style.height=H+'px';
+  var g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,H);
   var data=sel?sel.h.slice():D.hist.map(function(x){return x.v;});
   if(!data.length)data=[0];
   var mx=Math.max.apply(null,data),mn=Math.min.apply(null,data);
   if(mx<=mn)mx=mn+1;
-  var padL=48,padR=12,padT=14,padB=18;
-  var iw=Math.max(10,w-padL-padR),ih=H-padT-padB;
+  var padL=48,padR=12,padT=14,padB=18,iw=Math.max(10,w-padL-padR),ih=H-padT-padB;
   function X(i){return data.length<=1?padL+iw/2:padL+iw*i/(data.length-1);}
   function Y(v){return padT+ih*(1-(v-mn)/(mx-mn));}
-  g.strokeStyle='#241f3a'; g.lineWidth=1;
-  for(var r2=0;r2<=3;r2++){var yy=padT+ih*r2/3; g.beginPath(); g.moveTo(padL,yy); g.lineTo(w-padR,yy); g.stroke();}
-  g.fillStyle='#6f6a86'; g.font='10px system-ui,-apple-system'; g.textAlign='right';
-  g.fillText(fmt(mx),padL-6,padT+9); g.fillText(fmt(mn),padL-6,padT+ih+3);
+  g.strokeStyle='#241f3a';g.lineWidth=1;
+  for(var r2=0;r2<=3;r2++){var yy=padT+ih*r2/3;g.beginPath();g.moveTo(padL,yy);g.lineTo(w-padR,yy);g.stroke();}
+  g.fillStyle='#6f6a86';g.font='10px system-ui,-apple-system';g.textAlign='right';
+  g.fillText(fmt(mx),padL-6,padT+9);g.fillText(fmt(mn),padL-6,padT+ih+3);
   if(cur<0||cur>=data.length)cur=data.length-1;
   g.beginPath();
-  for(var i2=0;i2<data.length;i2++){var px=X(i2),py=Y(data[i2]); if(i2===0)g.moveTo(px,py); else g.lineTo(px,py);}
-  g.strokeStyle='#ffcf5c'; g.lineWidth=2; g.lineJoin='round'; g.stroke();
-  g.lineTo(X(data.length-1),padT+ih); g.lineTo(X(0),padT+ih); g.closePath();
-  g.fillStyle='rgba(255,207,92,0.10)'; g.fill();
+  for(var i2=0;i2<data.length;i2++){var px=X(i2),py=Y(data[i2]);if(i2===0)g.moveTo(px,py);else g.lineTo(px,py);}
+  g.strokeStyle='#ffcf5c';g.lineWidth=2;g.lineJoin='round';g.stroke();
+  g.lineTo(X(data.length-1),padT+ih);g.lineTo(X(0),padT+ih);g.closePath();
+  g.fillStyle='rgba(255,207,92,0.10)';g.fill();
   var cx=X(cur),cy=Y(data[cur]);
-  g.strokeStyle='#8fc0ff88'; g.setLineDash([3,3]);
-  g.beginPath(); g.moveTo(cx,padT); g.lineTo(cx,padT+ih); g.stroke(); g.setLineDash([]);
-  g.fillStyle='#8fc0ff'; g.beginPath(); g.arc(cx,cy,3.5,0,6.284); g.fill();
+  g.strokeStyle='#8fc0ff88';g.setLineDash([3,3]);
+  g.beginPath();g.moveTo(cx,padT);g.lineTo(cx,padT+ih);g.stroke();g.setLineDash([]);
+  g.fillStyle='#8fc0ff';g.beginPath();g.arc(cx,cy,3.5,0,6.284);g.fill();
   geo={padL:padL,iw:iw,n:data.length};
   var lbl='';
-  if(sel)lbl='「'+sel.name+'」第 '+(cur+1)+' 期　'+fmt(data[cur])+' 金';
-  else if(D.hist[cur])lbl='第 '+D.hist[cur].e+' 期　总估值 '+fmt(data[cur])+' 金';
-  var e2=$('kb8Cur'); if(e2)e2.textContent=lbl;
+  if(sel)lbl='「'+sel.name+'」第 '+(cur+1)+' 个时代　'+fmt(data[cur])+' 金';
+  else if(D.hist[cur])lbl=D.hist[cur].n+'（第 '+D.hist[cur].e+' 期）　'+fmt(data[cur])+' 金';
+  var e2=$('kb9Cur');if(e2)e2.textContent=lbl;
 }
 function pick(e){
   if(!geo)return;
-  var cv=$('kb8Cv'); if(!cv)return;
+  var cv=$('kb9Cv');if(!cv)return;
   var r=cv.getBoundingClientRect();
   var x=((e.touches&&e.touches[0])?e.touches[0].clientX:e.clientX)-r.left;
   if(geo.n<=1)cur=0;
@@ -10737,86 +10747,78 @@ function pick(e){
 
 /* ---------- 确认框 ---------- */
 function ask(title,body,okTxt,cb){
-  var m=$('kb8Ask');
+  var m=$('kb9Ask');
   if(!m){
-    m=document.createElement('div'); m.id='kb8Ask';
+    m=document.createElement('div');m.id='kb9Ask';
     m.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:99997;background:#000a;display:none;align-items:center;justify-content:center;padding:24px;';
     m.innerHTML='<div style="width:100%;max-width:340px;background:#1a1730;border:1px solid #3a3358;border-radius:16px;padding:18px 18px 14px;color:#e8e6f0;">'+
-      '<div id="kb8AskT" style="font-size:15px;font-weight:700;color:#ffcf5c;margin-bottom:8px;"></div>'+
-      '<div id="kb8AskB" style="font-size:13px;color:#b9b2cf;line-height:1.8;margin-bottom:16px;"></div>'+
+      '<div id="kb9AskT" style="font-size:15px;font-weight:700;color:#ffcf5c;margin-bottom:8px;"></div>'+
+      '<div id="kb9AskB" style="font-size:13px;color:#b9b2cf;line-height:1.8;margin-bottom:16px;"></div>'+
       '<div style="display:flex;gap:10px;">'+
-        '<button id="kb8No" style="flex:1;padding:11px;border-radius:11px;border:1px solid #3a3358;background:#241f3a;color:#cfc9e6;font-size:14px;">否</button>'+
-        '<button id="kb8Yes" style="flex:1;padding:11px;border-radius:11px;border:1px solid #5ad19a66;background:#1e3a2c;color:#7ee2ae;font-size:14px;font-weight:700;">是</button>'+
+        '<button id="kb9No" style="flex:1;padding:11px;border-radius:11px;border:1px solid #3a3358;background:#241f3a;color:#cfc9e6;font-size:14px;">否</button>'+
+        '<button id="kb9Yes" style="flex:1;padding:11px;border-radius:11px;border:1px solid #5ad19a66;background:#1e3a2c;color:#7ee2ae;font-size:14px;font-weight:700;">是</button>'+
       '</div></div>';
     document.body.appendChild(m);
-    $('kb8No').addEventListener('click',function(){m.style.display='none';askCb=null;});
-    $('kb8Yes').addEventListener('click',function(){m.style.display='none';var f=askCb;askCb=null;if(f)f();});
+    $('kb9No').addEventListener('click',function(){m.style.display='none';askCb=null;});
+    $('kb9Yes').addEventListener('click',function(){m.style.display='none';var f=askCb;askCb=null;if(f)f();});
     m.addEventListener('click',function(ev){if(ev.target===m){m.style.display='none';askCb=null;}});
   }
-  $('kb8AskT').textContent=title;
-  $('kb8AskB').innerHTML=body;
-  $('kb8Yes').textContent=okTxt||'是';
-  askCb=cb; m.style.display='flex';
+  $('kb9AskT').textContent=title;$('kb9AskB').innerHTML=body;$('kb9Yes').textContent=okTxt||'是';
+  askCb=cb;m.style.display='flex';
 }
 
 /* ---------- 界面 ---------- */
 function build(){
-  if($('kb8Screen'))return;
+  if($('kb9Screen'))return;
   var d=document.createElement('div');
-  d.id='kb8Screen';
+  d.id='kb9Screen';
   d.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:99980;background:#100e18;display:none;flex-direction:column;color:#e8e6f0;font-family:system-ui,-apple-system,sans-serif;';
   d.innerHTML=
     '<div style="display:flex;align-items:center;padding:14px 16px 10px;border-bottom:1px solid #2a2440;">'+
       '<div style="font-size:16px;font-weight:700;letter-spacing:3px;color:#ffcf5c;">债 券 交 易 所</div>'+
       '<div style="flex:1"></div>'+
-      '<button id="kb8X" style="padding:8px 15px;border-radius:10px;border:1px solid #3a3358;background:#1a1730;color:#cfc9e6;font-size:13px;">关闭</button>'+
+      '<button id="kb9X" style="padding:8px 15px;border-radius:10px;border:1px solid #3a3358;background:#1a1730;color:#cfc9e6;font-size:13px;">关闭</button>'+
     '</div>'+
-    '<div id="kb8Head" style="padding:10px 16px 0;font-size:12.5px;color:#9a94b5;line-height:1.85;"></div>'+
-    '<div style="padding:8px 12px 0;"><canvas id="kb8Cv" style="width:100%;display:block;border:1px solid #241f3a;border-radius:12px;background:#151223;touch-action:none;"></canvas></div>'+
-    '<div id="kb8Cur" style="padding:5px 16px 0;font-size:11.5px;color:#8f89ab;min-height:16px;"></div>'+
-    '<div style="padding:4px 16px 0;"><button id="kb8Next" style="padding:6px 12px;border-radius:9px;border:1px solid #8fc0ff44;background:#8fc0ff14;color:#8fc0ff;font-size:11.5px;">切换到下一期（测试用）</button></div>'+
+    '<div id="kb9Head" style="padding:10px 16px 0;font-size:12.5px;color:#9a94b5;line-height:1.85;"></div>'+
+    '<div style="padding:8px 12px 0;"><canvas id="kb9Cv" style="width:100%;display:block;border:1px solid #241f3a;border-radius:12px;background:#151223;touch-action:none;"></canvas></div>'+
+    '<div id="kb9Cur" style="padding:5px 16px 0;font-size:11.5px;color:#8f89ab;min-height:16px;"></div>'+
     '<div style="flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:0 12px 120px;">'+
-      '<div id="kb8IssueLbl" style="padding:10px 4px 4px;font-size:12px;color:#ffcf5c;letter-spacing:1px;"></div>'+
-      '<div id="kb8Buy"></div>'+
-      '<div id="kb8HoldLbl" style="padding:16px 4px 4px;font-size:12px;color:#8fc0ff;letter-spacing:1px;"></div>'+
-      '<div id="kb8List"></div>'+
+      '<div id="kb9IssueLbl" style="padding:10px 4px 4px;font-size:12px;color:#ffcf5c;letter-spacing:1px;"></div>'+
+      '<div id="kb9Buy"></div>'+
+      '<div id="kb9HoldLbl" style="padding:16px 4px 4px;font-size:12px;color:#8fc0ff;letter-spacing:1px;"></div>'+
+      '<div id="kb9List"></div>'+
     '</div>';
   document.body.appendChild(d);
   d.addEventListener('click',function(ev){
     var t=ev.target;
-    var b1=t&&t.closest?t.closest('[data-kb8buy]'):null;
-    if(b1){askBuy(parseInt(b1.getAttribute('data-kb8buy'),10));return;}
-    var b2=t&&t.closest?t.closest('[data-kb8sell]'):null;
-    if(b2){askSell(b2.getAttribute('data-kb8sell'));return;}
-    var b3=t&&t.closest?t.closest('[data-kb8sel]'):null;
-    if(b3){var id=b3.getAttribute('data-kb8sel');sel=(sel&&sel.id===id)?null:findBond(id);cur=-1;render();return;}
-    if(t&&t.id==='kb8X'){d.style.display='none';return;}
-    if(t&&t.id==='kb8Next'){
-      var nx=(D.bi+1)%BANKS.length;
-      advance(nx,BANKS[nx].t);
-    }
+    var b1=t&&t.closest?t.closest('[data-kb9buy]'):null;
+    if(b1){askBuy(parseInt(b1.getAttribute('data-kb9buy'),10));return;}
+    var b2=t&&t.closest?t.closest('[data-kb9sell]'):null;
+    if(b2){askSell(b2.getAttribute('data-kb9sell'));return;}
+    var b3=t&&t.closest?t.closest('[data-kb9sel]'):null;
+    if(b3){var id=b3.getAttribute('data-kb9sel');sel=(sel&&sel.id===id)?null:findBond(id);cur=-1;render();return;}
+    if(t&&t.id==='kb9X'){d.style.display='none';}
   });
-  var cv=$('kb8Cv');
+  var cv=$('kb9Cv');
   if(cv){cv.addEventListener('pointerdown',pick);cv.addEventListener('pointermove',function(e){if(e.buttons||e.pointerType==='touch')pick(e);});}
 }
 function open(){
   build();
-  var s=$('kb8Screen'); if(!s){say('面板创建失败');return;}
-  s.style.display='flex'; cur=-1; render();
+  var s=$('kb9Screen');if(!s){say('面板创建失败');return;}
+  s.style.display='flex';cur=-1;render();
 }
-function render(){try{_render();}catch(e){var t=$('kb8Head');if(t)t.innerHTML='<span style="color:#ff8a8a">渲染出错：'+e.message+'</span>';}}
+function render(){try{_render();}catch(e){var t=$('kb9Head');if(t)t.innerHTML='<span style="color:#ff8a8a">渲染出错：'+e.message+'</span>';}}
 function _render(){
-  if(!$('kb8Screen'))return;
-  var mins=Math.max(0,Math.round((Date.now()-(D.lastAt||Date.now()))/60000));
-  var warn=mins>=22?'<span style="color:#ff9d9d">游戏时代 '+mins+' 分钟未变 → 债券独立计时中</span>':'游戏时代上次变化 '+mins+' 分钟前';
-  var head=$('kb8Head');
+  if(!$('kb9Screen'))return;
+  var nm=eraNow()||D.eraName||'—';
+  var head=$('kb9Head');
   if(head)head.innerHTML=
-    '第 <b style="color:#5ad19a">'+D.era+'</b> 期　主题 <b style="color:#ffcf5c">'+D.theme+'</b>　阶级 <b style="color:#8fc0ff">'+rank()+'/10</b>　可选 <b style="color:#b57aff">'+slots()+'</b> 只'+
-    '<br>游戏时代：'+(eraName()||'—')+'　'+warn+
+    '当前时代 <b style="color:#ffcf5c">'+nm+'</b>　还有 <b style="color:#5ad19a">'+minsLeft()+'</b> 分钟换时代'+
+    '<br>债券已跟随 <b style="color:#8fc0ff">'+D.era+'</b> 个时代　阶级 <b style="color:#8fc0ff">'+rank()+'/10</b>　本期可选 <b style="color:#b57aff">'+slots()+'</b> 只'+
     '<br>金币 <b style="color:#ffcf5c">'+fmt(coins())+'</b>　持仓 '+D.list.length+'/'+cap()+'　估值 <b style="color:#5ad19a">'+fmt(total())+'</b>　累计收益 '+fmt(D.earned);
 
-  var lbl=$('kb8IssueLbl'); if(lbl)lbl.textContent='本 期 发 行 · '+D.theme;
-  var buy=$('kb8Buy'); buy.innerHTML='';
+  var lbl=$('kb9IssueLbl');if(lbl)lbl.textContent='本 期 发 行 · '+nm;
+  var buy=$('kb9Buy');buy.innerHTML='';
   var n=slots();
   for(var i=0;i<n;i++){
     var price=priceAt(i),name=bondName(i);
@@ -10824,16 +10826,16 @@ function _render(){
     row.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 12px;margin:6px 0;border-radius:13px;background:#1a1730;border:1px solid #2b2545;';
     row.innerHTML='<div style="flex:1;min-width:0;">'+
         '<div style="font-size:13.5px;font-weight:700;color:#e8e6f0;">'+name+'</div>'+
-        '<div style="font-size:11.5px;color:#8f89ab;margin-top:3px;">波动 '+(volAt(i)*100).toFixed(0)+'%　到期约 +'+Math.round(driftAt(i)*TERM*100)+'%　'+TERM+' 期</div></div>'+
+        '<div style="font-size:11.5px;color:#8f89ab;margin-top:3px;">波动 '+(volAt(i)*100).toFixed(0)+'%　到期约 +'+Math.round(driftAt(i)*TERM*100)+'%　'+TERM+' 个时代</div></div>'+
       '<div style="text-align:right;"><div style="font-size:13px;font-weight:700;color:#ffcf5c;">'+fmt(price)+'</div>'+
-        '<button data-kb8buy="'+i+'" style="margin-top:5px;padding:6px 15px;border-radius:9px;border:1px solid #5ad19a55;background:#1e3a2c;color:#7ee2ae;font-size:12.5px;font-weight:700;">买入</button></div>';
+        '<button data-kb9buy="'+i+'" style="margin-top:5px;padding:6px 15px;border-radius:9px;border:1px solid #5ad19a55;background:#1e3a2c;color:#7ee2ae;font-size:12.5px;font-weight:700;">买入</button></div>';
     buy.appendChild(row);
   }
 
-  var hl=$('kb8HoldLbl'); if(hl)hl.textContent='我 的 持 仓';
-  var list=$('kb8List'); list.innerHTML='';
+  var hl=$('kb9HoldLbl');if(hl)hl.textContent='我 的 持 仓';
+  var list=$('kb9List');list.innerHTML='';
   if(!D.list.length){
-    list.innerHTML='<div style="text-align:center;color:#6f6a86;font-size:13px;padding:30px 16px;line-height:2;">还没有持仓<br>买入后满 '+TERM+' 期自动兑付</div>';
+    list.innerHTML='<div style="text-align:center;color:#6f6a86;font-size:13px;padding:30px 16px;line-height:2;">还没有持仓<br>买入后满 '+TERM+' 个时代自动兑付</div>';
   }else{
     var arr=D.list.slice().sort(function(a,b){return b.era-a.era;});
     for(var k2=0;k2<arr.length;k2++){
@@ -10843,14 +10845,14 @@ function _render(){
       var on=(sel&&sel.id===b.id);
       var el=document.createElement('div');
       el.style.cssText='margin:6px 0;padding:11px 12px;border-radius:13px;background:'+(on?'#22203a':'#1a1730')+';border:1px solid '+(on?'#8fc0ff66':'#2b2545')+';';
-      el.innerHTML='<div data-kb8sel="'+b.id+'">'+
+      el.innerHTML='<div data-kb9sel="'+b.id+'">'+
           '<div style="display:flex;align-items:center;">'+
             '<div style="flex:1;min-width:0;font-size:13px;font-weight:700;color:#e8e6f0;">'+b.name+'</div>'+
-            '<div style="font-size:11.5px;color:#9a94b5;">剩 '+left+' 期</div></div>'+
+            '<div style="font-size:11.5px;color:#9a94b5;">剩 '+left+' 时代</div></div>'+
           '<div style="font-size:11.5px;color:#8f89ab;margin-top:4px;">买入 '+fmt(b.face)+' → 现值 <b style="color:'+col+'">'+fmt(b.val)+'</b>（'+(chg>=0?'+':'')+(chg*100).toFixed(1)+'%）</div></div>'+
         '<div style="display:flex;gap:8px;margin-top:9px;">'+
-          '<button data-kb8sell="'+b.id+'" style="flex:1;padding:7px;border-radius:9px;border:1px solid #ff7a7a55;background:#ff7a7a14;color:#ff9d9d;font-size:12px;">转卖 '+fmt(offer)+'（'+(rate*100).toFixed(0)+'%）</button>'+
-          '<button data-kb8sel="'+b.id+'" style="padding:7px 13px;border-radius:9px;border:1px solid #8fc0ff44;background:#8fc0ff14;color:#8fc0ff;font-size:12px;">'+(on?'收起':'看走势')+'</button>'+
+          '<button data-kb9sell="'+b.id+'" style="flex:1;padding:7px;border-radius:9px;border:1px solid #ff7a7a55;background:#ff7a7a14;color:#ff9d9d;font-size:12px;">转卖 '+fmt(offer)+'（'+(rate*100).toFixed(0)+'%）</button>'+
+          '<button data-kb9sel="'+b.id+'" style="padding:7px 13px;border-radius:9px;border:1px solid #8fc0ff44;background:#8fc0ff14;color:#8fc0ff;font-size:12px;">'+(on?'收起':'看走势')+'</button>'+
         '</div>';
       list.appendChild(el);
     }
@@ -10864,45 +10866,45 @@ function askBuy(i){
   var name=bondName(i),price=priceAt(i);
   if(D.list.length>=cap()){say('持仓上限 '+cap()+' 只，先转卖一些');return;}
   if(coins()<price){say('金币不足，需要 '+fmt(price)+' 金');return;}
-  ask('确认买入？','「'+name+'」<br>价格 <b style="color:#ffcf5c">'+fmt(price)+'</b> 金<br>波动 '+(volAt(i)*100).toFixed(0)+'%　满 '+TERM+' 期自动兑付','买入',function(){
+  ask('确认买入？','「'+name+'」<br>价格 <b style="color:#ffcf5c">'+fmt(price)+'</b> 金<br>波动 '+(volAt(i)*100).toFixed(0)+'%　满 '+TERM+' 个时代自动兑付','买入',function(){
     if(!pay(price)){say('金币不足');return;}
     var b={id:'b'+Date.now()+Math.floor(Math.random()*9999),name:name,i:i,face:price,val:price,h:[price],era:D.era};
-    D.list.push(b); sel=null; cur=-1;
+    D.list.push(b);sel=null;cur=-1;
     if(D.hist.length)D.hist[D.hist.length-1].v=total();
-    save(); render(); say('已买入 '+name);
+    save();render();say('已买入 '+name);
   });
 }
 function askSell(id){
-  var b=findBond(id); if(!b)return;
+  var b=findBond(id);if(!b)return;
   var rate=sellRate(b),got=Math.round(b.val*rate);
   ask('确认转卖？','「'+b.name+'」<br>当前估值 '+fmt(b.val)+' 金<br>本期比例 <b style="color:#ffcf5c">'+(rate*100).toFixed(0)+'%</b><br>到手 <b style="color:#5ad19a">'+fmt(got)+'</b> 金','转卖',function(){
     var i=-1;for(var k=0;k<D.list.length;k++)if(D.list[k].id===id){i=k;break;}
     if(i<0)return;
-    D.list.splice(i,1); gain(got); sel=null; cur=-1;
+    D.list.splice(i,1);gain(got);sel=null;cur=-1;
     if(D.hist.length)D.hist[D.hist.length-1].v=total();
-    save(); render(); say('已转卖，到手 '+fmt(got)+' 金');
+    save();render();say('已转卖，到手 '+fmt(got)+' 金');
   });
 }
 
-/* ---------- 清旧模块 ---------- */
+/* ---------- 清旧债券界面 ---------- */
 function hijack(b){
-  if(b.getAttribute('data-k8')==='1')return;
+  if(b.getAttribute('data-k9')==='1')return;
   var nb=b.cloneNode(true);
-  nb.setAttribute('data-k8','1');
+  nb.setAttribute('data-k9','1');
   nb.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();open();});
   if(b.parentNode)b.parentNode.replaceChild(nb,b);
 }
 function cleanup(){
   try{
-    var olds=document.querySelectorAll('[id^="kb7"],[id^="kzb"]');
+    var olds=document.querySelectorAll('[id^="kb8"],[id^="kb7"],[id^="kzb"]');
     for(var i=olds.length-1;i>=0;i--){if(olds[i].parentNode)olds[i].parentNode.removeChild(olds[i]);}
     var hid=document.querySelectorAll('[id*="bond"],[id*="Bond"]');
-    for(var j=0;j<hid.length;j++){var e=hid[j];if(e.id.indexOf('kb8')===0)continue;e.style.setProperty('display','none','important');}
+    for(var j=0;j<hid.length;j++){var e=hid[j];if(e.id.indexOf('kb9')===0)continue;e.style.setProperty('display','none','important');}
     var btns=document.querySelectorAll('button');
     for(var k=0;k<btns.length;k++){
       var b=btns[k];
-      if(b.id==='kb8Btn')continue;
-      if(b.closest&&b.closest('#kb8Screen'))continue;
+      if(b.id==='kb9Btn')continue;
+      if(b.closest&&b.closest('#kb9Screen'))continue;
       if((b.textContent||'').replace(/\s/g,'').indexOf('债券')>=0)hijack(b);
     }
   }catch(e){}
@@ -10910,17 +10912,17 @@ function cleanup(){
 
 /* ---------- 启动 ---------- */
 function init(){
-  load(); build();
-  if(!$('kb8Btn')){
+  load();build();
+  if(!$('kb9Btn')){
     var b=document.createElement('button');
-    b.id='kb8Btn'; b.textContent='债 券';
+    b.id='kb9Btn';b.textContent='债 券';
     b.style.cssText='position:fixed;left:12px;bottom:110px;z-index:9500;padding:10px 13px;border-radius:12px;border:1px solid #4f9dff55;background:linear-gradient(180deg,#1b2440,#111a30);color:#8fc0ff;font-size:13px;font-weight:700;letter-spacing:1px;box-shadow:0 6px 18px #0008;';
     b.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();open();});
     document.body.appendChild(b);
   }
   cleanup();
-  setTimeout(function(){syncEra();render();},1400);
-  setInterval(syncEra,3000);
+  setTimeout(function(){check();render();},1500);
+  setInterval(check,3000);
   setInterval(cleanup,1800);
   try{
     var mo=new MutationObserver(function(){if(busy)return;busy=true;setTimeout(function(){busy=false;cleanup();},160);});
@@ -10930,7 +10932,7 @@ function init(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);
 else init();
 })();
-/* ===== 债券 v8 结束 ===== */
+/* ===== 债券 v9 结束 ===== */
 </script>
 </body>
 </html>

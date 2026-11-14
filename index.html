@@ -11441,7 +11441,282 @@ setInterval(function(){
     };
   }catch(e){}
 })();
-/* ===== v169 结束 ===== */  
+/* ===== v169 结束 ===== */ 
+/* ===== v170：事件记录（上限300条）+ 时代简介分类榜单 ===== */
+(function(){
+  if(window.__V170__) return; window.__V170__=true;
+
+  /* ================= 一、事件记录核心 ================= */
+  var LKEY='keyhole_elog_v1', MAX=300;
+  var L=[];
+  try{ L=JSON.parse(localStorage.getItem(LKEY)||'[]')||[]; }catch(e){ L=[]; }
+  if(!(L instanceof Array)) L=[];
+  function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+  function hhmmss(t){
+    var d=new Date(t);
+    function p(n){ return (n<10?'0':'')+n; }
+    return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+  }
+  function add(txt,tone){
+    try{
+      L.push({t:Date.now(),x:txt,c:tone||'n'});
+      if(L.length>MAX) L=L.slice(L.length-MAX);
+      localStorage.setItem(LKEY,JSON.stringify(L));
+      var s=document.getElementById('elogScreen');
+      if(s&&s.style.display==='flex') draw();
+    }catch(e){}
+  }
+
+  var btn=null, scr=null, body=null;
+  function build(){
+    if(scr) return;
+    scr=document.createElement('div');
+    scr.id='elogScreen';
+    scr.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:99982;background:#0d0b14;display:none;flex-direction:column;color:#e8e6f0;font-family:system-ui,-apple-system,sans-serif;';
+    scr.innerHTML='<div style="display:flex;align-items:center;gap:8px;padding:14px 14px 10px;border-bottom:1px solid #2a2440;">'+
+        '<div style="font-size:15px;font-weight:700;letter-spacing:2px;color:#e6c47f;">事 件 记 录</div>'+
+        '<div style="flex:1"></div>'+
+        '<button id="elogClear" style="padding:7px 11px;border-radius:9px;border:1px solid #ff7a7a44;background:#ff7a7a12;color:#ff9d9d;font-size:12px;">清空</button>'+
+        '<button id="elogX" style="padding:7px 12px;border-radius:9px;border:1px solid #3a3358;background:#1a1730;color:#cfc9e6;font-size:12.5px;">关闭</button>'+
+      '</div>'+
+      '<div id="elogBody" style="flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:6px 12px 40px;"></div>';
+    document.body.appendChild(scr);
+    body=document.getElementById('elogBody');
+    document.getElementById('elogX').onclick=function(){ scr.style.display='none'; };
+    document.getElementById('elogClear').onclick=function(){
+      L=[]; try{ localStorage.setItem(LKEY,'[]'); }catch(e){} draw();
+    };
+  }
+  function draw(){
+    if(!body) return;
+    var out='<div style="font-size:11px;color:#6f6a86;padding:4px 2px 10px;">共 '+L.length+' 条 · 上限 '+MAX+' 条（超出自动删除最旧的）</div>';
+    if(!L.length){ out+='<div style="text-align:center;color:#6f6a86;font-size:13px;padding:40px 0;">还没有记录</div>'; }
+    for(var i=L.length-1;i>=0;i--){
+      var e=L[i], col=(e.c==='in'?'#7ee2ae':(e.c==='out'?'#ff9d9d':'#b9b2cf'));
+      out+='<div style="display:flex;gap:8px;padding:7px 2px;border-bottom:1px solid #ffffff08;">'+
+        '<span style="flex:0 0 auto;color:#6f6a86;font-size:11px;line-height:1.6">'+hhmmss(e.t)+'</span>'+
+        '<span style="flex:1;color:'+col+';font-size:12px;line-height:1.6;word-break:break-all">'+e.x+'</span></div>';
+    }
+    body.innerHTML=out;
+  }
+  function openLog(){ build(); draw(); scr.style.display='flex'; }
+  function placeBtn(){
+    if(btn) return;
+    btn=document.createElement('button');
+    btn.id='elogBtn'; btn.textContent='记录';
+    btn.style.cssText='position:fixed;left:12px;bottom:214px;z-index:9500;padding:9px 12px;border-radius:12px;border:1px solid #e6c47f55;background:linear-gradient(180deg,#2a2318,#161208);color:#e6c47f;font-size:12.5px;font-weight:700;letter-spacing:1px;box-shadow:0 6px 18px #0008;';
+    btn.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation(); openLog(); });
+    document.body.appendChild(btn);
+  }
+
+  /* ================= 二、金币变化 → 记录 ================= */
+  var lc=null, ctx='', ctxT=0;
+  function setCtx(c){ ctx=c; ctxT=Date.now()+5000; }
+
+  window.addEventListener('pointerdown',function(e){
+    try{
+      var t=e.target; var b=t&&t.closest?t.closest('button'):null; if(!b) return;
+      var id=b.id||'', tx=(b.textContent||'').replace(/\s/g,'');
+      if(b.hasAttribute('data-kb9buy')) setCtx('债券买入');
+      else if(b.hasAttribute('data-kb9sell')) setCtx('债券转卖');
+      else if(b.hasAttribute('data-buy3')||id==='omniBuy') setCtx('商店购买');
+      else if(b.hasAttribute('data-war')) setCtx('战乱物资箱');
+      else if(id==='btnB') setCtx('换一批箱子');
+      else if(id==='btnA') setCtx('买钥匙');
+      else if(id==='dSell'||id==='bsBulk'||id==='bulkSell') setCtx('卖出物品');
+      else if(id==='ofGo') setCtx('碎片合成');
+      else if(id==='elogBtn'||id==='elogX') return;
+      else if(tx.indexOf('买')>=0) setCtx('花费');
+    }catch(err){}
+  },true);
+
+  setInterval(function(){
+    try{
+      if(typeof S==='undefined'||!S) return;
+      var c=S.coins|0;
+      if(lc===null){ lc=c; return; }
+      if(c!==lc){
+        var d=c-lc; lc=c;
+        var why=(ctx&&Date.now()<ctxT)?ctx:'金币变动';
+        add((d>0?'＋':'－')+fmt(Math.abs(d))+' 金 · '+why, d>0?'in':'out');
+        ctx='';
+      }
+    }catch(e){}
+  },250);
+
+  /* 物品进出 → 记录 */
+  var lb=null;
+  function idName(id){ try{ return ITEM_BY_ID[id]?ITEM_BY_ID[id].n:id; }catch(e){ return id; } }
+  setInterval(function(){
+    try{
+      var m={};
+      (S.bag||[]).forEach(function(it){ if(it&&it.id) m[it.id]=(m[it.id]||0)+1; });
+      if(lb){
+        Object.keys(m).forEach(function(id){ var d=m[id]-(lb[id]||0); if(d>0) add('获得「'+idName(id)+'」×'+d,'in'); });
+        Object.keys(lb).forEach(function(id){ var d=lb[id]-(m[id]||0); if(d>0) add('失去「'+idName(id)+'」×'+d,'out'); });
+      }
+      lb=m;
+    }catch(e){}
+  },700);
+
+  /* 债券交易 → 记录 */
+  var lbd=null;
+  setInterval(function(){
+    try{
+      var o=JSON.parse(localStorage.getItem('keyhole_bond_v9')||'null');
+      var arr=(o&&o.list)||[], m={};
+      arr.forEach(function(x){ m[x.id]=x; });
+      if(lbd){
+        arr.forEach(function(x){
+          if(!lbd[x.id]) add('债券买入「'+x.name+'」−'+fmt(x.face)+' 金','out');
+        });
+        Object.keys(lbd).forEach(function(id){
+          if(!m[id]) add('债券了结「'+lbd[id].name+'」估值 '+fmt(lbd[id].val)+' 金','in');
+        });
+      }
+      lbd=m;
+    }catch(e){}
+  },1500);
+
+  /* 税务/结算提示 → 上下文 */
+  try{
+    var _tb=toast;
+    toast=function(h,ms){
+      try{
+        if(typeof h==='string'){
+          if(/查税|税务|搜查/.test(h)) setCtx('税务搜查');
+          else if(/保管|维持|结算/.test(h)) setCtx('时代结算');
+        }
+      }catch(e){}
+      return _tb.apply(this,arguments);
+    };
+  }catch(e){}
+
+  /* 时代切换 → 记录 */
+  var lera='';
+  setInterval(function(){
+    try{
+      var n=curEra().n;
+      if(n&&n!==lera){ if(lera) add('时代切换：'+lera+' → '+n,'n'); lera=n; }
+    }catch(e){}
+  },3000);
+
+  /* ================= 三、时代简介：分类榜单 ================= */
+  function pOf(it){
+    try{ return priceAt(it,1,Math.floor(Date.now()/3600000)); }
+    catch(e){ try{ return it.b||0; }catch(e2){ return 0; } }
+  }
+  var CATS=[
+    {k:'relic',  t:'传 世',   c:'#ffcf5c'},
+    {k:'antique',t:'古 物',   c:'#4f9dff'},
+    {k:'gem',    t:'珠 宝',   c:'#b57aff'},
+    {k:'obs',    t:'黑曜石',  c:'#a78bfa'},
+    {k:'dark',   t:'黑暗物件',c:'#8b5cf6'},
+    {k:'junk',   t:'垃 圾',   c:'#8d7c66'}
+  ];
+  function pool(k){
+    if(k==='obs'){ try{ return (typeof OBS_ITEMS!=='undefined'?OBS_ITEMS:[]).slice(); }catch(e){ return []; } }
+    try{
+      return (typeof ITEMS!=='undefined'?ITEMS:[]).filter(function(it){
+        return it && it.c===k && !it.uniq;
+      });
+    }catch(e){ return []; }
+  }
+  function rows(arr){
+    var s='';
+    for(var i=0;i<arr.length;i++){
+      s+='<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 2px;border-bottom:1px solid #ffffff08;font-size:12px;">'+
+        '<span style="color:#cfc4b2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+arr[i].n+'</span>'+
+        '<span style="color:#e6c47f;flex:0 0 auto">'+fmt(arr[i].p)+' 金</span></div>';
+    }
+    return s;
+  }
+  function buildEra(){
+    var nm='—', mins=0;
+    try{ nm=curEra().n; }catch(e){}
+    try{ mins=Math.max(0,Math.ceil((1800000-(Date.now()%1800000))/60000)); }catch(e){}
+    var h='<div style="padding:16px 16px 4px;font-size:12px;color:#b7a88e;line-height:1.9">'+
+      '当前时代 <b style="color:#e6c47f">'+nm+'</b>　还有 <b style="color:#8ef2a8">'+mins+'</b> 分钟换时代<br>'+
+      '<span style="color:#6f6558;font-size:10.5px">同品类内按当前时代价格排序（含时代系数）</span></div>';
+    for(var i=0;i<CATS.length;i++){
+      var ct=CATS[i], list=pool(ct.k).map(function(it){ return {n:it.n,p:pOf(it)}; });
+      if(!list.length) continue;
+      list.sort(function(a,b){ return b.p-a.p; });
+      var top=list.slice(0,3);
+      var low=list.slice(-3).sort(function(a,b){ return a.p-b.p; });
+      h+='<div style="margin:16px 16px 2px;font-size:12.5px;letter-spacing:2px;color:'+ct.c+'">'+ct.t+'</div>';
+      h+='<div style="margin:0 16px;font-size:10.5px;color:#6f6558;padding-top:6px">最 贵</div>';
+      h+='<div style="margin:0 16px">'+rows(top)+'</div>';
+      h+='<div style="margin:6px 16px 0;font-size:10.5px;color:#6f6558">最 便 宜</div>';
+      h+='<div style="margin:0 16px">'+rows(low)+'</div>';
+    }
+    h+='<div style="padding:18px 16px 30px;font-size:10.5px;color:#4f463c;line-height:1.95">'+
+      '时代换得越快，价格越波动；黑曜石与黑暗物件只有特定渠道出手。</div>';
+    return h;
+  }
+  try{
+    var _oe=openEra;
+    openEra=function(){
+      try{ _oe.apply(this,arguments); }catch(e){}
+      try{
+        var b=document.getElementById('esBody');
+        if(b) b.innerHTML=buildEra();
+      }catch(e){}
+    };
+  }catch(e){}
+
+  /* 启动 */
+  setTimeout(placeBtn,1600);
+  setTimeout(function(){ if(!lera){ try{ lera=curEra().n; }catch(e){} } },2000);
+})();
+/* ===== v170 结束 ===== */
+/* ===== v171：黑曜石藏品 0.3% · 越贵越难开出 ===== */
+(function(){
+  if(window.__V171__) return; window.__V171__=true;
+
+  /* 按价格反比加权抽黑曜石：越贵权重越低 */
+  function pickObs(){
+    try{
+      var arr=(typeof OBS_ITEMS!=='undefined')?OBS_ITEMS:[];
+      if(!arr.length) return null;
+      var w=[],tot=0,i;
+      for(i=0;i<arr.length;i++){
+        var p=arr[i].b||1000;
+        var x=1/Math.pow(p,1.15);      /* 指数越大，贵的越难 */
+        w.push(x); tot+=x;
+      }
+      var r=Math.random()*tot,a=0;
+      for(i=0;i<arr.length;i++){ a+=w[i]; if(r<a) return arr[i]; }
+      return arr[0];
+    }catch(e){ return null; }
+  }
+
+  try{
+    var _rl=rollLoot;
+    rollLoot=function(tier){
+      var out=_rl.apply(this,arguments);
+      try{
+        if(tier&&tier.special==='obsidian'&&out&&out.length){
+          try{ localStorage.setItem('keyhole_obs_pity_v1','0'); }catch(e){}
+          /* 先把上游给的黑曜石全部降级 */
+          for(var i=0;i<out.length;i++){
+            var o=out[i];
+            if(o&&o.kind==='item'&&o.item&&o.item.uniq){
+              out[i]={kind:'item',item:POOL[1][rnd(POOL[1].length)],cond:1};
+            }
+          }
+          /* 固定 0.3% 才给一件，且按价格加权 */
+          if(Math.random()<0.003){
+            var it=pickObs();
+            if(it) out[out.length-1]={kind:'item',item:it,cond:1};
+          }
+        }
+      }catch(e){}
+      return out;
+    };
+  }catch(e){}
+})();
+/* ===== v171 结束 ===== */
 </script>
 </body>
 </html>
